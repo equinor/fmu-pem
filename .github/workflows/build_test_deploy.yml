@@ -53,7 +53,7 @@ jobs:
           path: dist/
 
       - name: Build configuration file user interface
-        working-directory: ./user-interface-config
+        working-directory: ./documentation
         run: |
           npm ci
           npm run create-json-schema
