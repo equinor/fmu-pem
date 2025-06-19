@@ -27,6 +27,7 @@ jobs:
       - name: Build a binary wheel and a source tarball
         run: |
           pip install build
+          export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_FMU_PEM=0.0.1
           python -m build
           git diff
           git status
