@@ -27,7 +27,7 @@ from LFP logs, if they are available.
 > or reservoir pressure under hydrocarbon bubble point will need additional proprietary code to run.
 >
 > Equinor users can install additional proprietary models using
-> pip install "git+ssh://git@github.com/equinor/rock-physics"
+> `pip install "git+ssh://git@github.com/equinor/rock-physics"`
 
 ## User interface
 
