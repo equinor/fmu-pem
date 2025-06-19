@@ -58,9 +58,6 @@ docs = [
     "sphinx-togglebutton",
     "sphinx_rtd_theme",
 ]
-internal = [
-    "rock-physics @ git+ssh://git@github.com/equinor/rock-physics"
-]
 
 [project.urls]
 Homepage = "https://github.com/equinor/fmu-pem"
