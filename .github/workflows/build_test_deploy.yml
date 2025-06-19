@@ -38,23 +38,26 @@ jobs:
       - name: Test with pytest
         run: pytest
 
+      - name: Build a binary wheel and a source tarball
+        if: github.event_name == 'release'
+        run: |
+          pip install build
+          export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_FMU_PEM=$GITHUB_REF_NAME
+          python -m build
+
+      - name: Upload artifact
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Python dist
+          path: dist/
+
       - name: Build configuration file user interface
         working-directory: ./user-interface-config
         run: |
           npm ci
           npm run create-json-schema
           npm run build
-
-      - name: Build a binary wheel and a source tarball
-        run: |
-          pip install build
-          python -m build
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Python dist
-          path: dist/
 
       - name: 📚 Update GitHub pages
         # Update on merge to main
