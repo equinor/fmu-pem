@@ -1,0 +1,41 @@
+-- This script is run for test purpose of the PEM alone, whereas the PEM is normally run as part of
+-- a workflow that will produce its input files. The creation of directories and copying of input
+-- files may not be needed in a run where the PEM is just one part of a longer workflow.
+-- The model parameter directories ../../sim2seis/model is used by the PEM and the sim2seis workflows
+-- and copying of this directory may not be included in other ERT setup files
+-- HFLE/2025
+
+DEFINE <USER> $USER
+DEFINE <SCRATCH> /scratch/fmu
+DEFINE <CONFIG_PATH> /private/hfle/drogon_hfle/dev/rms/model
+
+NUM_REALIZATIONS 1
+RUNPATH     <SCRATCH>/<USER>/fmu_sim2seis_pem/realization-<IENS>/iter-<ITER>
+
+-- Copy required input files for the PEM, directories are automatically created by COPY_FILE
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../fmuconfig/output/global_variables.yml,      <TO>=<RUNPATH>/fmuconfig/output/global_variables.yml)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../fmuconfig/output/global_variables_pred.yml, <TO>=<RUNPATH>/fmuconfig/output/global_variables_pred.yml)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/ECLIPSE.EGRID,           <TO>=<RUNPATH>/sim2seis/input/pem/ECLIPSE.EGRID)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/ECLIPSE.INIT,            <TO>=<RUNPATH>/sim2seis/input/pem/ECLIPSE.INIT)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/ECLIPSE.UNRST,           <TO>=<RUNPATH>/sim2seis/input/pem/ECLIPSE.UNRST)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/export_grid.roff,      <TO>=<RUNPATH>/sim2seis/input/pem/export_grid.roff)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/export_prop.roff,      <TO>=<RUNPATH>/sim2seis/input/pem/export_prop.roff)
+
+-- Copy all model files in ../../sim2seis/model for flexibility. The PEM .yml file (new_pem_config.yml) is
+-- always required, .pkl model files are required if tmatrix model is used in the PEM
+FORWARD_MODEL COPY_DIRECTORY(<FROM>=<CONFIG_PATH>/../../sim2seis/model, <TO>=<RUNPATH>/sim2seis)
+
+-- Create output directories for input to seismic_forward and for QC/visualization of PEM results
+FORWARD_MODEL MAKE_DIRECTORY(<DIRECTORY> = <RUNPATH>/sim2seis/output/pem)
+FORWARD_MODEL MAKE_DIRECTORY(<DIRECTORY> = <RUNPATH>/share/results/grids)
+
+-- Create start directory
+FORWARD_MODEL MAKE_DIRECTORY(<DIRECTORY> = <RUNPATH>/rms/model)
+
+-- PEM parameter setting
+DEFINE <PEM_STARTDIR> <RUNPATH>/rms/model
+DEFINE <RELPATH_PEM> <RUNPATH>/sim2seis/model
+DEFINE <PEM_CONFIG_FILE_NAME> new_pem_config.yml
+
+-- Run the PEM
+FORWARD_MODEL PEM(<START_DIR>=<PEM_STARTDIR>, <CONFIG_DIR>=<RELPATH_PEM>, <CONFIG_FILE>=<PEM_CONFIG_FILE_NAME>)
