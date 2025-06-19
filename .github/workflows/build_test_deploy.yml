@@ -9,7 +9,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  build:
     name: "Python ${{ matrix.python-version }}"
     runs-on: "ubuntu-latest"
     strategy:
