@@ -24,6 +24,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Build a binary wheel and a source tarball
+        run: |
+          pip install build
+          python -m build
+          git diff
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Python dist
+          path: dist/
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -44,17 +56,6 @@ jobs:
           npm ci
           npm run create-json-schema
           npm run build
-
-      - name: Build a binary wheel and a source tarball
-        run: |
-          pip install build
-          python -m build
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Python dist
-          path: dist/
 
       - name: 📚 Update GitHub pages
         # Update on merge to main
