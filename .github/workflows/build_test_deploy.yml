@@ -44,8 +44,6 @@ jobs:
           pip install build
           export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_FMU_PEM=$GITHUB_REF_NAME
           python -m build
-          git diff
-          git status
 
       - name: Upload artifact
         if: github.event_name == 'release'
