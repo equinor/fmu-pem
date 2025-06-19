@@ -61,7 +61,7 @@ jobs:
 
       - name: 📚 Update GitHub pages
         # Update on merge to main
-        #if: github.ref_name == 'main'
+        if: github.ref_name == 'main'
         run: |
           # Move the built documentation out of working directory, in order to delete everything else afterwards
           cp -R ./documentation/docs/.vitepress/dist ../dist
