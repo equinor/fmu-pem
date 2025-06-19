@@ -9,7 +9,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  test:
     name: "Python ${{ matrix.python-version }}"
     runs-on: "ubuntu-latest"
     strategy:
@@ -57,7 +57,7 @@ jobs:
         run: |
           npm ci
           npm run create-json-schema
-          npm run build
+          npm run docs:build
 
       - name: 📚 Update GitHub pages
         # Update on merge to main
@@ -83,6 +83,7 @@ jobs:
             git commit -m "Update Github Pages"
             git push "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
           fi
+
 
   deploy:
     name: Upload release to PyPI
