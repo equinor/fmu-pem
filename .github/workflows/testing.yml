@@ -1,0 +1,68 @@
+name: Run tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  tests:
+    name: "Python ${{ matrix.python-version }}"
+    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[tests]
+
+#      - name: Run ruff format
+#        run: ruff format . --diff
+
+      - name: Run ruff check
+        run: ruff check .
+
+      - name: Test with pytest
+        run: pytest
+
+      - name: Build configuration file user interface
+        working-directory: ./user-interface-config
+        run: |
+          npm ci
+          npm run create-json-schema
+          npm run build
+
+      - name: 📚 Update GitHub pages
+        # Update on merge to main
+        if: github.ref_name == 'main'
+        run: |
+          # Move the built documentation out of working directory, in order to delete everything else afterwards
+          cp -R ./user-interface-config/dist ../dist
+
+          git config --local user.email "fmu-pem-github-action"
+          git config --local user.name "fmu-pem-github-action"
+          git fetch origin gh-pages
+          git checkout -f --track origin/gh-pages
+          git clean -f -f -d -x
+          git rm -r *
+
+          cp -R ../dist/* .
+
+          git add .
+
+          if git diff-index --quiet HEAD; then
+            echo "No changes in documentation. Skip documentation deploy."
+          else
+            git commit -m "Update Github Pages"
+            git push "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+          fi

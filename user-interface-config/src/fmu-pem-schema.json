@@ -1,0 +1,20 @@
+{
+  "title": "JSON schema example",
+  "description": "If you see this text, you need to run 'npm run create-json-scema' to generate the actual FMU sim2seis schema",
+  "type": "object",
+  "required": [
+    "firstName",
+    "lastName"
+  ],
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "title": "First name",
+      "default": "Ola"
+    },
+    "lastName": {
+      "type": "string",
+      "title": "Last name"
+    }
+  }
+}

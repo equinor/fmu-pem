@@ -1,0 +1,186 @@
+from pathlib import Path
+from typing import List, Union
+
+import numpy as np
+from rock_physics_open.t_matrix_models import (
+    carbonate_pressure_model,
+    run_t_matrix_forward_model_with_opt_params_exp,
+    run_t_matrix_forward_model_with_opt_params_petec,
+)
+
+from fmu.pem.pem_utilities import (
+    EffectiveFluidProperties,
+    MatrixProperties,
+    PemConfig,
+    PressureProperties,
+    SaturatedRockProperties,
+    filter_and_one_dim,
+    reverse_filter_and_restore,
+)
+
+from .run_patchy_cement_model import _verify_inputs
+
+
+def run_t_matrix_and_pressure_models(
+    mineral_properties: MatrixProperties,
+    fluid_properties: Union[list[EffectiveFluidProperties], EffectiveFluidProperties],
+    porosity: np.ma.MaskedArray,
+    vsh: Union[None, np.ma.MaskedArray],
+    pressure: Union[list[PressureProperties], PressureProperties],
+    config: PemConfig,
+    petec_parameter_file: Path = Path("t_mat_params_petec.pkl"),
+    exp_parameter_file: Path = Path("t_mat_params_exp.pkl"),
+    pres_model_vp: Path = Path("carbonate_pressure_model_vp_exp.pkl"),
+    pres_model_vs: Path = Path("carbonate_pressure_model_vs_exp.pkl"),
+) -> List[SaturatedRockProperties]:
+    """Model for carbonate rock with possibility to estimate changes due to
+    production, i.e., saturation changes, changes in the fluids due to pore pressure
+    change and also changes in the properties of the matrix by increase in effective
+    pressure.
+
+    The first timestep is regarded as in situ conditions for the pressure
+    substitution, any later timestep also takes into account the changes in effective
+    pressure from the initial one.
+
+    Calibration of parameters for the T-Matrix model must be made before running the
+    forward model, this is only possible in RokDoc with 1D match to logs.
+
+    Args:
+        mineral_properties: bulk modulus (k) [Pa], shear modulus (mu) [Pa],
+            density [kg/m^3]
+        fluid_properties: bulk modulus (k) [Pa] and density [kg/m^3] for each restart
+            date
+        porosity: porosity [fraction]
+        vsh: shale volume [fraction]
+        pressure: overburden, effective and formation (pore) pressure per restart date
+        config: configuration parameters
+        petec_parameter_file: additional parameters for the T-Matrix model, determined
+            through optimisation to well logs
+        exp_parameter_file: additional parameters for the T-Matrix model, determined
+            through optimisation to well logs
+        pres_model_vp: pressure sensitivity model for vp
+        pres_model_vs: pressure sensitivity model for vs
+
+    Returns:
+        saturated rock properties with vp [m/s], vs [m/s], density [kg/m^3],
+        ai (vp * density), si (vs * density), vpvs (vp / vs)
+    """
+    fluid_properties, pressure = _verify_inputs(fluid_properties, pressure)
+
+    # All model files are gathered with the config file for the PEM model,
+    # i.e. in ../sim2seis/model
+    petec_parameter_file = config.paths.rel_path_pem / petec_parameter_file
+    exp_parameter_file = config.paths.rel_path_pem / exp_parameter_file
+
+    saturated_props = []
+    t_mat_params = config.rock_matrix.rpm.parameters
+
+    if vsh is None and t_mat_params.t_mat_model_version == "EXP":
+        raise ValueError("Shale volume must be provided for EXP model")
+    if vsh is None:
+        # For simplicity in the filtering, if no shale volume is provided, it is set
+        # to zero
+        vsh = np.ma.array(
+            np.zeros_like(porosity), mask=np.zeros_like(porosity).astype(bool)
+        )
+    # Change unit from bar to Pa
+    pres_ovb = pressure[0].overburden_pressure * 1.0e5
+    pres_form = pressure[0].formation_pressure * 1.0e5
+
+    for time_step, fl_prop in enumerate(fluid_properties):
+        if time_step > 0:
+            pres_depl = pressure[time_step].formation_pressure * 1.0e5
+            (
+                mask,
+                tmp_min_k,
+                tmp_min_mu,
+                tmp_min_rho,
+                tmp_fl_k,
+                tmp_fl_rho,
+                tmp_por,
+                tmp_vsh,
+                tmp_pres_over,
+                tmp_pres_form,
+                tmp_pres_depl,
+            ) = filter_and_one_dim(
+                mineral_properties.bulk_modulus,
+                mineral_properties.shear_modulus,
+                mineral_properties.dens,
+                fl_prop.bulk_modulus,
+                fl_prop.dens,
+                porosity,
+                vsh,
+                pres_ovb,
+                pres_form,
+                pres_depl,
+            )
+        else:
+            tmp_pres_over, tmp_pres_form, tmp_pres_depl = (None, None, None)
+            (
+                mask,
+                tmp_min_k,
+                tmp_min_mu,
+                tmp_min_rho,
+                tmp_fl_k,
+                tmp_fl_rho,
+                tmp_por,
+                tmp_vsh,
+            ) = filter_and_one_dim(
+                mineral_properties.bulk_modulus,
+                mineral_properties.shear_modulus,
+                mineral_properties.dens,
+                fl_prop.bulk_modulus,
+                fl_prop.dens,
+                porosity,
+                vsh,
+            )
+        if t_mat_params.t_mat_model_version == "PETEC":
+            vp, vs, rho, k, mu = run_t_matrix_forward_model_with_opt_params_petec(
+                tmp_min_k,
+                tmp_min_mu,
+                tmp_min_rho,
+                tmp_fl_k,
+                tmp_fl_rho,
+                tmp_por,
+                t_mat_params.angle,
+                t_mat_params.perm,
+                t_mat_params.visco,
+                t_mat_params.tau,
+                t_mat_params.freq,
+                str(petec_parameter_file),
+            )
+        else:
+            vp, vs, rho, k, mu = run_t_matrix_forward_model_with_opt_params_exp(
+                tmp_fl_k,
+                tmp_fl_rho,
+                tmp_por,
+                tmp_vsh,
+                t_mat_params.angle,
+                t_mat_params.perm,
+                t_mat_params.visco,
+                t_mat_params.tau,
+                t_mat_params.freq,
+                str(exp_parameter_file),
+            )
+        if time_step > 0:
+            vp, vs, rho, _, _ = carbonate_pressure_model(
+                tmp_fl_rho,
+                vp,
+                vs,
+                rho,
+                vp,
+                vs,
+                rho,
+                tmp_por,
+                tmp_pres_over,
+                tmp_pres_form,
+                tmp_pres_depl,
+                pres_model_vp,
+                pres_model_vs,
+                config.paths.rel_path_pem.absolute(),
+                False,
+            )
+        vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho)
+        props = SaturatedRockProperties(vp=vp, vs=vs, dens=rho)
+        saturated_props.append(props)
+    return saturated_props

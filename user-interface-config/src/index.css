@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Equinor;
+}
+
+.form-group {
+  margin-top: 20px;
+  margin-left: 15px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.control-label {
+  font-weight: 500;
+}
+
+.field-description {
+  font-size: small;
+}
+
+legend {
+  text-decoration: underline;
+}
+
+.btn-group {
+  max-width: 300px;
+  margin: auto;
+  margin-bottom: 20px;
+}
+
+.glyphicon {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: "Glyphicons Halflings";
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+}
+.glyphicon-plus:before {
+  content: "➕";
+}
+.glyphicon-remove:before {
+  content: "🗑️";
+}
+.glyphicon-arrow-up:before {
+  content: "🢁";
+}
+.glyphicon-arrow-down:before {
+  content: "🢃";
+}
+
+.checkbox > label {
+  display: flex;
+  gap: 10px;
+  font-weight: 500;
+}
+
+input[type='text']:read-only{
+  background: lightgrey;
+  cursor: not-allowed;
+}

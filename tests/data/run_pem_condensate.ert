@@ -1,0 +1,15 @@
+DEFINE <USER> $USER
+
+NUM_REALIZATIONS 1
+
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/export_grid.roff, <TO>=export_grid.roff)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/export_prop.roff, <TO>=export_prop.roff)
+FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/t_mat_params_petec.pkl, <TO>=t_mat_params_petec.pkl)
+
+-- PEM parameter setting
+DEFINE <PEM_CONFIG_FILE_NAME> test_pem_config_condensate.yml
+DEFINE <PEM_STARTDIR> <CONFIG_PATH>
+DEFINE <RELPATH_PEM> <CONFIG_PATH>
+
+-- Run the PEM
+FORWARD_MODEL PEM(<START_DIR>=<PEM_STARTDIR>, <CONFIG_DIR>=<RELPATH_PEM>, <CONFIG_FILE>=<CONFIG_PATH>/<PEM_CONFIG_FILE_NAME>)

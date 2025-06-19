@@ -1,0 +1,95 @@
+[build-system]
+requires = [
+    "setuptools >= 69.5.1",
+    "setuptools_scm[toml]>=6.2",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/fmu/pem/version.py"
+
+[project]
+name = "fmu-pem"
+description = "pem"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+keywords = ["energy", "subsurface", "seismic", "scientific", "engineering"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Natural Language :: English",
+]
+dynamic = ["version"]
+dependencies = [
+    "numpy >= 1.24.3",
+    "xtgeo >= 4.7.1",
+    "fmu-tools",
+    "fmu-config",
+    "fmu-dataio",
+    "rock-physics-open >= 0.1.2",
+    "PyYAML >=6.0.1",
+    "pydantic",
+    "ert >= 14.1.10",
+]
+
+[project.optional-dependencies]
+tests = [
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "ruff",
+]
+docs = [
+    "autoapi",
+    "sphinx",
+    "sphinx-argparse",
+    "sphinx-autodoc-typehints",
+    "sphinx-copybutton",
+    "sphinx-togglebutton",
+    "sphinx_rtd_theme",
+]
+internal = [
+    "rock-physics @ git+ssh://git@github.com/equinor/rock-physics"
+]
+
+[project.urls]
+Homepage = "https://github.com/equinor/fmu-pem"
+Repository = "https://github.com/equinor/fmu-pem"
+
+[project.scripts]
+pem = "fmu.pem.__main__:main"
+
+[project.entry-points.ert]
+pem_jobs = "fmu.pem.hook_implementations.jobs"
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.ruff]
+lint.ignore = [
+    "C901",
+    "F401"
+]
+lint.select = [
+    "C",
+    "E",
+    "F",
+    "I",
+    "PIE",
+    "Q",
+    "RET",
+    "RSE",
+    "SIM",
+    "W",
+]
+line-length = 88
