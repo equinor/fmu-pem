@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs --base=/fmu-pem/",
+    "docs:preview": "vitepress preview docs",
+    "create-json-schema": "python -c \"import json; import pathlib; from fmu.pem.pem_utilities.pem_config_validation import PemConfig; pathlib.Path('./docs/yaml-edit/fmu-pem-schema.json').write_text(json.dumps(PemConfig.model_json_schema(), indent=2));\""
+  },
+  "dependencies": {
+    "@equinor/eds-core-react": "^0.46.0",
+    "@rjsf/core": "^6.0.0-beta.10",
+    "@rjsf/utils": "^6.0.0-beta.10",
+    "@rjsf/validator-ajv8": "^6.0.0-beta.10",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "styled-components": "^6.1.18",
+    "vitepress": "^1.6.3",
+    "yaml": "^2.8.0"
+  }
+}

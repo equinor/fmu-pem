@@ -14,3 +14,8 @@ src/fmu/pem/version.py
 # npm and node relevant build files
 node_modules
 dist
+
+# Documentation:
+fmu-pem-schema.json
+**/.vitepress/dist
+**/.vitepress/cache

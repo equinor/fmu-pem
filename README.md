@@ -39,9 +39,9 @@ Users can visit https://equinor.github.io/fmu-pem/ in order to get help configur
 
 Developing the user interface can be done by:
 ```bash
-cd ./user-interface-config
+cd ./documentation
 npm ci  # Install dependencies
 npm run create-json-schema  # Extract JSON schema from Python code
-npm run dev  # Start local development server
+npm run docs:dev  # Start local development server
 ```
 The JSON schema itself (type, title, description etc.) comes from the corresponding Pydantic models in the Python code.
