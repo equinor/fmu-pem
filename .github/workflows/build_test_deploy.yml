@@ -1,4 +1,4 @@
-name: Run tests
+name: Build, test and (if release) deploy
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  build:
     name: "Python ${{ matrix.python-version }}"
     runs-on: "ubuntu-latest"
     strategy:
@@ -42,6 +42,15 @@ jobs:
           npm run create-json-schema
           npm run build
 
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Python dist
+          path: dist/
+
       - name: 📚 Update GitHub pages
         # Update on merge to main
         if: github.ref_name == 'main'
@@ -66,3 +75,25 @@ jobs:
             git commit -m "Update Github Pages"
             git push "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
           fi
+
+  deploy:
+    name: Upload release to PyPI
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/fmu-pem
+    permissions:
+      id-token: write  # required for Trusted Publishing to PyPI
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Python dist
+          path: dist/
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
