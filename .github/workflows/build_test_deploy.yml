@@ -24,20 +24,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      - name: Build a binary wheel and a source tarball
-        run: |
-          pip install build
-          export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_FMU_PEM=0.0.1
-          python -m build
-          git diff
-          git status
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Python dist
-          path: dist/
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -51,6 +37,22 @@ jobs:
 
       - name: Test with pytest
         run: pytest
+
+      - name: Build a binary wheel and a source tarball
+        if: github.event_name == 'release'
+        run: |
+          pip install build
+          export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_FMU_PEM=$GITHUB_REF_NAME
+          python -m build
+          git diff
+          git status
+
+      - name: Upload artifact
+        if: github.event_name == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Python dist
+          path: dist/
 
       - name: Build configuration file user interface
         working-directory: ./user-interface-config
