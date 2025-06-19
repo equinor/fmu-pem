@@ -29,6 +29,7 @@ jobs:
           pip install build
           python -m build
           git diff
+          git status
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
