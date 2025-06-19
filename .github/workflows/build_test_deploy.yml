@@ -64,7 +64,7 @@ jobs:
         if: github.ref_name == 'main'
         run: |
           # Move the built documentation out of working directory, in order to delete everything else afterwards
-          cp -R ./user-interface-config/dist ../dist
+          cp -R ./documentation/docs/.vitepress/dist ../dist
 
           git config --local user.email "fmu-pem-github-action"
           git config --local user.name "fmu-pem-github-action"

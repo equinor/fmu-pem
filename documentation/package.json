@@ -1,7 +1,7 @@
 {
   "scripts": {
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs --base=/fmu-sim2seis/",
+    "docs:build": "vitepress build docs --base=/fmu-pem/",
     "docs:preview": "vitepress preview docs",
     "create-json-schema": "python -c \"import json; import pathlib; from fmu.pem.pem_utilities.pem_config_validation import PemConfig; pathlib.Path('./docs/yaml-edit/fmu-pem-schema.json').write_text(json.dumps(PemConfig.model_json_schema(), indent=2));\""
   },
