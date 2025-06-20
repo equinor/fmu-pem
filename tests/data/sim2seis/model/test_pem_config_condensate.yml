@@ -1,14 +1,13 @@
 # Paths: relative paths to directories within the RMS/sim2seis folder structure. The initial path
 # is set in the PEM run script
 paths:
-  rel_path_output: output
-  rel_path_mandatory_output: output
-  rel_path_pem: .
-  rel_path_fmu_config: .
-  rel_ntg_grid_path: .
-  rel_path_simgrid: .
-  rel_path_geogrid: .
-
+#  rel_path_output: ../../share/results/grids
+#  rel_path_mandatory_output ../../sim2seis/output/pem
+#  rel_path_pem: ../../sim2seis/model
+#  rel_path_fmu_config: ../../fmuconfig/output
+#  rel_ntg_grid_path: ../../sim2seis/input/pem
+#  rel_path_simgrid: ../../sim2seis/input/pem
+#  rel_path_geogrid: ../../share/results/grids
 
 # Dry rock parameters. It varies from model to model which of the parameters that are used.
 rock_matrix:
@@ -25,7 +24,7 @@ rock_matrix:
  # Example setup of volume fractions and matching minerals
   volume_fractions:
     mode: fraction_files  # one of 'volume_fractions' or 'ntg_sim'
-    rel_path_fractions: &frac_path .
+    rel_path_fractions: &frac_path ../../sim2seis/input/pem
     fractions_grid_file_name: !join [*frac_path, /simgrid.roff]
     fractions_prop_file_names: [!join [*frac_path, /simgrid--ntg_pem.roff]]
     fraction_is_ntg: True
