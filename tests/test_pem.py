@@ -9,7 +9,7 @@ def test_pem_fcn(data_dir, monkeypatch):
     monkeypatch.chdir(data_dir / "rms/model")
 
     rel_path_pem = Path("../../sim2seis/model")
-    pem_config_file_name = Path("test_pem_config_condensate.yml")
+    pem_config_file_name = Path("pem_config_condensate.yml")
 
     if not INTERNAL_EQUINOR:
         with pytest.raises((NotImplementedError, ImportError)):
