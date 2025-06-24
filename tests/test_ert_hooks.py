@@ -1,8 +1,8 @@
 # ruff: noqa: E501
 import os
-import shutil
 import subprocess
 from pathlib import Path
+from shutil import copytree
 
 import pytest
 import xtgeo
@@ -22,42 +22,21 @@ except ImportError:
 @pytest.mark.skipif(
     not HAVE_ERT, reason="ERT is not installed, skipping hook implementation tests."
 )
-def test_pem_through_ert(testdata, monkeypatch, tmp_path):
-    # Copy only specified files to temp directory
-    files_to_copy = [
-        "export_grid.roff",
-        "export_prop.roff",
-        "t_mat_params_petec.pkl",
-        "run_pem_no_condensate.ert",
-        "run_pem_condensate.ert",
-        "test_pem_config_condensate.yml",
-        "test_pem_config_no_condensate.yml",
-        "global_variables.yml",
-        "ECLIPSE.EGRID",
-        "ECLIPSE.INIT",
-        "ECLIPSE.UNRST",
-        "simgrid--ntg_pem.roff",
-        "carbonate_pressure_model_vp_exp.pkl",
-        "carbonate_pressure_model_vs_exp.pkl",
-        "vp_exp_model.pkl",
-        "vs_exp_model.pkl",
-    ]
-
-    for filename in files_to_copy:
-        shutil.copy2(Path(testdata) / filename, tmp_path / filename)
-
-    # Create output directory and run test in temp location
-    output_path = tmp_path / "output"
-    output_path.mkdir(exist_ok=True)
-    monkeypatch.chdir(tmp_path)
+def test_pem_through_ert(testdata, monkeypatch, data_dir):
+    monkeypatch.chdir(data_dir / "rms/model")
+    start_path = data_dir / "rms/model"
+    pem_output_path = data_dir / "sim2seis/output/pem"
+    share_output_path = data_dir / "share/results/grids"
     subprocess.run(
-        ["ert", "test_run", "run_pem_no_condensate.ert"],
-        env={**os.environ, "PEM_MODEL_DIR": str(tmp_path)},
+        ["ert", "test_run", "../../ert/model/run_pem_no_condensate.ert"],
+        env={**os.environ, "PEM_MODEL_DIR": str(start_path)},
     )
 
-    grid = xtgeo.grid_from_file("output/eclipsegrid_pem.roff")
+    grid = xtgeo.grid_from_file(share_output_path / "eclipsegrid_pem.roff")
     actnum = xtgeo.gridproperty_from_file(
-        "output/eclipsegrid_pem.grdecl", name="ACTNUM", grid=grid
+        pem_output_path / "eclipsegrid_pem.grdecl",
+        name="ACTNUM",
+        grid=grid,
     ).values
 
     # Files that are produced are too large for snapshot test.
@@ -123,76 +102,93 @@ def test_pem_through_ert(testdata, monkeypatch, tmp_path):
 
     estimated_values = {
         "eclipse--ai--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--ai--20180101.roff", grid=grid
+            share_output_path / "eclipse--ai--20180101.roff", grid=grid
         ).values.sum(),
         "eclipse--effective_pressure--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--effective_pressure--20180101.roff", grid=grid
+            share_output_path / "eclipse--effective_pressure--20180101.roff", grid=grid
         ).values.sum(),
         "eclipse--formation_pressure--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--formation_pressure--20180101.roff", grid=grid
+            share_output_path / "eclipse--formation_pressure--20180101.roff", grid=grid
         ).values.sum(),
         "eclipse--overburden_pressure--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--overburden_pressure--20180101.roff", grid=grid
+            share_output_path / "eclipse--overburden_pressure--20180101.roff", grid=grid
         ).values.sum(),
         "eclipse--dens--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--dens--20180101.roff", grid=grid
+            share_output_path / "eclipse--dens--20180101.roff", grid=grid
         ).values.sum(),
         "eclipse--vp--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--vp--20180101.roff", grid=grid
+            share_output_path / "eclipse--vp--20180101.roff", grid=grid
         ).values.sum(),
         "eclipse--vs--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--vs--20180101.roff", grid=grid
+            share_output_path / "eclipse--vs--20180101.roff", grid=grid
         ).values.sum(),
         "pem--20180101.grdecl_vp": xtgeo.gridproperty_from_file(
-            "output/pem--20180101.grdecl", name="VP", grid=grid
+            pem_output_path / "pem--20180101.grdecl", name="VP", grid=grid
         ).values.sum(),
         "pem--20180101.grdecl_vs": xtgeo.gridproperty_from_file(
-            "output/pem--20180101.grdecl", name="VS", grid=grid
+            pem_output_path / "pem--20180101.grdecl", name="VS", grid=grid
         ).values.sum(),
         "pem--20180101.grdecl_dens": xtgeo.gridproperty_from_file(
-            "output/pem--20180101.grdecl", name="DENS", grid=grid
+            pem_output_path / "pem--20180101.grdecl", name="DENS", grid=grid
         ).values.sum(),
         "eclipse--si--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--si--20180101.roff", grid=grid
+            share_output_path / "eclipse--si--20180101.roff", grid=grid
         ).values.sum(),
         "eclipse--vpvs--20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipse--vpvs--20180101.roff", grid=grid
+            share_output_path / "eclipse--vpvs--20180101.roff", grid=grid
         ).values.sum(),
         "eclipsegrid_pem--aidiffpercent--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--aidiffpercent--20180701_20180101.roff", grid=grid
+            share_output_path
+            / "eclipsegrid_pem--aidiffpercent--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--airatio--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--airatio--20180701_20180101.roff", grid=grid
+            share_output_path / "eclipsegrid_pem--airatio--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--densdiffpercent--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--densdiffpercent--20180701_20180101.roff", grid=grid
+            share_output_path
+            / "eclipsegrid_pem--densdiffpercent--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--pressurediff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--pressurediff--20180701_20180101.roff", grid=grid
+            share_output_path / "eclipsegrid_pem--pressurediff--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--sgasdiff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--sgasdiff--20180701_20180101.roff", grid=grid
+            share_output_path / "eclipsegrid_pem--sgasdiff--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--sidiffpercent--20180701_20180101.roff", grid=grid
+            share_output_path
+            / "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--siratio--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--siratio--20180701_20180101.roff", grid=grid
+            share_output_path / "eclipsegrid_pem--siratio--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--swatdiff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--swatdiff--20180701_20180101.roff", grid=grid
+            share_output_path / "eclipsegrid_pem--swatdiff--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--twtppdiff--20180701_20180101.roff", grid=grid
+            share_output_path / "eclipsegrid_pem--twtppdiff--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--vpdiffpercent--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--vpdiffpercent--20180701_20180101.roff", grid=grid
+            share_output_path
+            / "eclipsegrid_pem--vpdiffpercent--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--vpvsratio--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--vpvsratio--20180701_20180101.roff", grid=grid
+            share_output_path / "eclipsegrid_pem--vpvsratio--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
         "eclipsegrid_pem--vsdiffpercent--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            "output/eclipsegrid_pem--vsdiffpercent--20180701_20180101.roff", grid=grid
+            share_output_path
+            / "eclipsegrid_pem--vsdiffpercent--20180701_20180101.roff",
+            grid=grid,
         ).values.sum(),
     }
     if truth_values != estimated_values:

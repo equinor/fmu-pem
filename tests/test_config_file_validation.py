@@ -6,9 +6,9 @@ from fmu.pem import INTERNAL_EQUINOR
 from fmu.pem.pem_utilities.import_config import read_pem_config
 
 
-def test_validate_new_pem_config_condensate(testdata, monkeypatch):
-    monkeypatch.chdir(testdata)
-    pem_config_file_name = Path("test_pem_config_condensate.yml")
+def test_validate_new_pem_config_condensate(testdata, monkeypatch, data_dir):
+    monkeypatch.chdir(data_dir / "sim2seis/model")
+    pem_config_file_name = Path("pem_config_condensate.yml")
     if INTERNAL_EQUINOR:
         try:
             _ = read_pem_config(pem_config_file_name)
@@ -19,9 +19,9 @@ def test_validate_new_pem_config_condensate(testdata, monkeypatch):
             _ = read_pem_config(pem_config_file_name)
 
 
-def test_validate_new_pem_config(testdata, monkeypatch):
-    monkeypatch.chdir(testdata)
-    pem_config_file_name = Path("test_pem_config_no_condensate.yml")
+def test_validate_new_pem_config(testdata, monkeypatch, data_dir):
+    monkeypatch.chdir(data_dir / "sim2seis/model")
+    pem_config_file_name = Path("pem_config_no_condensate.yml")
     try:
         _ = read_pem_config(pem_config_file_name)
 

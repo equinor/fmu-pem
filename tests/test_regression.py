@@ -47,7 +47,7 @@ def setup_pressure():
 
 
 @pytest.fixture
-def setup_config(testdata):
+def setup_config(data_dir):
     config_mock = MagicMock()
     config_mock.rock_matrix.rpm.parameters.sandstone.vp_weights = [3930.0, -2267.0]
     config_mock.rock_matrix.rpm.parameters.sandstone.vs_weights = [2284.0, -779.0]
@@ -57,7 +57,7 @@ def setup_config(testdata):
     config_mock.rock_matrix.rpm.parameters.shale = (
         config_mock.rock_matrix.rpm.parameters.sandstone
     )
-    config_mock.paths.rel_path_pem = testdata
+    config_mock.paths.rel_path_pem = data_dir / "sim2seis/model"
     return config_mock
 
 

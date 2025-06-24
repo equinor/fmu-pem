@@ -43,7 +43,7 @@ class FractionFiles(BaseModel):
         default=Path("../../sim2seis/input/pem"),
         description="Directory for volume fractions",
     )
-    fractions_grid_file_name: FilePath = Field(
+    fractions_grid_file_name: Path = Field(
         description="Grid definition of the volume fractions"
     )
     fractions_prop_file_names: list[Path] = Field(description="Volume fractions")
@@ -53,6 +53,21 @@ class FractionFiles(BaseModel):
         "fraction or a net-to-gross parameter. If there is more than one fraction, "
         "they have to represent real volume fractions, and this will be ignored",
     )
+
+    @model_validator(mode="after")
+    def check_fractions(self) -> Self:
+        full_fraction_grid = self.rel_path_fractions / self.fractions_grid_file_name
+        if not full_fraction_grid.exists():
+            raise FileNotFoundError(
+                f"fraction grid file is missing: {full_fraction_grid}"
+            )
+        for frac_prop in self.fractions_prop_file_names:
+            full_fraction_prop = self.rel_path_fractions / frac_prop
+            if not full_fraction_prop.exists():
+                raise FileNotFoundError(
+                    f"fraction prop file is missing: {full_fraction_prop}"
+                )
+        return self
 
 
 class RockMatrixProperties(BaseModel):
@@ -453,6 +468,7 @@ class Results(BaseModel):
 
 class PemConfig(BaseModel):
     paths: SkipJsonSchema[PemPaths] = Field(
+        default_factory=PemPaths(),
         description="Default path settings exist, it is possible to override them, "
         "mostly relevant for input paths",
     )
@@ -479,7 +495,9 @@ class PemConfig(BaseModel):
     global_params: Optional[FromGlobal] = None
 
     @field_validator("paths", mode="before")
-    def check_and_create_directories(cls, v):
+    def check_and_create_directories(cls, v: Dict, info: ValidationInfo):
+        if v is None:
+            return PemPaths()
         for key, path in v.items():
             if key == "rel_path_intermed_output" or key == "rel_path_output":
                 os.makedirs(path, exist_ok=True)
