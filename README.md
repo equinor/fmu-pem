@@ -1,10 +1,16 @@
-# How to use fmu-pem
+> [!WARNING]
+> `fmu-pem` is not yet qualified technology, and as of today only applicable for selected pilot test fields.
 
-Petro-elastic model (PEM) for [fmu-sim2seis](https://github.com/equinor/fmu-sim2seis)
-based on the [rock-physics-open](https://github.com/equinor/rock-physics-open)
-library.
+**[📚 User documentation](https://equinor.github.io/fmu-pem/)**
 
-## Installation
+## What is fmu-pem?
+
+Petro-elastic model (PEM) for use in e.g. [fmu-sim2seis](https://github.com/equinor/fmu-sim2seis)
+based on the [rock-physics-open](https://github.com/equinor/rock-physics-open) library.
+
+## How to use fmu-pem?
+
+### Installation
 
 To install `fmu-pem`, first activate a virtual environment, then type:
 
@@ -15,7 +21,7 @@ pip install fmu-pem
 The PEM is controlled by parameter settings in a *yaml-file*, given as part of the
 command line arguments, or by the workflow parameter if it is run as an ERT forward model.
 
-## Calibration of rock physics models
+### Calibration of rock physics models
 
 Calibration of the rock physics models is normally carried out in
 [RokDoc](https://www.ikonscience.com/rokdoc-geoprediction-software-platform/)
@@ -31,11 +37,7 @@ from LFP logs, if they are available.
 > pip install "git+ssh://git@github.com/equinor/rock-physics"`
 > ```
 
-## User interface
-
-Users can visit https://equinor.github.io/fmu-pem/ in order to get help configuring the `fmu-pem` input data.
-
-# How to develop fmu-pem
+## How to develop fmu-pem?
 
 Developing the user interface can be done by:
 ```bash
