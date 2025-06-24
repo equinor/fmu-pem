@@ -24,9 +24,9 @@ rock_matrix:
  # Example setup of volume fractions and matching minerals
   volume_fractions:
     mode: fraction_files  # one of 'volume_fractions' or 'ntg_sim'
-    rel_path_fractions: &frac_path ../../sim2seis/input/pem
-    fractions_grid_file_name: !join [*frac_path, /simgrid.roff]
-    fractions_prop_file_names: [!join [*frac_path, /simgrid--ntg_pem.roff]]
+    rel_path_fractions: ../../sim2seis/input/pem
+    fractions_grid_file_name: simgrid.roff
+    fractions_prop_file_names: [simgrid--ntg_pem.roff, ]
     fraction_is_ntg: True
     # In case the NTG parameter from eclipse is a binary 0/1 value, it may be better to base NTG on porosity
     # mode: ntg_sim
