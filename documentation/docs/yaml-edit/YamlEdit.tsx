@@ -1,7 +1,9 @@
+import React from "react";
 import Form from "@rjsf/core";
-
 import YAML from "yaml";
 import validator from "@rjsf/validator-ajv8";
+
+import { pemSchema } from "./schema";
 
 import {
   Button,
@@ -11,16 +13,15 @@ import {
   Snackbar,
   Switch
 } from "@equinor/eds-core-react";
-import { upload, file_description, copy } from "@equinor/eds-icons";
 
-import { pemSchema } from "./schema";
-import React from "react";
+import { copy } from "@equinor/eds-icons";
 
-function App() {
+
+export const YamlEdit = () => {
   const [validInput, setValidInput] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
-  const [populateDefault, setPopulateDefault] = React.useState(false);
+  const [populateDefault, setPopulateDefault] = React.useState(true);
 
   const [initialConfig, setInitialConfig] = React.useState({});
 
@@ -31,18 +32,10 @@ function App() {
     YAML.stringify(userInputRef.current);
 
   return (
-    <div className="min-h-screen min-w-screen bg-slate-100">
-      <div className="bg-slate-700 p-4 flex gap-20 items-center shadow-md">
-        <div className="text-white">
-          Create, update or change a <span className="font-bold">fmu-pem</span>{" "}
-          configuration file. You can load an existing configuration file as
-          starting point.
-        </div>
-      </div>
+    <div>
       <div className="flex w-full justify-center my-10 gap-10">
-        <Button
-          as="button"
-          color="secondary"
+        <button
+          className="flex gap-2 font-bold items-center shadow p-1 rounded-lg bg-gray-100 hover:bg-gray-50 dark:bg-gray-800"
           onClick={() => {
             const input = document.createElement("input");
             input.type = "file";
@@ -68,13 +61,12 @@ function App() {
             input.click();
           }}
         >
-          <Icon data={upload} size={16}></Icon>
-          Load existing configuration file (YAML)
-        </Button>
-        <Button as="button" color="primary" onClick={() => setDialogOpen(true)}>
-          <Icon data={file_description} size={16}></Icon>
-          Configuration file output (YAML)
-        </Button>
+          Load config (YAML)
+        </button>
+        <button
+          className="flex gap-2 font-bold items-center shadow p-1 rounded-lg bg-gray-100 hover:bg-gray-50" onClick={() => setDialogOpen(true)}>
+          Config output (YAML)
+        </button>
         <Dialog
           open={dialogOpen}
           onClose={() => {
@@ -82,17 +74,17 @@ function App() {
             setSnackbarOpen(false);
           }}
           isDismissable={true}
-          className="w-100"
+          style={{width: 1000, maxHeight: "90vh"}}
         >
           <Dialog.Header>
             <Dialog.Title>YAML output</Dialog.Title>
           </Dialog.Header>
-          <Dialog.CustomContent className="min-w-[600px]">
+          <Dialog.CustomContent>
             <TextField
               id="yaml-content"
               multiline={true}
               placeholder={yamlOutput}
-              rowsMax={50}
+              rowsMax={35}
               readOnly={true}
             />
             <Button
@@ -114,11 +106,11 @@ function App() {
             </Snackbar>
           </Dialog.CustomContent>
         </Dialog>
-        <Switch label="Populate with default values" onChange={(e) => setPopulateDefault(e.target.checked)} />
+        <Switch label="Populate with default values" checked={populateDefault} onChange={(e) => setPopulateDefault(e.target.checked)} />
 
-      </div>
+      </div> 
       <div className="flex justify-center my-20">
-        <div className="p-10 shadow-lg rounded bg-slate-50 min-w-[800px]">
+        <div className="p-10 shadow-lg rounded bg-slate-50 border-2 border-slate-50" style={{minWidth: 800}}>
           <Form
             schema={pemSchema}
             validator={validator}
@@ -149,5 +141,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

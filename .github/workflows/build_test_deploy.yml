@@ -53,18 +53,18 @@ jobs:
           path: dist/
 
       - name: Build configuration file user interface
-        working-directory: ./user-interface-config
+        working-directory: ./documentation
         run: |
           npm ci
           npm run create-json-schema
-          npm run build
+          npm run docs:build
 
       - name: 📚 Update GitHub pages
         # Update on merge to main
         if: github.ref_name == 'main'
         run: |
           # Move the built documentation out of working directory, in order to delete everything else afterwards
-          cp -R ./user-interface-config/dist ../dist
+          cp -R ./documentation/docs/.vitepress/dist ../dist
 
           git config --local user.email "fmu-pem-github-action"
           git config --local user.name "fmu-pem-github-action"
@@ -83,6 +83,7 @@ jobs:
             git commit -m "Update Github Pages"
             git push "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
           fi
+
 
   deploy:
     name: Upload release to PyPI
