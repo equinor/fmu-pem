@@ -12,7 +12,7 @@ write_to = "src/fmu/pem/version.py"
 name = "fmu-pem"
 description = "pem"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 license = { file = "LICENSE" }
 keywords = ["energy", "subsurface", "seismic", "scientific", "engineering"]
 classifiers = [
@@ -22,10 +22,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Topic :: Utilities",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Natural Language :: English",
 ]
 dynamic = ["version"]
