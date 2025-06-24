@@ -3,8 +3,6 @@ DEFINE <USER> $USER
 NUM_REALIZATIONS 1
 
 -- PEM parameter setting
-DEFINE <CONFIG_PATH> ../../rms/model
-
 DEFINE <PEM_CONFIG_FILE_NAME> test_pem_config_no_condensate.yml
 DEFINE <PEM_STARTDIR> <CONFIG_PATH>
 DEFINE <RELPATH_PEM> ../../sim2seis/model
