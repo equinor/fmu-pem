@@ -1,4 +1,9 @@
-# How to use fmu-pem
+> [!WARNING]
+> `fmu-pem` is not yet qualified technology, and as of today only applicable for selected pilot test fields.
+
+**[📚 User documentation](https://equinor.github.io/fmu-pem/)**
+
+# How to use fmu-pem?
 
 Petro-elastic model (PEM) for [fmu-sim2seis](https://github.com/equinor/fmu-sim2seis)
 based on the [rock-physics-open](https://github.com/equinor/rock-physics-open)
