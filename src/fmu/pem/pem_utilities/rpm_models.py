@@ -2,10 +2,10 @@
 Define RPM model types and their parameters
 """
 
-from enum import Enum
 from typing import List, Literal
 
 from pydantic import BaseModel, Field
+from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import Annotated
 
 from fmu.pem.pem_utilities.enum_defs import RPMType
@@ -158,20 +158,20 @@ class RegressionModels(BaseModel):
 
 
 class PatchyCementRPM(BaseModel):
-    model: Literal[RPMType.PATCHY_CEMENT]
+    model: SkipJsonSchema[Literal[RPMType.PATCHY_CEMENT]]
     parameters: PatchyCementParams
 
 
 class FriableRPM(BaseModel):
-    model: Literal[RPMType.FRIABLE]
+    model: SkipJsonSchema[Literal[RPMType.FRIABLE]]
     parameters: PatchyCementParams
 
 
 class TMatrixRPM(BaseModel):
-    model: Literal[RPMType.T_MATRIX]
+    model: SkipJsonSchema[Literal[RPMType.T_MATRIX]]
     parameters: TMatrixParams
 
 
 class RegressionRPM(BaseModel):
-    model: Literal[RPMType.REGRESSION]
+    model: SkipJsonSchema[Literal[RPMType.REGRESSION]]
     parameters: RegressionModels
