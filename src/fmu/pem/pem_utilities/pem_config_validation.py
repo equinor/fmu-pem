@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Literal, Optional, Self, Union
 import numpy as np
 from pydantic import (
     BaseModel,
+    ConfigDict,
     DirectoryPath,
     Field,
     field_validator,
@@ -77,6 +78,8 @@ class RockMatrixProperties(BaseModel):
     different rock types, including sandstones, carbonates,
     and other lithologies.
     """
+
+    model_config = ConfigDict(title="Rock matrix properties:")
 
     rpm: Union[PatchyCementRPM, TMatrixRPM, RegressionRPM] = Field(
         description="Selection of parameter set for rock physics model"

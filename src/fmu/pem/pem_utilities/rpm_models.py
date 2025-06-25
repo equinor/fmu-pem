@@ -4,7 +4,7 @@ Define RPM model types and their parameters
 
 from typing import List, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import Annotated
 
@@ -112,8 +112,10 @@ class TMatrixParams(BaseModel):
 
 
 class RhoRegressionMixin(BaseModel):
-    rho_weights: List[float] | None = Field(
-        default=None,
+    rho_weights: List[float] = Field(
+        default=[
+            1.0,
+        ],
         description="List of float values for polynomial regression for density "
         "based on porosity",
     )
@@ -122,7 +124,8 @@ class RhoRegressionMixin(BaseModel):
         description="Matrix density is normally estimated from "
         "mineral composition and the density of each mineral. "
         "Setting this to True will estimate matrix "
-        "density based on porosity alone",
+        "density based on porosity alone. In that case, check the "
+        "rho regression parameters",
     )
 
 
@@ -137,7 +140,7 @@ class VpVsRegressionParams(RhoRegressionMixin):
         description="List of float values for polynomial regression for Vs "
         "based on porosity",
     )
-    mode: Literal["vp_vs"] = Field(
+    mode: SkipJsonSchema[Literal["vp_vs"]] = Field(
         default="vp_vs",
         description="Regression mode mode must be set to 'vp_vs' for "
         "estimation of Vp and Vs based on porosity",
@@ -155,7 +158,7 @@ class KMuRegressionParams(RhoRegressionMixin):
         description="List of float values for polynomial regression for shear modulus "
         "based on porosity",
     )
-    mode: Literal["k_mu"] = Field(
+    mode: SkipJsonSchema[Literal["k_mu"]] = Field(
         default="k_mu",
         description="Regression mode mode must be set to 'k_mu' for "
         "estimation of bulk and shear modulus based on porosity",
@@ -172,20 +175,24 @@ class RegressionModels(BaseModel):
 
 
 class PatchyCementRPM(BaseModel):
+    model_config = ConfigDict(title="Patchy Cement Model")
     model: SkipJsonSchema[Literal[RPMType.PATCHY_CEMENT]]
     parameters: PatchyCementParams
 
 
 class FriableRPM(BaseModel):
+    model_config = ConfigDict(title="Friable Sand Model")
     model: SkipJsonSchema[Literal[RPMType.FRIABLE]]
     parameters: PatchyCementParams
 
 
 class TMatrixRPM(BaseModel):
+    model_config = ConfigDict(title="T-Matrix Inclusion Model")
     model: SkipJsonSchema[Literal[RPMType.T_MATRIX]]
     parameters: TMatrixParams
 
 
 class RegressionRPM(BaseModel):
+    model_config = ConfigDict(title="Regression Model")
     model: SkipJsonSchema[Literal[RPMType.REGRESSION]]
     parameters: RegressionModels
