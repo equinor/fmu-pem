@@ -8,7 +8,6 @@ from pydantic import (
     BaseModel,
     DirectoryPath,
     Field,
-    FilePath,
     field_validator,
     model_validator,
 )
@@ -20,6 +19,7 @@ from fmu.pem import INTERNAL_EQUINOR
 from .enum_defs import (
     CO2Models,
     FluidMixModel,
+    GasModels,
     MineralMixModel,
     OverburdenPressure,
     VolumeFractions,
@@ -284,7 +284,7 @@ class Gas(BaseModel):
         le=0.87,
         description="Gas gravity is a ratio of gas molecular weight to that air",
     )
-    model: str = Field(
+    model: GasModels = Field(
         default="HC2016",
         description="Gas model is one of 'Global', 'Light', or 'HC2016' (default)",
     )
@@ -468,7 +468,7 @@ class Results(BaseModel):
 
 class PemConfig(BaseModel):
     paths: SkipJsonSchema[PemPaths] = Field(
-        default_factory=PemPaths(),
+        default_factory=PemPaths,
         description="Default path settings exist, it is possible to override them, "
         "mostly relevant for input paths",
     )

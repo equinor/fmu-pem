@@ -52,3 +52,9 @@ class RPMType(str, Enum):
 class VolumeFractions(str, Enum):
     NTG_SIM = "ntg_sim"
     VOL_FRAC = "fraction_files"
+
+
+class GasModels(str, Enum):
+    GLOBAL = "Global"
+    LIGHT = "Light"
+    HC2016 = "HC2016"
