@@ -92,7 +92,8 @@ def read_sim_grid_props(
 
     init_props = read_init_properties(init_property_file, sim_grid)
 
-    RST_PROPS = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT"]
+    # TEMP will only be available for eclipse-300
+    RST_PROPS = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
 
     # Restart properties - set strict to False, False in case RV is not included in
     # the UNRST file

@@ -11,7 +11,7 @@ from fmu.pem.pem_utilities import (
     SimRstProperties,
     to_masked_array,
 )
-from fmu.pem.pem_utilities.enum_defs import OverburdenPressure
+from fmu.pem.pem_utilities.enum_defs import OverburdenPressureTypes
 
 from .density import estimate_bulk_density
 
@@ -44,13 +44,14 @@ def estimate_pressure(
     # Saturated rock bulk density bulk
     bulk_density = estimate_bulk_density(config, sim_init, fluid_props, matrix_props)
 
-    ovb = config.pressure.overburden
-    if ovb.type == OverburdenPressure.CONSTANT:
+    # ovb = config.pressure.overburden
+    ovb = config.pressure
+    if ovb.type == OverburdenPressureTypes.CONSTANT:
         eff_pres = [
             estimate_effective_pressure(
                 formation_pressure=sim_date.pressure * 1.0e5,
                 bulk_density=dens,
-                reference_overburden_pressure=ovb.constant,
+                reference_overburden_pressure=ovb.value,
             )
             for (sim_date, dens) in zip(sim_rst, bulk_density)
         ]
@@ -60,8 +61,8 @@ def estimate_pressure(
                 formation_pressure=sim_date.pressure * 1.0e5,
                 bulk_density=dens,
                 reference_overburden_pressure=overburden_pressure_from_trend(
-                    inter=ovb.trend.intercept,
-                    grad=ovb.trend.gradient,
+                    inter=ovb.intercept,
+                    grad=ovb.gradient,
                     depth=sim_init.depth,
                 ),
             )

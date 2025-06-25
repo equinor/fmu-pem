@@ -35,7 +35,7 @@ def estimate_bulk_density(
     Raises:
         ValueError: If fluid_props is an empty list.
     """
-    if config.rock_matrix.rpm == PatchyCementRPM:
+    if isinstance(config.rock_matrix.model, PatchyCementRPM):
         # Get cement mineral properties
         cement_mineral = config.rock_matrix.cement
         mineral = config.rock_matrix.minerals[cement_mineral]
@@ -44,7 +44,7 @@ def estimate_bulk_density(
             mineral.bulk_modulus, mineral.shear_modulus, mineral.density, init_prop.poro
         )
         rel_frac_cem = (
-            config.rock_matrix.rpm.parameters.cement_fraction / init_prop.poro
+            config.rock_matrix.model.parameters.cement_fraction / init_prop.poro
         )
         rho_m = (
             rel_frac_cem * cement_properties.dens

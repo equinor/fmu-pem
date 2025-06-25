@@ -40,7 +40,7 @@ def estimate_saturated_rock(
     Returns:
         saturated rock properties per restart date
     """
-    if isinstance(config.rock_matrix.rpm, PatchyCementRPM):
+    if isinstance(config.rock_matrix.model, PatchyCementRPM):
         # Patchy cement model
         cement = config.rock_matrix.minerals[config.rock_matrix.cement]
         cement_properties = estimate_cement(
@@ -57,7 +57,7 @@ def estimate_saturated_rock(
             eff_pres,
             config,
         )
-    elif isinstance(config.rock_matrix.rpm, FriableRPM):
+    elif isinstance(config.rock_matrix.model, FriableRPM):
         # Friable sandstone model
         sat_rock_props = run_friable(
             matrix_props,
@@ -66,7 +66,7 @@ def estimate_saturated_rock(
             eff_pres,
             config,
         )
-    elif isinstance(config.rock_matrix.rpm, RegressionModels):
+    elif isinstance(config.rock_matrix.model, RegressionModels):
         # Regression models for dry rock properties, saturation by Gassmann
         sat_rock_props = run_regression_models(
             matrix_props,

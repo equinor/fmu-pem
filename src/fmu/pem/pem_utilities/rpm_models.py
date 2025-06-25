@@ -2,19 +2,40 @@
 Define RPM model types and their parameters
 """
 
-from enum import Enum
 from typing import List, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import Annotated
 
-from fmu.pem.pem_utilities.enum_defs import RPMType
+from fmu.pem.pem_utilities.enum_defs import CoordinationNumberFunction, RPMType
 
 
 class MineralProperties(BaseModel):
-    bulk_modulus: Annotated[float, Field(gt=1.0e9)]
-    shear_modulus: Annotated[float, Field(gt=1.0e9)]
-    density: Annotated[float, Field(gt=1.0e3)]
+    bulk_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Units: Pa")
+    shear_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Units: Pa")
+    density: float = Field(gt=1.0e3, lt=1.0e4, description="Units: kg/m^3")
+
+
+class CoordinationNumberPorBased(BaseModel):
+    fcn: SkipJsonSchema[CoordinationNumberFunction] = Field(
+        default="PorBased",
+        description="Coordinate number is the number of grain-grain contacts. It is "
+        "normally assumed to be a function of porosity for friable sand",
+    )
+
+
+class CoordinationNumberConstVal(BaseModel):
+    fcn: SkipJsonSchema[CoordinationNumberFunction] = Field(
+        default="ConstVal",
+    )
+    coordination_number: float = Field(
+        default=9.0,
+        gt=2.0,
+        lt=16.0,
+        description="In case of a constant value for the number of grain contacts, "
+        "a value of 8-9 is common",
+    )
 
 
 class PatchyCementParams(BaseModel):
@@ -47,15 +68,12 @@ class PatchyCementParams(BaseModel):
         "between grains. Shear reduction of 1 means frictionless contact, "
         "and 0 means full friction",
     )
-    coord_num_function: Literal["ConstVal", "PorBased"] = Field(
-        default="PorBased",
+    coordination_number_function: (
+        CoordinationNumberPorBased | CoordinationNumberConstVal
+    ) = Field(
+        default_factory=CoordinationNumberPorBased,
         description="Coordinate number is the number of grain-grain contacts. It is "
         "normally assumed to be a function of porosity for friable sand",
-    )
-    coordination_number: float = Field(
-        default=9.0,
-        description="In case of a constant value for the number of grain contacts, "
-        "a value of 8-9 is common",
     )
 
 
@@ -98,8 +116,10 @@ class TMatrixParams(BaseModel):
 
 
 class RhoRegressionMixin(BaseModel):
-    rho_weights: List[float] | None = Field(
-        default=None,
+    rho_weights: List[float] = Field(
+        default=[
+            1.0,
+        ],
         description="List of float values for polynomial regression for density "
         "based on porosity",
     )
@@ -108,7 +128,8 @@ class RhoRegressionMixin(BaseModel):
         description="Matrix density is normally estimated from "
         "mineral composition and the density of each mineral. "
         "Setting this to True will estimate matrix "
-        "density based on porosity alone",
+        "density based on porosity alone. In that case, check the "
+        "rho regression parameters",
     )
 
 
@@ -123,7 +144,7 @@ class VpVsRegressionParams(RhoRegressionMixin):
         description="List of float values for polynomial regression for Vs "
         "based on porosity",
     )
-    mode: Literal["vp_vs"] = Field(
+    mode: SkipJsonSchema[Literal["vp_vs"]] = Field(
         default="vp_vs",
         description="Regression mode mode must be set to 'vp_vs' for "
         "estimation of Vp and Vs based on porosity",
@@ -141,7 +162,7 @@ class KMuRegressionParams(RhoRegressionMixin):
         description="List of float values for polynomial regression for shear modulus "
         "based on porosity",
     )
-    mode: Literal["k_mu"] = Field(
+    mode: SkipJsonSchema[Literal["k_mu"]] = Field(
         default="k_mu",
         description="Regression mode mode must be set to 'k_mu' for "
         "estimation of bulk and shear modulus based on porosity",
@@ -158,20 +179,24 @@ class RegressionModels(BaseModel):
 
 
 class PatchyCementRPM(BaseModel):
-    model: Literal[RPMType.PATCHY_CEMENT]
+    model_config = ConfigDict(title="Patchy Cement Model")
+    model: SkipJsonSchema[Literal[RPMType.PATCHY_CEMENT]]
     parameters: PatchyCementParams
 
 
 class FriableRPM(BaseModel):
-    model: Literal[RPMType.FRIABLE]
+    model_config = ConfigDict(title="Friable Sand Model")
+    model: SkipJsonSchema[Literal[RPMType.FRIABLE]]
     parameters: PatchyCementParams
 
 
 class TMatrixRPM(BaseModel):
-    model: Literal[RPMType.T_MATRIX]
+    model_config = ConfigDict(title="T-Matrix Inclusion Model")
+    model: SkipJsonSchema[Literal[RPMType.T_MATRIX]]
     parameters: TMatrixParams
 
 
 class RegressionRPM(BaseModel):
-    model: Literal[RPMType.REGRESSION]
+    model_config = ConfigDict(title="Regression Model")
+    model: SkipJsonSchema[Literal[RPMType.REGRESSION]]
     parameters: RegressionModels
