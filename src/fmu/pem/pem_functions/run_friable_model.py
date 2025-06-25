@@ -41,7 +41,7 @@ def run_friable(
     # effective_pressure can be lists
     fluid, pressure = _verify_inputs(fluid, pressure)
     saturated_props = []
-    friable_params = config.rock_matrix.rpm.parameters
+    friable_params = config.rock_matrix.model.parameters
     for fl_prop, pres in zip(fluid, pressure):
         (
             mask,

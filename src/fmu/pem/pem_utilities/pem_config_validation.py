@@ -81,7 +81,7 @@ class RockMatrixProperties(BaseModel):
 
     model_config = ConfigDict(title="Rock matrix properties:")
 
-    rpm: Union[PatchyCementRPM, TMatrixRPM, RegressionRPM] = Field(
+    model: Union[PatchyCementRPM, TMatrixRPM, RegressionRPM] = Field(
         description="Selection of parameter set for rock physics model"
     )
     minerals: Dict[str, MineralProperties] = Field(
