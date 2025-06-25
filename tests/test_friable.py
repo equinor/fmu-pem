@@ -59,7 +59,7 @@ def valid_config_mock():
 
     # Setting the attributes
     config_mock.rock_matrix.rpm.parameters.critical_porosity = 0.4
-    config_mock.rock_matrix.rpm.parameters.coord_num_function = "porosity_based"
+    config_mock.rock_matrix.rpm.parameters.coord_num_function.fcn = "PorBased"
     config_mock.rock_matrix.rpm.parameters.coordination_number = 9
     config_mock.rock_matrix.rpm.parameters.shear_reduction = 0.5
 

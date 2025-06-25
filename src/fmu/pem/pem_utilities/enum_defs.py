@@ -58,3 +58,8 @@ class GasModels(str, Enum):
     GLOBAL = "Global"
     LIGHT = "Light"
     HC2016 = "HC2016"
+
+
+class CoordinationNumberFunction(str, Enum):
+    PORBASED = "PorBased"
+    CONSTANT = "ConstVal"

@@ -8,13 +8,32 @@ from pydantic import BaseModel, Field
 from pydantic.json_schema import SkipJsonSchema
 from typing_extensions import Annotated
 
-from fmu.pem.pem_utilities.enum_defs import RPMType
+from fmu.pem.pem_utilities.enum_defs import CoordinationNumberFunction, RPMType
 
 
 class MineralProperties(BaseModel):
     bulk_modulus: Annotated[float, Field(gt=1.0e9)]
     shear_modulus: Annotated[float, Field(gt=1.0e9)]
     density: Annotated[float, Field(gt=1.0e3)]
+
+
+class CoordinationNumberPorBased(BaseModel):
+    fcn: SkipJsonSchema[CoordinationNumberFunction] = Field(
+        default="PorBased",
+        description="Coordinate number is the number of grain-grain contacts. It is "
+        "normally assumed to be a function of porosity for friable sand",
+    )
+
+
+class CoordinationNumberConstVal(BaseModel):
+    fcn: SkipJsonSchema[CoordinationNumberFunction] = Field(
+        default="ConstVal",
+    )
+    coordination_number: float = Field(
+        default=9.0,
+        description="In case of a constant value for the number of grain contacts, "
+        "a value of 8-9 is common",
+    )
 
 
 class PatchyCementParams(BaseModel):
@@ -47,15 +66,10 @@ class PatchyCementParams(BaseModel):
         "between grains. Shear reduction of 1 means frictionless contact, "
         "and 0 means full friction",
     )
-    coord_num_function: Literal["ConstVal", "PorBased"] = Field(
-        default="PorBased",
+    coord_num_function: CoordinationNumberPorBased | CoordinationNumberConstVal = Field(
+        default_factory=CoordinationNumberPorBased,
         description="Coordinate number is the number of grain-grain contacts. It is "
         "normally assumed to be a function of porosity for friable sand",
-    )
-    coordination_number: float = Field(
-        default=9.0,
-        description="In case of a constant value for the number of grain contacts, "
-        "a value of 8-9 is common",
     )
 
 
