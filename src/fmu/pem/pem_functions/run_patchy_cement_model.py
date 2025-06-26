@@ -88,7 +88,7 @@ def run_patchy_cement(
             tmp_pres,
             pat_cem_params.cement_fraction,
             pat_cem_params.critical_porosity,
-            pat_cem_params.coord_num_function.fcn,
+            pat_cem_params.coordination_number_function.fcn,
             pat_cem_params.coordination_number,
             pat_cem_params.shear_reduction,
         )

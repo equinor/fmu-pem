@@ -75,7 +75,7 @@ def run_friable(
             tmp_por,
             tmp_pres,
             friable_params.critical_porosity,
-            friable_params.coord_num_function.fcn,
+            friable_params.coordination_number_function.fcn,
             friable_params.coordination_number,
             friable_params.shear_reduction,
         )

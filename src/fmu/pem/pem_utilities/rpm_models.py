@@ -66,7 +66,9 @@ class PatchyCementParams(BaseModel):
         "between grains. Shear reduction of 1 means frictionless contact, "
         "and 0 means full friction",
     )
-    coord_num_function: CoordinationNumberPorBased | CoordinationNumberConstVal = Field(
+    coordination_number_function: (
+        CoordinationNumberPorBased | CoordinationNumberConstVal
+    ) = Field(
         default_factory=CoordinationNumberPorBased,
         description="Coordinate number is the number of grain-grain contacts. It is "
         "normally assumed to be a function of porosity for friable sand",
