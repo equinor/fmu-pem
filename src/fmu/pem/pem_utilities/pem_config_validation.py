@@ -303,8 +303,16 @@ class Fluids(BaseModel):
     gas: Gas = Field(description="Gas model parameters")
     condensate: Oil | None = Field(
         default=None,
+        title="Condensate properties",
         description="Condensate is defined by the same set of parameters as oil, "
         "optional setting for condensate cases",
+        json_schema_extra={
+            "nullable": True,
+            "oneOf": [
+                {"$ref": "#/definitions/Oil", "title": "Condensate Properties"},
+                {"type": "null", "title": "No Condensate"},
+            ],
+        },
     )
     mix_method: FluidMixModel = Field(
         description="Selection between Wood's or Brie model. Wood's model gives more "
