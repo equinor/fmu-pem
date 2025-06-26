@@ -309,7 +309,7 @@ class Fluids(BaseModel):
         json_schema_extra={
             "nullable": True,
             "oneOf": [
-                {"$ref": "#/definitions/Oil", "title": "Condensate Properties"},
+                {"$ref": "#/$defs/Oil", "title": "Condensate Properties"},
                 {"type": "null", "title": "No Condensate"},
             ],
         },
