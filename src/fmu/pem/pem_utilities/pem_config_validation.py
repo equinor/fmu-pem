@@ -306,13 +306,7 @@ class Fluids(BaseModel):
         title="Condensate properties",
         description="Condensate is defined by the same set of parameters as oil, "
         "optional setting for condensate cases",
-        json_schema_extra={
-            "nullable": True,
-            "oneOf": [
-                {"$ref": "#/$defs/Oil", "title": "Condensate Properties"},
-                {"type": "null", "title": "No Condensate"},
-            ],
-        },
+        json_schema_extra={"anyOf": [{"$ref": "#/$defs/Oil"}, {"type": "null"}]},
     )
     mix_method: FluidMixModel = Field(
         description="Selection between Wood's or Brie model. Wood's model gives more "
@@ -503,7 +497,9 @@ class PemConfig(BaseModel):
         "difference calculation is run - normal difference, percent "
         "difference or ratio"
     )
-    global_params: Optional[FromGlobal] = None
+    global_params: SkipJsonSchema[FromGlobal | None] = Field(
+        default=None,
+    )
 
     @field_validator("paths", mode="before")
     def check_and_create_directories(cls, v: Dict, info: ValidationInfo):
