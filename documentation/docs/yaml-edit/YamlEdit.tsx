@@ -2,6 +2,7 @@ import React from "react";
 import Form from "@rjsf/core";
 import YAML from "yaml";
 import validator from "@rjsf/validator-ajv8";
+import { ADDITIONAL_PROPERTY_FLAG, RJSFSchema, WrapIfAdditionalTemplateProps } from '@rjsf/utils';
 
 import { pemSchema } from "./schema";
 
@@ -16,6 +17,40 @@ import {
 
 import { copy } from "@equinor/eds-icons";
 
+const schema: RJSFSchema = {
+  type: 'object',
+  additionalProperties: true,
+};
+
+function WrapIfAdditionalTemplate(props: WrapIfAdditionalTemplateProps) {
+  const { id, label, onKeyChange, onDropPropertyClick, schema, children, classNames, style } =
+    props;
+  const additional = ADDITIONAL_PROPERTY_FLAG in schema;
+
+  if (!additional) {
+    return <div>{children}</div>;
+  }
+
+  const labelString = id.startsWith("root_rock_matrix_minerals") ? "Mineral name" : "Key"
+  return (
+    <div className={classNames} style={style}>
+      <label id={`${id}-key`}>
+        {labelString}:
+      </label>
+      <input
+        className='form-control'
+        type='text'
+        id={`${id}-key`}
+        onBlur={function (event) {
+          onKeyChange(event.target.value);
+        }}
+        defaultValue={label}
+      />
+      <div>{children}</div>
+      <button onClick={onDropPropertyClick(label)}>Delete</button>
+    </div>
+  );
+}
 
 export const YamlEdit = () => {
   const [validInput, setValidInput] = React.useState(false);
@@ -135,6 +170,7 @@ export const YamlEdit = () => {
               "ui:submitButtonOptions": { norender: true },
             }}
             showErrorList={false}
+             templates={{ WrapIfAdditionalTemplate }}
           />
         </div>
       </div>
