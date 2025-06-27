@@ -93,13 +93,13 @@ fluids:
   gas_z_factor: 1.0  # Factor for deviation from a ideal gas
 
 # Overburden pressure may be set to a constant, but it is better estimated from a depth trend
+# Unit is Pa
 pressure:
-  overburden:
-    type: trend
-    trend:  # trend or constant
-      intercept: 20.0e6
-      gradient: 9174.3
-    constant: 50000000.0
+  type: trend
+  intercept: 20.0e6
+  gradient: 9174.3
+#  type: constant
+#  value: 50000000.0
 
 # Settings for saving results
 results:

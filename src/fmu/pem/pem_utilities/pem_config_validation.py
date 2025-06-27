@@ -22,7 +22,7 @@ from .enum_defs import (
     FluidMixModel,
     GasModels,
     MineralMixModel,
-    OverburdenPressure,
+    OverburdenPressureTypes,
     VolumeFractions,
 )
 from .rpm_models import MineralProperties, PatchyCementRPM, RegressionRPM, TMatrixRPM
@@ -192,23 +192,15 @@ class RockMatrixProperties(BaseModel):
 
 
 # Pressure
-class Trend(BaseModel):
+class OverburdenPressureTrend(BaseModel):
+    type: OverburdenPressureTypes = "trend"
     intercept: float = Field(description="Intercept in pressure depth trend")
     gradient: float = Field(description="Gradient in pressure depth trend")
 
 
-class Overburden(BaseModel):
-    type: OverburdenPressure = Field(
-        description="Selection of 'trend' or 'constant' type for overburden pressure"
-    )
-    trend: Trend = Field(
-        description="Setting of intercept and gradient for pressure trend vs. depth"
-    )
-    constant: float = Field(description="Constant overburden pressure setting")
-
-
-class Pressure(BaseModel):
-    overburden: Overburden
+class OverburdenPressureConstant(BaseModel):
+    type: OverburdenPressureTypes = "constant"
+    value: float = Field(description="Constant pressure")
 
 
 # Fluids
@@ -484,7 +476,8 @@ class PemConfig(BaseModel):
     fluids: Fluids = Field(
         description="Settings related to fluid composition",
     )
-    pressure: Pressure = Field(
+    pressure: OverburdenPressureTrend | OverburdenPressureConstant = Field(
+        default_factory=OverburdenPressureTrend,
         description="Definition of overburden pressure model - constant or trend",
     )
     results: Results = Field(

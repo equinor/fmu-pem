@@ -5,7 +5,7 @@ Define enumerated strings
 from enum import Enum
 
 
-class OverburdenPressure(str, Enum):
+class OverburdenPressureTypes(str, Enum):
     CONSTANT = "constant"
     TREND = "trend"
 
