@@ -193,13 +193,13 @@ class RockMatrixProperties(BaseModel):
 
 # Pressure
 class OverburdenPressureTrend(BaseModel):
-    type: OverburdenPressureTypes = "trend"
+    type: SkipJsonSchema[OverburdenPressureTypes] = "trend"
     intercept: float = Field(description="Intercept in pressure depth trend")
     gradient: float = Field(description="Gradient in pressure depth trend")
 
 
 class OverburdenPressureConstant(BaseModel):
-    type: OverburdenPressureTypes = "constant"
+    type: SkipJsonSchema[OverburdenPressureTypes] = "constant"
     value: float = Field(description="Constant pressure")
 
 
