@@ -85,9 +85,11 @@ fluids:
     brie_exponent: 3.0
 #    method: wood
   brie_exponent: 3.0
-  temperature: 75
+  temperature:
+    type: constant
+    temperature_value: 75
+#    type: from_sim
   salinity_from_sim: False
-  temperature_from_sim: False
   gas_saturation_is_co2: False
   # CO2 model is either the one from FLAG or the Span-Wagner model {'flag', 'span_wagner'}
   # The FLAG model is significantly faster, but the Span-Wagner model is considered to be more accurate

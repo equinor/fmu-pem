@@ -23,6 +23,7 @@ from .enum_defs import (
     GasModels,
     MineralMixModel,
     OverburdenPressureTypes,
+    TemperatureMethod,
     VolumeFractions,
 )
 from .rpm_models import MineralProperties, PatchyCementRPM, RegressionRPM, TMatrixRPM
@@ -298,6 +299,15 @@ class MixModelBrie(BaseModel):
     )
 
 
+class ConstantTemperature(BaseModel):
+    type: SkipJsonSchema[TemperatureMethod] = "constant"
+    temperature_value: float
+
+
+class TemperatureFromSim(BaseModel):
+    type: SkipJsonSchema[TemperatureMethod] = "from_sim"
+
+
 # Note that CO2 does not require a separate definition here, as it's properties only
 # depend on temperature and pressure
 class Fluids(BaseModel):
@@ -317,7 +327,7 @@ class Fluids(BaseModel):
         description="Selection between Wood's or Brie model. Wood's model gives more "
         "radical response to adding small amounts of gas in brine or oil",
     )
-    temperature: float = Field(
+    temperature: ConstantTemperature | TemperatureFromSim = Field(
         description="In most cases it is sufficient with a constant temperature "
         "setting for the reservoir. If temperature is modelled in the "
         "simulation model, it is preferred to use that"
@@ -328,10 +338,6 @@ class Fluids(BaseModel):
         "setting for the reservoir, unless there is large contrast"
         "between formation water and injected water. If salinity is "
         "modelled in the simulation model, it is preferred to use that",
-    )
-    temperature_from_sim: bool = Field(
-        default=False,
-        description="Flag to use temperature estimate from simulation model",
     )
     gas_saturation_is_co2: bool = Field(
         default=False,

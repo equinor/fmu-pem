@@ -63,3 +63,8 @@ class GasModels(str, Enum):
 class CoordinationNumberFunction(str, Enum):
     PORBASED = "PorBased"
     CONSTANT = "ConstVal"
+
+
+class TemperatureMethod(str, Enum):
+    CONSTANT = "constant"
+    FROMSIM = "from_sim"
