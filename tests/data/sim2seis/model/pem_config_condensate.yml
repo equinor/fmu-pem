@@ -80,8 +80,10 @@ fluids:
     reference_density: 865.0
     gor: 623.0
 
-  mix_method: brie
-  brie_exponent: 3.0
+  fluid_mix_method:
+    method: brie
+    brie_exponent: 3.0
+#    method: wood
   temperature: 75
   salinity_from_sim: False
   temperature_from_sim: False

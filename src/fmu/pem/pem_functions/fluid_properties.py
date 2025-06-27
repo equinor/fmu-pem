@@ -61,8 +61,6 @@ def effective_fluid_properties(
 
         # Convert pressure from bar to Pa
         pres = 1.0e5 * prop.pressure
-        mix_model = fluid_params.mix_method
-        brie_exp = fluid_params.brie_exponent
 
         # Salinity and temperature are either taken as constants from config file or
         # from eclipse simulator model
@@ -217,7 +215,7 @@ def effective_fluid_properties(
 
         gas = dict(zip(fluid_keys, gas_props))
 
-        if mix_model == FluidMixModel.WOOD:
+        if fluid_params.fluid_mix_method == FluidMixModel.WOOD:
             mixed_fluid_bulk_modulus = multi_wood(
                 [sat_wat, sat_gas, sat_oil],
                 [brine["bulk_modulus"], gas["bulk_modulus"], oil["bulk_modulus"]],
@@ -230,7 +228,7 @@ def effective_fluid_properties(
                 brine["bulk_modulus"],
                 sat_oil,
                 oil["bulk_modulus"],
-                brie_exp,
+                fluid_params.fluid_mix_method.brie_exponent,
             )
         mixed_fluid_density = (
             sat_wat * brine["density"]

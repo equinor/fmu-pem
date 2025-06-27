@@ -285,6 +285,19 @@ class Gas(BaseModel):
     )
 
 
+class MixModelWood(BaseModel):
+    method: SkipJsonSchema[FluidMixModel] = "wood"
+
+
+class MixModelBrie(BaseModel):
+    method: SkipJsonSchema[FluidMixModel] = "brie"
+    brie_exponent: float = Field(
+        default=3.0,
+        description="Brie exponent selects the mixing curve shape, from linear mix to "
+        "harmonic mean",
+    )
+
+
 # Note that CO2 does not require a separate definition here, as it's properties only
 # depend on temperature and pressure
 class Fluids(BaseModel):
@@ -299,13 +312,10 @@ class Fluids(BaseModel):
         description="Condensate is defined by the same set of parameters as oil, "
         "optional setting for condensate cases",
     )
-    mix_method: FluidMixModel = Field(
+    fluid_mix_method: MixModelBrie | MixModelWood = Field(
+        default=MixModelBrie,
         description="Selection between Wood's or Brie model. Wood's model gives more "
-        "radical response to adding small amounts of gas in brine or oil"
-    )
-    brie_exponent: int = Field(
-        description="Brie exponent selects the mixing curve shape, from linear mix to "
-        "harmonic mean"
+        "radical response to adding small amounts of gas in brine or oil",
     )
     temperature: float = Field(
         description="In most cases it is sufficient with a constant temperature "
