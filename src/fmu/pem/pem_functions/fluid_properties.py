@@ -22,7 +22,7 @@ from fmu.pem.pem_utilities import (
     reverse_filter_and_restore,
     to_masked_array,
 )
-from fmu.pem.pem_utilities.enum_defs import CO2Models, FluidMixModel
+from fmu.pem.pem_utilities.enum_defs import CO2Models, FluidMixModel, TemperatureMethod
 
 
 def effective_fluid_properties(
@@ -61,8 +61,6 @@ def effective_fluid_properties(
 
         # Convert pressure from bar to Pa
         pres = 1.0e5 * prop.pressure
-        mix_model = fluid_params.mix_method
-        brie_exp = fluid_params.brie_exponent
 
         # Salinity and temperature are either taken as constants from config file or
         # from eclipse simulator model
@@ -73,10 +71,17 @@ def effective_fluid_properties(
             salinity = to_masked_array(fluid_params.brine.salinity, sat_wat)
         # Temperature will normally be set as a constant. It can come from eclipse in
         # the case a compositional fluid model is run.
-        if fluid_params.temperature_from_sim:
-            temp = prop.temp
+        if fluid_params.temperature.type == TemperatureMethod.FROMSIM:
+            if hasattr(prop, "temp") and prop.temp is not None:
+                temp = prop.temp
+            else:
+                raise ValueError(
+                    "eclipse simulation restart file does not have "
+                    "temperature attribute. Constant temperature must "
+                    "be set in parameter file"
+                )
         else:
-            temp = to_masked_array(fluid_params.temperature, sat_wat)
+            temp = to_masked_array(fluid_params.temperature.temperature_value, sat_wat)
 
         # Gas gravity has to be expanded to a masked array if it comes as a float
         if isinstance(fluid_params.gas.gas_gravity, float):
@@ -217,7 +222,7 @@ def effective_fluid_properties(
 
         gas = dict(zip(fluid_keys, gas_props))
 
-        if mix_model == FluidMixModel.WOOD:
+        if fluid_params.fluid_mix_method == FluidMixModel.WOOD:
             mixed_fluid_bulk_modulus = multi_wood(
                 [sat_wat, sat_gas, sat_oil],
                 [brine["bulk_modulus"], gas["bulk_modulus"], oil["bulk_modulus"]],
@@ -230,7 +235,7 @@ def effective_fluid_properties(
                 brine["bulk_modulus"],
                 sat_oil,
                 oil["bulk_modulus"],
-                brie_exp,
+                fluid_params.fluid_mix_method.brie_exponent,
             )
         mixed_fluid_density = (
             sat_wat * brine["density"]

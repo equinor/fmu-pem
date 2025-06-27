@@ -6,9 +6,9 @@ from typing import Any, Dict, List, Literal, Optional, Self, Union
 import numpy as np
 from pydantic import (
     BaseModel,
+    ConfigDict,
     DirectoryPath,
     Field,
-    FilePath,
     field_validator,
     model_validator,
 )
@@ -20,8 +20,10 @@ from fmu.pem import INTERNAL_EQUINOR
 from .enum_defs import (
     CO2Models,
     FluidMixModel,
+    GasModels,
     MineralMixModel,
-    OverburdenPressure,
+    OverburdenPressureTypes,
+    TemperatureMethod,
     VolumeFractions,
 )
 from .rpm_models import MineralProperties, PatchyCementRPM, RegressionRPM, TMatrixRPM
@@ -78,7 +80,9 @@ class RockMatrixProperties(BaseModel):
     and other lithologies.
     """
 
-    rpm: Union[PatchyCementRPM, TMatrixRPM, RegressionRPM] = Field(
+    model_config = ConfigDict(title="Rock matrix properties:")
+
+    model: Union[PatchyCementRPM, TMatrixRPM, RegressionRPM] = Field(
         description="Selection of parameter set for rock physics model"
     )
     minerals: Dict[str, MineralProperties] = Field(
@@ -189,23 +193,15 @@ class RockMatrixProperties(BaseModel):
 
 
 # Pressure
-class Trend(BaseModel):
+class OverburdenPressureTrend(BaseModel):
+    type: SkipJsonSchema[OverburdenPressureTypes] = "trend"
     intercept: float = Field(description="Intercept in pressure depth trend")
     gradient: float = Field(description="Gradient in pressure depth trend")
 
 
-class Overburden(BaseModel):
-    type: OverburdenPressure = Field(
-        description="Selection of 'trend' or 'constant' type for overburden pressure"
-    )
-    trend: Trend = Field(
-        description="Setting of intercept and gradient for pressure trend vs. depth"
-    )
-    constant: float = Field(description="Constant overburden pressure setting")
-
-
-class Pressure(BaseModel):
-    overburden: Overburden
+class OverburdenPressureConstant(BaseModel):
+    type: SkipJsonSchema[OverburdenPressureTypes] = "constant"
+    value: float = Field(description="Constant pressure")
 
 
 # Fluids
@@ -284,10 +280,32 @@ class Gas(BaseModel):
         le=0.87,
         description="Gas gravity is a ratio of gas molecular weight to that air",
     )
-    model: str = Field(
+    model: GasModels = Field(
         default="HC2016",
         description="Gas model is one of 'Global', 'Light', or 'HC2016' (default)",
     )
+
+
+class MixModelWood(BaseModel):
+    method: SkipJsonSchema[FluidMixModel] = "wood"
+
+
+class MixModelBrie(BaseModel):
+    method: SkipJsonSchema[FluidMixModel] = "brie"
+    brie_exponent: float = Field(
+        default=3.0,
+        description="Brie exponent selects the mixing curve shape, from linear mix to "
+        "harmonic mean",
+    )
+
+
+class ConstantTemperature(BaseModel):
+    type: SkipJsonSchema[TemperatureMethod] = "constant"
+    temperature_value: float
+
+
+class TemperatureFromSim(BaseModel):
+    type: SkipJsonSchema[TemperatureMethod] = "from_sim"
 
 
 # Note that CO2 does not require a separate definition here, as it's properties only
@@ -300,18 +318,16 @@ class Fluids(BaseModel):
     gas: Gas = Field(description="Gas model parameters")
     condensate: Oil | None = Field(
         default=None,
+        title="Condensate properties",
         description="Condensate is defined by the same set of parameters as oil, "
         "optional setting for condensate cases",
     )
-    mix_method: FluidMixModel = Field(
+    fluid_mix_method: MixModelBrie | MixModelWood = Field(
+        default=MixModelBrie,
         description="Selection between Wood's or Brie model. Wood's model gives more "
-        "radical response to adding small amounts of gas in brine or oil"
+        "radical response to adding small amounts of gas in brine or oil",
     )
-    brie_exponent: int = Field(
-        description="Brie exponent selects the mixing curve shape, from linear mix to "
-        "harmonic mean"
-    )
-    temperature: float = Field(
+    temperature: ConstantTemperature | TemperatureFromSim = Field(
         description="In most cases it is sufficient with a constant temperature "
         "setting for the reservoir. If temperature is modelled in the "
         "simulation model, it is preferred to use that"
@@ -322,10 +338,6 @@ class Fluids(BaseModel):
         "setting for the reservoir, unless there is large contrast"
         "between formation water and injected water. If salinity is "
         "modelled in the simulation model, it is preferred to use that",
-    )
-    temperature_from_sim: bool = Field(
-        default=False,
-        description="Flag to use temperature estimate from simulation model",
     )
     gas_saturation_is_co2: bool = Field(
         default=False,
@@ -468,7 +480,7 @@ class Results(BaseModel):
 
 class PemConfig(BaseModel):
     paths: SkipJsonSchema[PemPaths] = Field(
-        default_factory=PemPaths(),
+        default_factory=PemPaths,
         description="Default path settings exist, it is possible to override them, "
         "mostly relevant for input paths",
     )
@@ -479,7 +491,8 @@ class PemConfig(BaseModel):
     fluids: Fluids = Field(
         description="Settings related to fluid composition",
     )
-    pressure: Pressure = Field(
+    pressure: OverburdenPressureTrend | OverburdenPressureConstant = Field(
+        default=OverburdenPressureTrend,
         description="Definition of overburden pressure model - constant or trend",
     )
     results: Results = Field(
@@ -492,7 +505,9 @@ class PemConfig(BaseModel):
         "difference calculation is run - normal difference, percent "
         "difference or ratio"
     )
-    global_params: Optional[FromGlobal] = None
+    global_params: SkipJsonSchema[FromGlobal | None] = Field(
+        default=None,
+    )
 
     @field_validator("paths", mode="before")
     def check_and_create_directories(cls, v: Dict, info: ValidationInfo):

@@ -58,10 +58,12 @@ def valid_pressure():
 @pytest.fixture
 def valid_config_mock():
     config_mock = MagicMock()
-    config_mock.rock_matrix.rpm.parameters = MagicMock(
+    config_mock.rock_matrix = MagicMock()
+    config_mock.rock_matrix.model = MagicMock()
+    config_mock.rock_matrix.model.parameters = MagicMock(
         cement_fraction=0.3,
         critical_porosity=0.4,
-        coord_num_function="linear",
+        coord_num_function=MagicMock(fcn="PorBased"),
         coordination_number=6,
         shear_reduction=0.6,
     )

@@ -68,7 +68,7 @@ def valid_pressure():
 @pytest.fixture
 def valid_config_mock(data_dir):
     config_mock = MagicMock()
-    config_mock.rock_matrix.rpm.parameters = MagicMock(
+    config_mock.rock_matrix.model.parameters = MagicMock(
         t_mat_model_version="PETEC", angle=30, perm=200, visco=0.001, tau=2, freq=25
     )
     config_mock.paths = MagicMock(rel_path_pem=data_dir / "sim2seis/model")

@@ -73,7 +73,7 @@ def run_t_matrix_and_pressure_models(
     exp_parameter_file = config.paths.rel_path_pem / exp_parameter_file
 
     saturated_props = []
-    t_mat_params = config.rock_matrix.rpm.parameters
+    t_mat_params = config.rock_matrix.model.parameters
 
     if vsh is None and t_mat_params.t_mat_model_version == "EXP":
         raise ValueError("Shale volume must be provided for EXP model")
