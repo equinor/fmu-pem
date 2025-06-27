@@ -12,7 +12,7 @@ from fmu.pem.pem_utilities.pem_config_validation import (
 def test_dryrock_missing_rpm_model():
     """Test RockMatrixProperties instantiation with minimal valid data."""
     valid_data = {
-        "rpm": {
+        "model": {
             "model": None,
             "parameters": {
                 "upper_bound_cement_fraction": 0.1,
