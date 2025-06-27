@@ -298,7 +298,6 @@ class Fluids(BaseModel):
         title="Condensate properties",
         description="Condensate is defined by the same set of parameters as oil, "
         "optional setting for condensate cases",
-        json_schema_extra={"anyOf": [{"$ref": "#/$defs/Oil"}, {"type": "null"}]},
     )
     mix_method: FluidMixModel = Field(
         description="Selection between Wood's or Brie model. Wood's model gives more "
@@ -477,7 +476,7 @@ class PemConfig(BaseModel):
         description="Settings related to fluid composition",
     )
     pressure: OverburdenPressureTrend | OverburdenPressureConstant = Field(
-        default_factory=OverburdenPressureTrend,
+        default=OverburdenPressureTrend,
         description="Definition of overburden pressure model - constant or trend",
     )
     results: Results = Field(
