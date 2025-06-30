@@ -55,13 +55,13 @@ def valid_config_mock():
 
     # Mocking the nested structure
     config_mock.rock_matrix = MagicMock()
-    config_mock.rock_matrix.rpm.parameters = MagicMock()
+    config_mock.rock_matrix.model.parameters = MagicMock()
 
     # Setting the attributes
-    config_mock.rock_matrix.rpm.parameters.critical_porosity = 0.4
-    config_mock.rock_matrix.rpm.parameters.coord_num_function = "porosity_based"
-    config_mock.rock_matrix.rpm.parameters.coordination_number = 9
-    config_mock.rock_matrix.rpm.parameters.shear_reduction = 0.5
+    config_mock.rock_matrix.model.parameters.critical_porosity = 0.4
+    config_mock.rock_matrix.model.parameters.coord_num_function.fcn = "PorBased"
+    config_mock.rock_matrix.model.parameters.coordination_number = 9
+    config_mock.rock_matrix.model.parameters.shear_reduction = 0.5
 
     return config_mock
 

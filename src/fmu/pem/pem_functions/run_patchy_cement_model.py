@@ -43,7 +43,7 @@ def run_patchy_cement(
     # effective_pressure can be lists
     fluid, pressure = _verify_inputs(fluid, pressure)
     saturated_props = []
-    pat_cem_params = config.rock_matrix.rpm.parameters
+    pat_cem_params = config.rock_matrix.model.parameters
     for fl_prop, pres in zip(fluid, pressure):
         (
             mask,
@@ -88,7 +88,7 @@ def run_patchy_cement(
             tmp_pres,
             pat_cem_params.cement_fraction,
             pat_cem_params.critical_porosity,
-            pat_cem_params.coord_num_function,
+            pat_cem_params.coordination_number_function.fcn,
             pat_cem_params.coordination_number,
             pat_cem_params.shear_reduction,
         )

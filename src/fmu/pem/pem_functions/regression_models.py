@@ -200,14 +200,14 @@ def run_regression_models(
             )
         if not multiple_lithologies:
             dry_props = dry_rock_regression(
-                tmp_por, tmp_min_rho, config.rock_matrix.rpm.parameters.sandstone
+                tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.sandstone
             )
         else:
             dry_props_sand = dry_rock_regression(
-                tmp_por, tmp_min_rho, config.rock_matrix.rpm.parameters.sandstone
+                tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.sandstone
             )
             dry_props_shale = dry_rock_regression(
-                tmp_por, tmp_min_rho, config.rock_matrix.rpm.parameters.shale
+                tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.shale
             )
             dry_rho = (
                 dry_props_sand.dens * (1.0 - tmp_vsh) + dry_props_shale.dens * tmp_vsh

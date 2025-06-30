@@ -11,7 +11,7 @@ paths:
 
 # Dry rock parameters. It varies from model to model which of the parameters that are used.
 rock_matrix:
-  rpm:
+  model:
     model: t_matrix  # One of patchy_cement, friable, t_matrix or regression
     parameters:
       t_mat_model_version: PETEC  # One of 'PETEC' or 'EXP'
@@ -80,11 +80,15 @@ fluids:
     reference_density: 865.0
     gor: 623.0
 
-  mix_method: brie
-  brie_exponent: 3.0
-  temperature: 75
+  fluid_mix_method:
+    method: brie
+    brie_exponent: 3.0
+#    method: wood
+  temperature:
+    type: constant
+    temperature_value: 75
+#    type: from_sim
   salinity_from_sim: False
-  temperature_from_sim: False
   gas_saturation_is_co2: False
   # CO2 model is either the one from FLAG or the Span-Wagner model {'flag', 'span_wagner'}
   # The FLAG model is significantly faster, but the Span-Wagner model is considered to be more accurate
@@ -93,13 +97,13 @@ fluids:
   gas_z_factor: 1.0  # Factor for deviation from a ideal gas
 
 # Overburden pressure may be set to a constant, but it is better estimated from a depth trend
+# Unit is Pa
 pressure:
-  overburden:
-    type: trend
-    trend:  # trend or constant
-      intercept: 20.0e6
-      gradient: 9174.3
-    constant: 50000000.0
+  type: trend
+  intercept: 20.0e6
+  gradient: 9174.3
+#  type: constant
+#  value: 50000000.0
 
 # Settings for saving results
 results:

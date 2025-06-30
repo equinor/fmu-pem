@@ -5,7 +5,7 @@ Define enumerated strings
 from enum import Enum
 
 
-class OverburdenPressure(str, Enum):
+class OverburdenPressureTypes(str, Enum):
     CONSTANT = "constant"
     TREND = "trend"
 
@@ -52,3 +52,19 @@ class RPMType(str, Enum):
 class VolumeFractions(str, Enum):
     NTG_SIM = "ntg_sim"
     VOL_FRAC = "fraction_files"
+
+
+class GasModels(str, Enum):
+    GLOBAL = "Global"
+    LIGHT = "Light"
+    HC2016 = "HC2016"
+
+
+class CoordinationNumberFunction(str, Enum):
+    PORBASED = "PorBased"
+    CONSTANT = "ConstVal"
+
+
+class TemperatureMethod(str, Enum):
+    CONSTANT = "constant"
+    FROMSIM = "from_sim"
