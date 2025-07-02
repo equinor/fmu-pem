@@ -262,13 +262,13 @@ class Oil(BaseModel):
         default=865.0,
         ge=700,
         le=950,
-        description="Oil density in kg/m^3 at standard conditions, i.e. 15.6 deg. C "
-        "and 101 kPa",
+        description="Oil density in `kg/m³` at standard conditions, i.e. `15.6 °C`"
+        "and `101 kPa`",
     )
     gor: float = Field(
         default=123.0,
         ge=0.0,
-        description="Gas-oil volume ratio in liter/liter when the oil it brought to "
+        description="Gas-oil volume ratio in `liter/liter` when the oil it brought to "
         "the surface at standard conditions",
     )
 
@@ -282,7 +282,7 @@ class Gas(BaseModel):
     )
     model: GasModels = Field(
         default="HC2016",
-        description="Gas model is one of 'Global', 'Light', or 'HC2016' (default)",
+        description="Gas model is one of `Global`, `Light`, or `HC2016` (default)",
     )
 
 
@@ -342,12 +342,12 @@ class Fluids(BaseModel):
     gas_saturation_is_co2: bool = Field(
         default=False,
         description="Eclipse model only provides one parameter for gas saturation, "
-        "this flag sets the gas type to be CO2 instead of hydrocarbon gas",
+        "this flag sets the gas type to be CO₂ instead of hydrocarbon gas",
     )
     calculate_condensate: bool = Field(
         default=False,
         description="Flag to control if gas should be modelled with condensate model, "
-        "in which case RV parameter must be present in the Eclipse model",
+        "in which case `RV` parameter must be present in the Eclipse model",
     )
     gas_z_factor: float = Field(
         default=1.0,
@@ -356,8 +356,8 @@ class Fluids(BaseModel):
     )
     co2_model: CO2Models = Field(
         default="span_wagner",
-        description="Selection of model for CO2 properties, 'span_wagner' equation "
-        "of state model or 'flag'. Note that access to flag model depends "
+        description="Selection of model for CO₂ properties, `span_wagner` equation "
+        "of state model or `flag`. Note that access to flag model depends "
         "on licence",
     )
 

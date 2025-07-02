@@ -16,12 +16,22 @@ import {
 
 import { copy } from "@equinor/eds-icons";
 
+import { TranslatableString, englishStringTranslator, replaceStringParameters } from '@rjsf/utils';
+
+function fixupSomeEnglishStrings(stringToTranslate: TranslatableString, params?: string[]): string {
+  console.log(params, stringToTranslate)
+  if(stringToTranslate === TranslatableString.KeyLabel && params && params.length > 0 && params[0].length > 0) {
+      return replaceStringParameters('Mineral:', params); // Add "Name" onto the end of the WrapIfAdditionalTemplate key label
+  }
+  
+  return englishStringTranslator(stringToTranslate, params); // Fallback to the default english
+}
 
 export const YamlEdit = () => {
   const [validInput, setValidInput] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
-  const [populateDefault, setPopulateDefault] = React.useState(true);
+  const [populateDefault, setPopulateDefault] = React.useState(false);
 
   const [initialConfig, setInitialConfig] = React.useState({});
 
@@ -133,8 +143,12 @@ export const YamlEdit = () => {
             liveValidate
             uiSchema={{
               "ui:submitButtonOptions": { norender: true },
+              "ui:globalOptions": {
+                enableMarkdownInDescription: true,
+              },
             }}
             showErrorList={false}
+            translateString={fixupSomeEnglishStrings}
           />
         </div>
       </div>
