@@ -18,13 +18,12 @@ import { copy } from "@equinor/eds-icons";
 
 import { TranslatableString, englishStringTranslator, replaceStringParameters } from '@rjsf/utils';
 
-// Workaround 
+// Workaround since the translateString from rjsf do not provide us information about where we are in the schema_
 const whereAreWeInSchema = {
   inMineralSection: false,
   inDiffCalculationSection: false,
 } 
-function fixupSomeEnglishStrings(stringToTranslate: TranslatableString, params?: string[]): string {
-  console.log(params, stringToTranslate)
+function domainSpecificStrings(stringToTranslate: TranslatableString, params?: string[]): string {
   if(stringToTranslate === TranslatableString.KeyLabel && params && params.length > 0 && params[0].length > 0) {
     if(params[0] === "PemConfig"){
       whereAreWeInSchema.inMineralSection = false; // Reset the state when we are in the top level;
@@ -168,7 +167,7 @@ export const YamlEdit = () => {
               },
             }}
             showErrorList={false}
-            translateString={fixupSomeEnglishStrings}
+            translateString={domainSpecificStrings}
           />
         </div>
       </div>
