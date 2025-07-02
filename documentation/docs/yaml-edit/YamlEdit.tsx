@@ -25,8 +25,9 @@ const whereAreWeInSchema = {
 } 
 function domainSpecificStrings(stringToTranslate: TranslatableString, params?: string[]): string {
   if(stringToTranslate === TranslatableString.KeyLabel && params && params.length > 0 && params[0].length > 0) {
-    if(params[0] === "PemConfig"){
-      whereAreWeInSchema.inMineralSection = false; // Reset the state when we are in the top level;
+    if(params[0] === "PemConfig"){ // Reset the state when we are in the top level of schema
+      whereAreWeInSchema.inMineralSection = false;
+      whereAreWeInSchema.inDiffCalculationSection = false;
     } else if(params[0] === "Minerals") {
       whereAreWeInSchema.inMineralSection = true; // We are in the mineral section
     } else if(params[0] === "VolumeFractions") {
@@ -36,10 +37,10 @@ function domainSpecificStrings(stringToTranslate: TranslatableString, params?: s
     }
 
     if(whereAreWeInSchema.inMineralSection){
-      return replaceStringParameters('Mineral:', params); // Add "Name" onto the end of the WrapIfAdditionalTemplate key label
+      return replaceStringParameters('Mineral:', params);
     }
     if(whereAreWeInSchema.inDiffCalculationSection){
-      return replaceStringParameters('Parameter:', params); // Add "Name" onto the end of the WrapIfAdditionalTemplate key label
+      return replaceStringParameters('Parameter:', params);
     }
   }
   
