@@ -113,9 +113,9 @@ class RockMatrixProperties(BaseModel):
                 "density": 2490.0,
             },
         },
-        description="Standard values are set for `shale`, `quartz`, `calcite`, `dolomite` and "
-        "`stevensite`. All settings can be changed by re-defining them in "
-        "the parameter file",
+        description="Standard values are set for `shale`, `quartz`, "
+        "`calcite`, `dolomite` and `stevensite`. All settings can be "
+        "changed by re-defining them in the parameter file",
     )
     volume_fractions: NTGFraction | FractionFiles = Field(
         default=NTGFraction,
