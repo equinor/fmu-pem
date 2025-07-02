@@ -18,7 +18,7 @@ import { copy } from "@equinor/eds-icons";
 
 import { TranslatableString, englishStringTranslator, replaceStringParameters } from '@rjsf/utils';
 
-// Workaround since the translateString from rjsf do not provide us information about where we are in the schema_
+// Workaround since the signature of translateString from rjsf does not provide us information about where we are in the schema
 const whereAreWeInSchema = {
   inMineralSection: false,
   inDiffCalculationSection: false,
