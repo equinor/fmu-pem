@@ -33,9 +33,9 @@ class NTGFraction(BaseModel):
     mode: SkipJsonSchema[Literal[VolumeFractions.NTG_SIM]]
     from_porosity: bool = Field(
         default=False,
-        description="If True, net-to-gross is estimated from porosity parameter in "
-        "reservoir simulator INIT file. If False, net-to-gross is read "
-        "from the NTG parameter in the INIT file.",
+        description="If checked, net-to-gross is estimated from porosity parameter in "
+        "reservoir simulator `.INIT` file. Otherwise, net-to-gross is read "
+        "from the `NTG` parameter in the `.INIT` file.",
     )
 
 
@@ -113,14 +113,14 @@ class RockMatrixProperties(BaseModel):
                 "density": 2490.0,
             },
         },
-        description="Standard values are set for shale, quartz, calcite, dolomite and "
-        "stevensite. All settings can be changed by re-defining them in "
+        description="Standard values are set for `shale`, `quartz`, `calcite`, `dolomite` and "
+        "`stevensite`. All settings can be changed by re-defining them in "
         "the parameter file",
     )
     volume_fractions: NTGFraction | FractionFiles = Field(
         default=NTGFraction,
-        description=r"Choice of volume fractions based on NTG from "
-        "simulator INIT file or from grid property file ",
+        description=r"Choice of volume fractions based on `NTG` from "
+        "simulator `.INIT` file or from grid property file ",
     )
     fraction_names: List[str] = Field(
         description="Fraction names must match the names in the volume fractions file",
@@ -152,7 +152,7 @@ class RockMatrixProperties(BaseModel):
     mineral_mix_model: MineralMixModel = Field(
         default="voigt-reuss-hill",
         description="Effective medium model selection: either "
-        "'hashin-shtrikman-average' or 'voigt-reuss-hill'",
+        "`hashin-shtrikman-average` or `voigt-reuss-hill`",
     )
 
     @field_validator("shale_fractions", mode="before")
@@ -209,25 +209,25 @@ class Brine(BaseModel):
     salinity: float = Field(
         default=35000.0,
         gt=0.0,
-        description="Salinity of brine, with unit ppm (parts per million)",
+        description="Salinity of brine, with unit `ppm` (parts per million)",
     )
     perc_na: float = Field(
         ge=0.0,
         le=100.0,
         default=0.0,
-        description="Percentage of NaCl in the dissolved salts in brine",
+        description="Percentage of `NaCl in the dissolved salts in brine",
     )
     perc_ca: float = Field(
         ge=0.0,
         le=100.0,
         default=100.0,
-        description="Percentage of CaCl in the dissolved salts in brine",
+        description="Percentage of `CaCl` in the dissolved salts in brine",
     )
     perc_k: float = Field(
         ge=0.0,
         le=100.0,
         default=0.0,
-        description="Percentage of KCl in the dissolved salts in brine",
+        description="Percentage of `KCl` in the dissolved salts in brine",
     )
 
     @model_validator(mode="after")
@@ -500,7 +500,7 @@ class PemConfig(BaseModel):
     )
     diff_calculation: Dict[str, List[Literal["ratio", "diff", "diffpercent"]]] = Field(
         description="Difference properties of the PEM can be calculated for the dates "
-        "in the Eclipse UNRST file. The settings decide which parameters "
+        "in the Eclipse `.UNRST` file. The settings decide which parameters "
         "difference properties will be generated for, and what kind of "
         "difference calculation is run - normal difference, percent "
         "difference or ratio"

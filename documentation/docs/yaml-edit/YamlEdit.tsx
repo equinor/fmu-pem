@@ -18,10 +18,30 @@ import { copy } from "@equinor/eds-icons";
 
 import { TranslatableString, englishStringTranslator, replaceStringParameters } from '@rjsf/utils';
 
+// Workaround 
+const whereAreWeInSchema = {
+  inMineralSection: false,
+  inDiffCalculationSection: false,
+} 
 function fixupSomeEnglishStrings(stringToTranslate: TranslatableString, params?: string[]): string {
   console.log(params, stringToTranslate)
   if(stringToTranslate === TranslatableString.KeyLabel && params && params.length > 0 && params[0].length > 0) {
+    if(params[0] === "PemConfig"){
+      whereAreWeInSchema.inMineralSection = false; // Reset the state when we are in the top level;
+    } else if(params[0] === "Minerals") {
+      whereAreWeInSchema.inMineralSection = true; // We are in the mineral section
+    } else if(params[0] === "VolumeFractions") {
+      whereAreWeInSchema.inMineralSection = true; // We are finished with the mineral section
+    } else if(params[0] === "Diff Calculation") {
+      whereAreWeInSchema.inDiffCalculationSection = true; // We are in the diff calculation section
+    }
+
+    if(whereAreWeInSchema.inMineralSection){
       return replaceStringParameters('Mineral:', params); // Add "Name" onto the end of the WrapIfAdditionalTemplate key label
+    }
+    if(whereAreWeInSchema.inDiffCalculationSection){
+      return replaceStringParameters('Parameter:', params); // Add "Name" onto the end of the WrapIfAdditionalTemplate key label
+    }
   }
   
   return englishStringTranslator(stringToTranslate, params); // Fallback to the default english
@@ -31,7 +51,7 @@ export const YamlEdit = () => {
   const [validInput, setValidInput] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
-  const [populateDefault, setPopulateDefault] = React.useState(false);
+  const [populateDefault, setPopulateDefault] = React.useState(true);
 
   const [initialConfig, setInitialConfig] = React.useState({});
 
