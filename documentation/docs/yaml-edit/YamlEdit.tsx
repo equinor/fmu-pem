@@ -31,7 +31,7 @@ function domainSpecificStrings(stringToTranslate: TranslatableString, params?: s
     } else if(params[0] === "Minerals") {
       whereAreWeInSchema.inMineralSection = true; // We are in the mineral section
     } else if(params[0] === "VolumeFractions") {
-      whereAreWeInSchema.inMineralSection = true; // We are finished with the mineral section
+      whereAreWeInSchema.inMineralSection = false; // We are finished with the mineral section
     } else if(params[0] === "Diff Calculation") {
       whereAreWeInSchema.inDiffCalculationSection = true; // We are in the diff calculation section
     }
