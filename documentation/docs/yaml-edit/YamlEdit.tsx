@@ -16,6 +16,36 @@ import {
 
 import { copy } from "@equinor/eds-icons";
 
+import { TranslatableString, englishStringTranslator, replaceStringParameters } from '@rjsf/utils';
+
+// Workaround since the signature of translateString from rjsf does not provide us information about where we are in the schema
+const whereAreWeInSchema = {
+  inMineralSection: false,
+  inDiffCalculationSection: false,
+} 
+function domainSpecificStrings(stringToTranslate: TranslatableString, params?: string[]): string {
+  if(stringToTranslate === TranslatableString.KeyLabel && params && params.length > 0 && params[0].length > 0) {
+    if(params[0] === "PemConfig"){ // Reset the state when we are in the top level of schema
+      whereAreWeInSchema.inMineralSection = false;
+      whereAreWeInSchema.inDiffCalculationSection = false;
+    } else if(params[0] === "Minerals") {
+      whereAreWeInSchema.inMineralSection = true; // We are in the mineral section
+    } else if(params[0] === "VolumeFractions") {
+      whereAreWeInSchema.inMineralSection = false; // We are finished with the mineral section
+    } else if(params[0] === "Diff Calculation") {
+      whereAreWeInSchema.inDiffCalculationSection = true; // We are in the diff calculation section
+    }
+
+    if(whereAreWeInSchema.inMineralSection){
+      return replaceStringParameters('Mineral:', params);
+    }
+    if(whereAreWeInSchema.inDiffCalculationSection){
+      return replaceStringParameters('Parameter:', params);
+    }
+  }
+  
+  return englishStringTranslator(stringToTranslate, params); // Fallback to the default english
+}
 
 export const YamlEdit = () => {
   const [validInput, setValidInput] = React.useState(false);
@@ -133,8 +163,12 @@ export const YamlEdit = () => {
             liveValidate
             uiSchema={{
               "ui:submitButtonOptions": { norender: true },
+              "ui:globalOptions": {
+                enableMarkdownInDescription: true,
+              },
             }}
             showErrorList={false}
+            translateString={domainSpecificStrings}
           />
         </div>
       </div>

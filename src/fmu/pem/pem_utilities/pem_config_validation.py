@@ -33,9 +33,9 @@ class NTGFraction(BaseModel):
     mode: SkipJsonSchema[Literal[VolumeFractions.NTG_SIM]]
     from_porosity: bool = Field(
         default=False,
-        description="If True, net-to-gross is estimated from porosity parameter in "
-        "reservoir simulator INIT file. If False, net-to-gross is read "
-        "from the NTG parameter in the INIT file.",
+        description="If checked, net-to-gross is estimated from porosity parameter in "
+        "reservoir simulator `.INIT` file. Otherwise, net-to-gross is read "
+        "from the `NTG` parameter in the `.INIT` file.",
     )
 
 
@@ -113,14 +113,14 @@ class RockMatrixProperties(BaseModel):
                 "density": 2490.0,
             },
         },
-        description="Standard values are set for shale, quartz, calcite, dolomite and "
-        "stevensite. All settings can be changed by re-defining them in "
-        "the parameter file",
+        description="Standard values are set for `shale`, `quartz`, "
+        "`calcite`, `dolomite` and `stevensite`. All settings can be "
+        "changed by re-defining them in the parameter file",
     )
     volume_fractions: NTGFraction | FractionFiles = Field(
         default=NTGFraction,
-        description=r"Choice of volume fractions based on NTG from "
-        "simulator INIT file or from grid property file ",
+        description=r"Choice of volume fractions based on `NTG` from "
+        "simulator `.INIT` file or from grid property file ",
     )
     fraction_names: List[str] = Field(
         description="Fraction names must match the names in the volume fractions file",
@@ -152,7 +152,7 @@ class RockMatrixProperties(BaseModel):
     mineral_mix_model: MineralMixModel = Field(
         default="voigt-reuss-hill",
         description="Effective medium model selection: either "
-        "'hashin-shtrikman-average' or 'voigt-reuss-hill'",
+        "`hashin-shtrikman-average` or `voigt-reuss-hill`",
     )
 
     @field_validator("shale_fractions", mode="before")
@@ -209,25 +209,25 @@ class Brine(BaseModel):
     salinity: float = Field(
         default=35000.0,
         gt=0.0,
-        description="Salinity of brine, with unit ppm (parts per million)",
+        description="Salinity of brine, with unit `ppm` (parts per million)",
     )
     perc_na: float = Field(
         ge=0.0,
         le=100.0,
         default=0.0,
-        description="Percentage of NaCl in the dissolved salts in brine",
+        description="Percentage of `NaCl in the dissolved salts in brine",
     )
     perc_ca: float = Field(
         ge=0.0,
         le=100.0,
         default=100.0,
-        description="Percentage of CaCl in the dissolved salts in brine",
+        description="Percentage of `CaCl` in the dissolved salts in brine",
     )
     perc_k: float = Field(
         ge=0.0,
         le=100.0,
         default=0.0,
-        description="Percentage of KCl in the dissolved salts in brine",
+        description="Percentage of `KCl` in the dissolved salts in brine",
     )
 
     @model_validator(mode="after")
@@ -262,13 +262,13 @@ class Oil(BaseModel):
         default=865.0,
         ge=700,
         le=950,
-        description="Oil density in kg/m^3 at standard conditions, i.e. 15.6 deg. C "
-        "and 101 kPa",
+        description="Oil density in `kg/m³` at standard conditions, i.e. `15.6 °C`"
+        "and `101 kPa`",
     )
     gor: float = Field(
         default=123.0,
         ge=0.0,
-        description="Gas-oil volume ratio in liter/liter when the oil it brought to "
+        description="Gas-oil volume ratio in `liter/liter` when the oil it brought to "
         "the surface at standard conditions",
     )
 
@@ -282,7 +282,7 @@ class Gas(BaseModel):
     )
     model: GasModels = Field(
         default="HC2016",
-        description="Gas model is one of 'Global', 'Light', or 'HC2016' (default)",
+        description="Gas model is one of `Global`, `Light`, or `HC2016` (default)",
     )
 
 
@@ -342,12 +342,12 @@ class Fluids(BaseModel):
     gas_saturation_is_co2: bool = Field(
         default=False,
         description="Eclipse model only provides one parameter for gas saturation, "
-        "this flag sets the gas type to be CO2 instead of hydrocarbon gas",
+        "this flag sets the gas type to be CO₂ instead of hydrocarbon gas",
     )
     calculate_condensate: bool = Field(
         default=False,
         description="Flag to control if gas should be modelled with condensate model, "
-        "in which case RV parameter must be present in the Eclipse model",
+        "in which case `RV` parameter must be present in the Eclipse model",
     )
     gas_z_factor: float = Field(
         default=1.0,
@@ -356,8 +356,8 @@ class Fluids(BaseModel):
     )
     co2_model: CO2Models = Field(
         default="span_wagner",
-        description="Selection of model for CO2 properties, 'span_wagner' equation "
-        "of state model or 'flag'. Note that access to flag model depends "
+        description="Selection of model for CO₂ properties, `span_wagner` equation "
+        "of state model or `flag`. Note that access to flag model depends "
         "on licence",
     )
 
@@ -500,7 +500,7 @@ class PemConfig(BaseModel):
     )
     diff_calculation: Dict[str, List[Literal["ratio", "diff", "diffpercent"]]] = Field(
         description="Difference properties of the PEM can be calculated for the dates "
-        "in the Eclipse UNRST file. The settings decide which parameters "
+        "in the Eclipse `.UNRST` file. The settings decide which parameters "
         "difference properties will be generated for, and what kind of "
         "difference calculation is run - normal difference, percent "
         "difference or ratio"

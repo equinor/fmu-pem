@@ -12,9 +12,9 @@ from fmu.pem.pem_utilities.enum_defs import CoordinationNumberFunction, RPMType
 
 
 class MineralProperties(BaseModel):
-    bulk_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Units: Pa")
-    shear_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Units: Pa")
-    density: float = Field(gt=1.0e3, lt=1.0e4, description="Units: kg/m^3")
+    bulk_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Unit: `Pa`")
+    shear_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Unit: `Pa`")
+    density: float = Field(gt=1.0e3, lt=1.0e4, description="Unit: `kg/m³`")
 
 
 class CoordinationNumberPorBased(BaseModel):
