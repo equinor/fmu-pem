@@ -115,11 +115,11 @@ results:
 diff_calculation:
   AI: [diffpercent, ratio]
   SI: [diffpercent, ratio]
-  VPVS: ratio
-  TWTPP: diff
-  DENS: diffpercent
-  VP: diffpercent
-  VS: diffpercent
-  PRESSURE: diff
-  SWAT: diff
-  SGAS: diff
+  VPVS: [ratio]
+  TWTPP: [diff]
+  DENS: [diffpercent]
+  VP: [diffpercent]
+  VS: [diffpercent]
+  PRESSURE: [diff]
+  SWAT: [diff]
+  SGAS: [diff]
