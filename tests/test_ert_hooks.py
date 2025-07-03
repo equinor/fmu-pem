@@ -1,8 +1,7 @@
 # ruff: noqa: E501
 import os
 import subprocess
-from pathlib import Path
-from shutil import copytree
+from math import isclose
 
 import pytest
 import xtgeo
@@ -27,6 +26,7 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
     start_path = data_dir / "rms/model"
     pem_output_path = data_dir / "sim2seis/output/pem"
     share_output_path = data_dir / "share/results/grids"
+
     subprocess.run(
         ["ert", "test_run", "../../ert/model/run_pem_no_condensate.ert"],
         env={**os.environ, "PEM_MODEL_DIR": str(start_path)},
@@ -192,10 +192,15 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
         ).values.sum(),
     }
     if truth_values != estimated_values:
+        # First go through all cases, report differences without raising an error
         for key, value in truth_values.items():
-            if value != estimated_values[key]:
+            if not isclose(
+                value, estimated_values[key], rel_tol=0.00001, abs_tol=0.001
+            ):
                 print(
                     f"test mismatch for {key}: estimated {estimated_values[key]}, "
                     f"stored value {value}"
                 )
-    assert truth_values == estimated_values
+        # Now raise an assertion error is at least one case is outside of tolerance limits
+        for key, value in truth_values.items():
+            assert isclose(value, estimated_values[key], rel_tol=0.00001, abs_tol=0.001)

@@ -74,7 +74,6 @@ fluids:
   gas:
     type: gas
     gas_gravity: 0.763
-    model: HC2016
   condensate:
     gas_gravity: 0.763
     reference_density: 865.0

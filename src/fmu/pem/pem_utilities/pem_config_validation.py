@@ -83,7 +83,8 @@ class RockMatrixProperties(BaseModel):
     model_config = ConfigDict(title="Rock matrix properties:")
 
     model: Union[PatchyCementRPM, TMatrixRPM, RegressionRPM] = Field(
-        description="Selection of parameter set for rock physics model"
+        description="Selection of parameter set for rock physics model",
+        default_factory=PatchyCementRPM,
     )
     minerals: Dict[str, MineralProperties] = Field(
         default={
@@ -269,7 +270,8 @@ class Oil(BaseModel):
         default=123.0,
         ge=0.0,
         description="Gas-oil volume ratio in `liter/liter` when the oil it brought to "
-        "the surface at standard conditions",
+        "the surface at standard conditions. This is normally read from the "
+        "simulator model restart file (Rs parameter).",
     )
 
 
@@ -280,7 +282,7 @@ class Gas(BaseModel):
         le=0.87,
         description="Gas gravity is a ratio of gas molecular weight to that air",
     )
-    model: GasModels = Field(
+    model: SkipJsonSchema[GasModels] = Field(
         default="HC2016",
         description="Gas model is one of `Global`, `Light`, or `HC2016` (default)",
     )
@@ -294,8 +296,9 @@ class MixModelBrie(BaseModel):
     method: SkipJsonSchema[FluidMixModel] = "brie"
     brie_exponent: float = Field(
         default=3.0,
-        description="Brie exponent selects the mixing curve shape, from linear mix to "
-        "harmonic mean",
+        description="Brie exponent selects the mixing curve shape, from linear mix "
+        "(exponent = 2.0) to approximate harmonic mean for high values "
+        "(exponent > 10.0). Default value is 3.0.",
     )
 
 
