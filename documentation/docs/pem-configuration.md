@@ -53,7 +53,7 @@ select.form-control:hover {
 }
 
 .control-label {
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .field-description {
@@ -61,7 +61,6 @@ select.form-control:hover {
 }
 
 legend {
-  font-size: 20px;
   font-weight: 700;
 }
 
