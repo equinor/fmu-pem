@@ -8,6 +8,9 @@ hero:
   tagline: Calculate seismic properties from rock physics models in a FMU context.
   actions:
     - theme: brand
+      text: Why and how PEM?
+      link: ./use-cases
+    - theme: brand
       text: ERT configuration
       link: /ert-configuration
     - theme: brand
@@ -17,7 +20,7 @@ hero:
 features:
   - icon: 🛠️
     title: Less maintenance
-    details: No need for custom scripts in your FMU or RMS project. PEM is maintained centrally by Equinor, and available as pre-installert ERT forward models.
+    details: No need for custom scripts in your FMU or RMS project. PEM is maintained centrally by Equinor, and available as pre-installed ERT forward models.
   - icon: 🤝
     title: Shared rock physics library
     details: FMU PEM uses the same underlying rock physics library as RokDoc plugins - ensuring consistent output across the software portfolio.
