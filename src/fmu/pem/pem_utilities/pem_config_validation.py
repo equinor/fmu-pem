@@ -120,10 +120,9 @@ class RockMatrixProperties(BaseModel):
         "ignore their definition).",
     )
     volume_fractions: NTGFraction | FractionFiles = Field(
-        default=NTGFraction,
-        title="Mineral volume fractions",
+        default=FractionFiles,
         description=r"Choice of volume fractions based on `NTG` from "
-        "simulator `.INIT` file or from grid property file ",
+        "simulator `.INIT` file or from geomodel volume fraction property file(s) ",
     )
     fraction_names: List[str] = Field(
         description="Fraction names must match the names in the volume fractions file",
