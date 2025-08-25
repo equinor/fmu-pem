@@ -1,3 +1,4 @@
+
 # Why and How Petro-elastic Modelling - PEM
 
 The FMU `pem` workflow calculates elastic parameters based on input from reservoir simulator results, model selections
@@ -10,7 +11,7 @@ described in a chapter below.
 
 1. [Read and validate parameter file in `YAML` format](yaml-validation.md)
 2. [Import reservoir simulator results](import-sim-results.md)
-3. Estimate effective mineral properties
+3. [Estimate effective mineral properties](./effective-mineral-properties.md)
 4. Estimate effective fluid properties for each date
 5. Estimate effective pressure for each date
 6. Estimate effective properties for saturated rock
