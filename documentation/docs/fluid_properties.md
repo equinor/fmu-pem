@@ -148,3 +148,47 @@ has led to uncertainty in evaluation of exploration prospects.
 <img src="./images/wood_brie.png">
 <span id="figure-8-brine-gas-mix"><strong>Figure 8:</strong> Brine and gas mixing model comparison.</span>
 <br><br>
+
+## YAML file parameter settings for fluids
+
+Most settings in the YAML config file is discussed above, expect the gas z-factor, or deviation factor for an ideal gas.
+This is only used in the cases where there is gas out of solution due to depletion below the bubble point of the oil.
+The correction for oil properties below bubble point is an Equinor internal function.
+
+```yaml
+# Fluid definition: each fluid for FLAG modelling must have their parameters defined, temperature and pressure will be
+# varied in the model, salinity will also be taken from model if flag is set
+fluids:
+  brine:
+    salinity: 350000
+    perc_na: 100.0
+    perc_ca: 0.0
+    perc_k: 0.0
+  oil:
+    gas_gravity: 0.763
+    reference_density: 865.0
+    gor: 123.0
+  gas:
+    type: gas
+    gas_gravity: 0.763
+  condensate:
+    gas_gravity: 0.763
+    reference_density: 865.0
+    gor: 623.0
+
+  fluid_mix_method:
+    method: brie
+    brie_exponent: 3.0
+#    method: wood
+  temperature:
+    type: constant
+    temperature_value: 75
+#    type: from_sim
+  salinity_from_sim: False
+  gas_saturation_is_co2: False
+  # CO2 model is either the one from FLAG or the Span-Wagner model {'flag', 'span_wagner'}
+  # The FLAG model is significantly faster, but the Span-Wagner model is considered to be more accurate
+  co2_model: flag
+  calculate_condensate: True
+  gas_z_factor: 1.0  # Factor for deviation from a ideal gas
+```
