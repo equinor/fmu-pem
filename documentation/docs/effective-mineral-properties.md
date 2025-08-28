@@ -19,6 +19,9 @@ and it can range from a soft marine clay to a stiff, quartz-rich silt.
 
 <span id="table-1-mineral-properties"><strong>Table 1:</strong> Default values of elastic properties for common minerals.</span>
 
+More mineral properties can be found in the **Rock Physics Handbook**.
+
+Mavko, G., Mukerji, T., & Dvorkin, J. (2020). *The Rock Physics Handbook* (3rd ed.). Cambridge University Press.
 
 ## Volume fractions
 
