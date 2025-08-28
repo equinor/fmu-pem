@@ -13,7 +13,7 @@ described in a chapter below.
 2. [Import reservoir simulator results](import-sim-results.md)
 3. [Estimate effective mineral properties](./effective-mineral-properties.md)
 4. [Estimate effective fluid properties for each date](./fluid_properties.md)
-5. Estimate effective pressure for each date
+5. [Estimate effective pressure for each date](./effective_pressure.md)
 6. Estimate effective properties for saturated rock
 7. (Optional) estimate difference properties
 8. Save intermediate (optional) and final estimates

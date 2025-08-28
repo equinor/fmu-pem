@@ -5,7 +5,8 @@ saturations and a mixing model. For "normal" (Newtonian) fluids, the elastic pro
 from which compressional wave velocity (Vp) can be derived.
 
 Unlike mineral properties, the elastic properties of each fluid phase are not constants. They vary with temperature
-and pressure, as well as other parameters, listed in [Table 1](table-1-fluid-model-parameters) below.
+and pressure, as well as other parameters, listed in [Table 1](table-1-fluid-model-parameters) below. Pressure in
+terms of fluid modelling is synonymous with formation pressure.
 
 | Fluid phase | Parameters                                                    |
 |-------------|---------------------------------------------------------------|
@@ -121,7 +122,7 @@ of hydrocarbons, brine and CO₂, as CO₂ can also react with the rock matrix a
 <br><br>
 
 <img src="./images/The-phase-transition-diagram-of-carbon-dioxide.png">
-<span id="figure-7-co2-phase-diagram"><strong>Figure 7:</strong> CO2 phase diagram.</span>
+<span id="figure-7-co2-phase-diagram"><strong>Figure 7:</strong> CO2 phase diagram, from Yang et al. 2018.</span>
 <br><br>
 
 Yang, Jianfeng & Lian, Haojie & Liang, Weiguo & Nguyen, Vinh Phu & Chen, Yuedu. (2018). Experimental investigation of
