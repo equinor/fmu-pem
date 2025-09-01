@@ -116,7 +116,8 @@ class RockMatrixProperties(BaseModel):
         },
         description="Define minerals relevant for the field. Default values are set for "
         "`shale`, `quartz`, `calcite`, `dolomite` and `stevensite` (you can not delete "
-        "these minerals, but you can override their default values and/or ignore their definition).",
+        "these minerals, but you can override their default values and/or "
+        "ignore their definition).",
     )
     volume_fractions: NTGFraction | FractionFiles = Field(
         default=NTGFraction,
