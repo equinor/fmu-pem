@@ -9,12 +9,12 @@ described in a chapter below.
 
 `pem` performs of the following tasks:
 
-1. [Read and validate parameter file in `YAML` format](yaml-validation.md)
+1. [Read and validate parameter file in `YAML` format](./yaml-validation.md)
 2. [Import reservoir simulator results](import-sim-results.md)
 3. [Estimate effective mineral properties](./effective-mineral-properties.md)
 4. [Estimate effective fluid properties for each date](./fluid_properties.md)
-5. [Estimate effective pressure for each date](./effective_pressure.md)
-6. Estimate effective properties for saturated rock
+5. [Estimate effective pressure for each date](effective-pressure.md)
+6. [Estimate effective properties for saturated rock](./saturated-rock.md)
 7. (Optional) estimate difference properties
 8. Save intermediate (optional) and final estimates
 
