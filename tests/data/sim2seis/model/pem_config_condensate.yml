@@ -12,7 +12,7 @@ paths:
 # Dry rock parameters. It varies from model to model which of the parameters that are used.
 rock_matrix:
   model:
-    model: t_matrix  # One of patchy_cement, friable, t_matrix or regression
+    model_name: t_matrix  # One of patchy_cement, friable, t_matrix or regression
     parameters:
       t_mat_model_version: PETEC  # One of 'PETEC' or 'EXP'
       angle: 90.0

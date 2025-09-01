@@ -139,4 +139,12 @@ li.text-danger::marker {
   content: "⚠";
 }
 
+/* In order to avoid confusion we hide the duplicate model name attribution in auto-generated user interface */
+label[for="root_rock_matrix_model_model_name"], #root_rock_matrix_model_model_name, #root_rock_matrix_model_model_name__description, #root_rock_matrix_model_model_name__error,
+label[for="root_rock_matrix_model_parameters_sandstone_mode"], #root_rock_matrix_model_parameters_sandstone_mode, #root_rock_matrix_model_parameters_sandstone_mode__description, #root_rock_matrix_model_parameters_sandstone_mode__error {
+  display: none;
+}
+
+
+
 </style>

@@ -13,7 +13,7 @@ def test_dryrock_missing_rpm_model():
     """Test RockMatrixProperties instantiation with minimal valid data."""
     valid_data = {
         "model": {
-            "model": None,
+            "model_name": None,
             "parameters": {
                 "upper_bound_cement_fraction": 0.1,
                 "cement_fraction": 0.04,

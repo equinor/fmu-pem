@@ -180,23 +180,24 @@ class RegressionModels(BaseModel):
 
 class PatchyCementRPM(BaseModel):
     model_config = ConfigDict(title="Patchy Cement Model")
-    model: Literal[RPMType.PATCHY_CEMENT]
+    model_name: Literal[RPMType.PATCHY_CEMENT]
     parameters: PatchyCementParams
 
 
 class FriableRPM(BaseModel):
     model_config = ConfigDict(title="Friable Sand Model")
-    model: SkipJsonSchema[Literal[RPMType.FRIABLE]]
+    model_name: Literal[RPMType.FRIABLE]
     parameters: PatchyCementParams
 
 
 class TMatrixRPM(BaseModel):
     model_config = ConfigDict(title="T-Matrix Inclusion Model")
-    model: Literal[RPMType.T_MATRIX]
+    model_name: Literal[RPMType.T_MATRIX]
     parameters: TMatrixParams
 
 
 class RegressionRPM(BaseModel):
     model_config = ConfigDict(title="Regression Model")
-    model: Literal[RPMType.REGRESSION]
+    model_name: Literal[RPMType.REGRESSION]
     parameters: RegressionModels
+
