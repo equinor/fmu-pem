@@ -144,7 +144,7 @@ class VpVsRegressionParams(RhoRegressionMixin):
         description="List of float values for polynomial regression for Vs "
         "based on porosity",
     )
-    mode: SkipJsonSchema[Literal["vp_vs"]] = Field(
+    mode: Literal["vp_vs"] = Field(
         default="vp_vs",
         description="Regression mode mode must be set to 'vp_vs' for "
         "estimation of Vp and Vs based on porosity",
@@ -162,7 +162,7 @@ class KMuRegressionParams(RhoRegressionMixin):
         description="List of float values for polynomial regression for shear modulus "
         "based on porosity",
     )
-    mode: SkipJsonSchema[Literal["k_mu"]] = Field(
+    mode: Literal["k_mu"] = Field(
         default="k_mu",
         description="Regression mode mode must be set to 'k_mu' for "
         "estimation of bulk and shear modulus based on porosity",
@@ -180,7 +180,7 @@ class RegressionModels(BaseModel):
 
 class PatchyCementRPM(BaseModel):
     model_config = ConfigDict(title="Patchy Cement Model")
-    model: SkipJsonSchema[Literal[RPMType.PATCHY_CEMENT]]
+    model: Literal[RPMType.PATCHY_CEMENT]
     parameters: PatchyCementParams
 
 
@@ -192,11 +192,11 @@ class FriableRPM(BaseModel):
 
 class TMatrixRPM(BaseModel):
     model_config = ConfigDict(title="T-Matrix Inclusion Model")
-    model: SkipJsonSchema[Literal[RPMType.T_MATRIX]]
+    model: Literal[RPMType.T_MATRIX]
     parameters: TMatrixParams
 
 
 class RegressionRPM(BaseModel):
     model_config = ConfigDict(title="Regression Model")
-    model: SkipJsonSchema[Literal[RPMType.REGRESSION]]
+    model: Literal[RPMType.REGRESSION]
     parameters: RegressionModels
