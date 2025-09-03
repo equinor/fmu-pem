@@ -23,17 +23,12 @@ rock_matrix:
   pressure_sensitivity: True  # mainly for regression models
  # Example setup of volume fractions and matching minerals
   volume_fractions:
-    mode: fraction_files  # one of 'fraction_files' or 'ntg_sim'
     rel_path_fractions: ../../sim2seis/input/pem
-    fractions_grid_file_name: simgrid.roff
-    fractions_prop_file_names: [simgrid--ntg_pem.roff, ]
-    fraction_is_ntg: False
-    # In case the NTG parameter from eclipse is a binary 0/1 value, it may be better to base NTG on porosity
-    # mode: ntg_sim
-    # from_porosity: False
-  fraction_names: [ntg_pem, ]  # matching the names of properties in the fractions properties file
+    fractions_prop_file_names: [simgrid--vsh.roff, ]
+    fractions_are_mineral_fraction: False # volume fractions, not mineral fractions are assumed by default
+  fraction_names: [VSH, ]  # matching the names of properties in the fractions properties file. NB! Case-sensitive
   fraction_minerals: [shale, ] # each of the minerals must be defined with bulk modulus, shear modulus and density
-  shale_fractions: [ntg_pem, ]
+  shale_fractions: [VSH, ]
   complement: quartz  # if not all fractions add up to 1.0
   minerals:
     shale:
