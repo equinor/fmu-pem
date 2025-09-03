@@ -328,7 +328,7 @@ class Fluids(BaseModel):
         "optional setting for condensate cases",
     )
     fluid_mix_method: MixModelBrie | MixModelWood = Field(
-        default=MixModelBrie,
+        default_factory=MixModelBrie,
         description="Selection between Wood's or Brie model. Wood's model gives more "
         "radical response to adding small amounts of gas in brine or oil",
     )
@@ -497,7 +497,7 @@ class PemConfig(BaseModel):
         description="Settings related to fluid composition",
     )
     pressure: OverburdenPressureTrend | OverburdenPressureConstant = Field(
-        default=OverburdenPressureTrend,
+        default_factory=OverburdenPressureTrend,
         description="Definition of overburden pressure model - constant or trend",
     )
     results: Results = Field(
