@@ -127,31 +127,34 @@ def test_verify_mineral_inputs():
 def test_normalize_mineral_fractions():
     # Basic case - fractions sum to less than 1
     names = ["shale"]
-    fracs = [np.ma.array([0.6])]
-    result_names, result_fracs = normalize_mineral_fractions(names, fracs, "quartz")
+    fracs = [np.ma.array([0.67])]
+    por = np.ma.array([0.3])
+    result_names, result_fracs = normalize_mineral_fractions(
+        names, fracs, "quartz", por, False
+    )
     assert result_names == ["shale", "quartz"]
-    assert_array_almost_equal(result_fracs[0], 0.6)
-    assert_array_almost_equal(result_fracs[1], 0.4)
-    assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
+    assert_array_almost_equal(result_fracs[0], 0.67)
+    assert_array_almost_equal(result_fracs[1], 0.03)
+    assert_array_almost_equal(np.ma.sum(result_fracs), 0.7)
 
     # Test clipping of negative values
     names = ["shale"]
     fracs = [np.ma.array([-0.1])]
-    with pytest.warns(
-        UserWarning, match="mineral fraction shale has values outside of range"
-    ):
-        result_names, result_fracs = normalize_mineral_fractions(names, fracs, "quartz")
+    with pytest.warns(UserWarning, match="fraction shale has values outside of range"):
+        result_names, result_fracs = normalize_mineral_fractions(
+            names, fracs, "quartz", por, False
+        )
     assert_array_almost_equal(result_fracs[0], 0.0)
-    assert_array_almost_equal(result_fracs[1], 1.0)
-    assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
+    assert_array_almost_equal(result_fracs[1], 0.7)
+    assert_array_almost_equal(np.ma.sum(result_fracs), 0.7)
 
     # Test clipping of values > 1
     names = ["shale"]
     fracs = [np.ma.array([1.2])]
-    with pytest.warns(
-        UserWarning, match="mineral fraction shale has values outside of range"
-    ):
-        result_names, result_fracs = normalize_mineral_fractions(names, fracs, "quartz")
+    with pytest.warns(UserWarning, match="fraction shale has values outside of range"):
+        result_names, result_fracs = normalize_mineral_fractions(
+            names, fracs, "quartz", por, True
+        )
     assert_array_almost_equal(result_fracs[0], 1.0)
     # No complement fraction should be added when the main fraction is 1.0
     assert len(result_fracs) == 1
@@ -161,8 +164,10 @@ def test_normalize_mineral_fractions():
     # Test scaling when sum > 1
     names = ["shale", "calcite"]
     fracs = [np.ma.array([0.7]), np.ma.array([0.6])]
-    with pytest.warns(UserWarning, match="sum of mineral fractions are above 1.0"):
-        result_names, result_fracs = normalize_mineral_fractions(names, fracs, "quartz")
+    with pytest.warns(UserWarning, match="sum of fractions has values above limit"):
+        result_names, result_fracs = normalize_mineral_fractions(
+            names, fracs, "quartz", por, True
+        )
     assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
     assert_array_almost_equal(result_fracs[0] / result_fracs[1], 0.7 / 0.6)
 
@@ -171,7 +176,9 @@ def test_normalize_mineral_fractions():
     masked_array = np.ma.array([0.6, 0.7])
     masked_array[1] = np.ma.masked
     fracs = [masked_array]
-    result_names, result_fracs = normalize_mineral_fractions(names, fracs, "quartz")
+    result_names, result_fracs = normalize_mineral_fractions(
+        names, fracs, "quartz", por, True
+    )
     assert result_fracs[0].mask[1]  # Check mask is preserved
     assert_array_almost_equal(result_fracs[0][0], 0.6)  # Check unmasked value
     assert_array_almost_equal(result_fracs[1][0], 0.4)  # Check complement
