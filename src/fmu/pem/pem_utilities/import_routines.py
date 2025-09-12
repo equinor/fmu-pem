@@ -121,12 +121,13 @@ def read_ntg_grid(ntg_grid_file: Path) -> np.ma.MaskedArray:
     return xtgeo.gridproperty_from_file(ntg_grid_file).values
 
 
-def import_fractions(root_dir: Path, config: PemConfig) -> list:
+def import_fractions(root_dir: Path, config: PemConfig, grd: xtgeo.Grid) -> list:
     """Import volume fractions
 
     Args:
         root_dir (str): model directory, relative paths refer to it
         config (PemConfig): configuration file with PEM parameters
+        grd (xtgeo.Grid): model grid
 
     Returns:
         list: fraction properties
@@ -134,15 +135,6 @@ def import_fractions(root_dir: Path, config: PemConfig) -> list:
     with restore_dir(
         root_dir.joinpath(config.rock_matrix.volume_fractions.rel_path_fractions)
     ):
-        try:
-            grd = xtgeo.grid_from_file(
-                config.rock_matrix.volume_fractions.fractions_grid_file_name,
-            )
-        except ValueError as exc:
-            raise ImportError(
-                f"{__file__}: failed to import volume fractions file "
-                f"{config.rock_matrix.volume_fractions.fractions_grid_file_name}"
-            ) from exc
         try:
             fracs = config.rock_matrix.fraction_names
             grid_props = [

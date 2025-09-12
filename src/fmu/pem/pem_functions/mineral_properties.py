@@ -18,6 +18,7 @@ from rock_physics_open.equinor_utilities.std_functions import (
     multi_hashin_shtrikman,
     multi_voigt_reuss_hill,
 )
+from xtgeo import Grid
 
 from fmu.pem.pem_utilities import (
     MatrixProperties,
@@ -26,19 +27,17 @@ from fmu.pem.pem_utilities import (
     filter_and_one_dim,
     get_shale_fraction,
     import_fractions,
-    ntg_to_shale_fraction,
-    read_ntg_grid,
     reverse_filter_and_restore,
     to_masked_array,
 )
-from fmu.pem.pem_utilities.enum_defs import MineralMixModel, VolumeFractions
+from fmu.pem.pem_utilities.enum_defs import MineralMixModel
 from fmu.pem.pem_utilities.pem_config_validation import (
     MineralProperties,
 )
 
 
 def effective_mineral_properties(
-    root_dir: Path, config: PemConfig, sim_init: SimInitProperties
+    root_dir: Path, config: PemConfig, sim_init: SimInitProperties, sim_grid: Grid
 ) -> Tuple[Union[np.ma.MaskedArray, None], MatrixProperties]:
     """Estimate effective mineral properties for each grid cell
 
@@ -50,29 +49,17 @@ def effective_mineral_properties(
     Returns:
         shale volume, effective mineral properties
     """
-    if config.rock_matrix.volume_fractions.mode == VolumeFractions.NTG_SIM:
-        # ntg_from_init_file flag takes precedence over ntg_from_porosity
-        if config.rock_matrix.volume_fractions.from_porosity:
-            vsh = calc_ntg_from_porosity(sim_init.poro)
-        else:
-            vsh = ntg_to_shale_fraction(sim_init.ntg, sim_init.poro)
-        fractions = [
-            vsh,
-        ]
-    else:
-        fractions = import_fractions(root_dir, config)
-        # In case of a single fraction: it can either be NTG or a true volume fraction
-        if len(fractions) == 1 and config.rock_matrix.volume_fractions.fraction_is_ntg:
-            fractions[0] = ntg_to_shale_fraction(fractions[0], sim_init.poro)
-        vsh = get_shale_fraction(
-            fractions,
-            config.rock_matrix.fraction_names,
-            config.rock_matrix.shale_fractions,
-        )
+    fractions = import_fractions(root_dir, config, sim_grid)
+
+    vsh = get_shale_fraction(
+        fractions,
+        config.rock_matrix.fraction_names,
+        config.rock_matrix.shale_fractions,
+    )
 
     mineral_names = config.rock_matrix.fraction_minerals
     eff_min_props = estimate_effective_mineral_properties(
-        mineral_names, fractions, config
+        mineral_names, fractions, config, sim_init.poro
     )
     return vsh, eff_min_props
 
@@ -81,6 +68,7 @@ def estimate_effective_mineral_properties(
     fraction_names: Union[str, List[str]],
     fractions: Union[np.ma.MaskedArray, List[np.ma.MaskedArray]],
     pem_config: PemConfig,
+    porosity: np.ma.MaskedArray,
 ) -> MatrixProperties:
     """Estimation of effective mineral properties must be able to handle cases where
     there is a more complex combination of minerals than the standard sand/shale case.
@@ -106,7 +94,11 @@ def estimate_effective_mineral_properties(
     )
 
     fraction_names, fractions = normalize_mineral_fractions(
-        fraction_names, fractions, pem_config.rock_matrix.complement
+        fraction_names,
+        fractions,
+        pem_config.rock_matrix.complement,
+        porosity,
+        pem_config.rock_matrix.volume_fractions.fractions_are_mineral_fraction,
     )
 
     mask, *fractions = filter_and_one_dim(*fractions)
@@ -119,6 +111,7 @@ def estimate_effective_mineral_properties(
         mu_list.append(to_masked_array(mineral.shear_modulus, fractions[0]))
         rho_list.append(to_masked_array(mineral.density, fractions[0]))
 
+    # ToDo: check mixing functions - high values for K
     if pem_config.rock_matrix.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
         eff_k, eff_mu = multi_hashin_shtrikman(
             *[arr for prop in zip(k_list, mu_list, fractions) for arr in prop]
@@ -166,8 +159,13 @@ def normalize_mineral_fractions(
     names: str | list[str],
     fracs: np.ma.MaskedArray | list[np.ma.MaskedArray],
     complement: str,
+    porosity: np.ma.MaskedArray,
+    mineral_fractions: bool,
 ) -> Tuple[list[str], list[np.ma.MaskedArray]]:
     """Normalizes mineral fractions and adds complement mineral if needed.
+
+    If the fractions are volume fractions, porosity must be taken into account
+    when the fractions are normalized.
 
     When the sum of specified mineral fractions is less than 1.0, adds the complement
     mineral to make up the remainder. For example, if shale is 0.6 (60%) and the
@@ -186,45 +184,42 @@ def normalize_mineral_fractions(
             - List of mineral names (with complement added if needed)
             - List of normalized mineral fractions as masked arrays
     """
+    # Decide the mode of normalization - volume or mineral fractions
+    normalize_sum = 1.0 if mineral_fractions else 1.0 - porosity
+
+    # Check for single or list of names and fractions
     if isinstance(names, str):
         names = [names]
-
     if isinstance(fracs, np.ma.MaskedArray):
         fracs = [fracs]
 
+    # Demand values in the range [0.0, 1.0]
     for i, frac in enumerate(fracs):
-        if np.any(frac[~frac.mask] < 0.0) or np.any(frac[~frac.mask] > 1.0):
+        if np.any(frac < 0.0) or np.any(frac > 1.0):
             warn(
-                f"mineral fraction {names[i]} has values outside of range 0.0 to 1.0,"
+                f"fraction {names[i]} has values outside of range 0.0 to 1.0,"
                 f"clipped to range",
                 UserWarning,
             )
             fracs[i] = np.ma.MaskedArray(np.ma.clip(frac, 0.0, 1.0))
 
+    # Adjust values so that no cells exceed normalize_sum
     tot_fractions = np.ma.sum(fracs, axis=0)
-    max_fraction = np.ma.max(tot_fractions)
-    TOLERANCE = 0.00001
-
-    if np.any(tot_fractions[~tot_fractions.mask] > 1.0 + TOLERANCE):
+    if np.ma.any(tot_fractions > normalize_sum):
         warn(
-            f"sum of mineral fractions are above 1.0 for "
-            f"{np.sum(tot_fractions[~tot_fractions.mask] > 1.0)} cells, is "
-            f"scaled to maximum 1.0.\n"
-            f"Max value is {np.max(tot_fractions[~tot_fractions.mask])}",
+            "sum of fractions has values above limit, rescaled to range",
             UserWarning,
         )
+        scale_factor = np.ma.max(tot_fractions / normalize_sum)
         for i, frac in enumerate(fracs):
-            fracs[i] /= max_fraction
+            fracs[i] /= scale_factor
+        tot_fractions = np.ma.minimum(tot_fractions, normalize_sum)
 
-    comp_fraction = 1.0 - np.ma.sum(fracs, axis=0)
+    # ToDo: recalculate from volume fractrions to mineral fractions
+    # Add a complement fraction if needed
+    comp_fraction = normalize_sum - np.ma.sum(fracs, axis=0)
     if np.any(comp_fraction > 0.0):
         names = names + [complement]
         fracs = fracs + [comp_fraction]
 
     return names, fracs
-
-
-def calc_ntg_from_porosity(porosity: np.ma.MaskedArray) -> np.ma.MaskedArray:
-    vsh = to_masked_array(0, porosity)
-    vsh[porosity <= 0.33] = np.ma.power((0.33 - porosity[porosity < 0.33]) / 0.33, 2.0)
-    return (vsh / (1.0 - porosity)).clip(0.0, 1.0)
