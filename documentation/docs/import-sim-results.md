@@ -40,24 +40,19 @@ the same grid resolution as the reservoir simulator grid, and in the **.roff** f
 
 ```yaml
   volume_fractions:
-    mode: fraction_files  # one of 'fraction_files' or 'ntg_sim'
     rel_path_fractions: ../../sim2seis/input/pem
-    fractions_grid_file_name: simgrid.roff
     fractions_prop_file_names: [simgrid--vsh_pem.roff, ]
-    fraction_is_ntg: False
-    # In case the NTG parameter from eclipse is a binary 0/1 value, it may be better to base NTG on porosity
-    # from_porosity: False
+    fractions_are_mineral_fraction: False  # volume fractions, not mineral fractions are assumed by default
   fraction_names: [vsh_pem, ]  # matching the names of properties in the fractions properties file
   fraction_minerals: [shale, ] # each of the minerals must be defined with bulk modulus, shear modulus and density
-  shale_fractions: [vsh_pem, ]
+  shale_fractions: [vsh_pem, ] # define the non-reservoir fraction(s)
   complement: quartz  # if not all fractions add up to 1.0
 ```
 
 #### Volume fractions to mineral fractions
 
 It is important to know the definition of volume fractions. The standard definition in petrophysics is that volume
-fractions and effective porosity comprise the bulk volume. If `fraction_files` are given as the `mode` option in
-the YAML file, this definition is used in `pem`.
+fractions and effective porosity comprise the bulk volume. This definition is the default value in `pem`.
 
 In a case where only VSH is defined, and we wish to calculate VSST, we do it simply by:
 
@@ -67,6 +62,12 @@ However, when effective mineral properties are calculated, the volume fractions 
 fractions, i.e. fractions of the rock matrix:
 
 $$ FRAC_SST = VSST / (1.0 - POR); FRAC_SH = VSH / (1.0 - POR) $$
+
+**NB!** It is possible to override the volume fraction assumption by ticking **on** the option for
+`fractions_are_mineral_fraction` in the parameter interface or setting it to *true* in the YAML file. In that case the
+fraction of sandstone in the example above becomes:
+
+$$ FRAC_SST = 1.0 - FRAC_SH$$
 
 ## Dynamic results
 
