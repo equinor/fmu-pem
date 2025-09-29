@@ -198,13 +198,13 @@ class Brine(BaseModel):
     perc_na: float = Field(
         ge=0.0,
         le=100.0,
-        default=0.0,
-        description="Percentage of `NaCl in the dissolved salts in brine",
+        default=100.0,
+        description="Percentage of `NaCl` in the dissolved salts in brine",
     )
     perc_ca: float = Field(
         ge=0.0,
         le=100.0,
-        default=100.0,
+        default=0.0,
         description="Percentage of `CaCl` in the dissolved salts in brine",
     )
     perc_k: float = Field(
@@ -272,7 +272,7 @@ class Gas(BaseModel):
 
 
 class MixModelWood(BaseModel):
-    method: SkipJsonSchema[FluidMixModel] = "wood"
+    method: SkipJsonSchema[FluidMixModel] = "wood",
 
 
 class MixModelBrie(BaseModel):
@@ -298,7 +298,7 @@ class TemperatureFromSim(BaseModel):
 # depend on temperature and pressure
 class Fluids(BaseModel):
     brine: Brine = Field(
-        description="Brine model parameters",
+        description="Brine model parameters.",
     )
     oil: Oil = Field(description="Oil model parameters")
     gas: Gas = Field(description="Gas model parameters")
@@ -309,8 +309,8 @@ class Fluids(BaseModel):
         "the oil model, this is an optional setting for condensate"
         "cases",
     )
-    fluid_mix_method: MixModelBrie | MixModelWood = Field(
-        default=MixModelWood,
+    fluid_mix_method: MixModelWood | MixModelBrie = Field(
+        default_factory=MixModelWood,
         description="Selection between Wood's or Brie model. Wood's model gives more "
         "radical response to adding small amounts of gas in brine or oil",
     )

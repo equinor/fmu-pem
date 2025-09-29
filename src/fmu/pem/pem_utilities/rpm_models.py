@@ -79,6 +79,7 @@ class PatchyCementParams(BaseModel):
 
 class TMatrixParams(BaseModel):
     t_mat_model_version: Literal["PETEC", "EXP"] = Field(
+        default="PETEC",
         description="When T Matrix model is calibrated and optimised based on well "
         "data, a selection is made on how much information will be "
         "available when the calibrated model is applied to a PEM model"
