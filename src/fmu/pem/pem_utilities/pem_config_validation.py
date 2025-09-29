@@ -272,7 +272,7 @@ class Gas(BaseModel):
 
 
 class MixModelWood(BaseModel):
-    method: SkipJsonSchema[FluidMixModel] = "wood",
+    method: SkipJsonSchema[FluidMixModel] = "wood"
 
 
 class MixModelBrie(BaseModel):
