@@ -29,7 +29,6 @@ export const YamlEdit = () => {
   const [validInput, setValidInput] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
-  const [populateDefault, setPopulateDefault] = React.useState(true);
 
   const [initialConfig, setInitialConfig] = React.useState({});
 
@@ -114,7 +113,6 @@ export const YamlEdit = () => {
             </Snackbar>
           </Dialog.CustomContent>
         </Dialog>
-        <Switch label="Populate with default values" checked={populateDefault} onChange={(e) => setPopulateDefault(e.target.checked)} />
 
       </div> 
       <div className="flex justify-center my-20">
@@ -123,9 +121,6 @@ export const YamlEdit = () => {
             schema={pemSchema}
             validator={validator}
             formData={initialConfig}
-            experimental_defaultFormStateBehavior={{
-              emptyObjectFields: populateDefault ? "populateAllDefaults" : "skipDefaults",
-            }}
             onChange={(event) => {
               userInputRef.current = event.formData;
               if (
