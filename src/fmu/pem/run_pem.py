@@ -49,7 +49,7 @@ def pem_fcn(
 
     # Effective mineral (matrix) properties - one set valid for all time-steps
     vsh, matrix_properties = pem_fcns.effective_mineral_properties(
-        start_dir, config, constant_props
+        start_dir, config, constant_props, sim_grid
     )
     # VSH is exported with other constant results, add it to the constant properties
     constant_props.ntg_pem = vsh
