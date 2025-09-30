@@ -305,8 +305,9 @@ class Fluids(BaseModel):
     condensate: Oil | None = Field(
         default=None,
         title="Condensate properties",
-        description="Condensate is defined by the same set of parameters as oil, "
-        "optional setting for condensate cases",
+        description="Condensate model requires a similar set of parameters as"
+        "the oil model, this is an optional setting for condensate"
+        "cases",
     )
     fluid_mix_method: MixModelBrie | MixModelWood = Field(
         default=MixModelWood,
