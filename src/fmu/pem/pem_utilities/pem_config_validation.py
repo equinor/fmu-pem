@@ -309,7 +309,7 @@ class Fluids(BaseModel):
         "optional setting for condensate cases",
     )
     fluid_mix_method: MixModelBrie | MixModelWood = Field(
-        default_factory=MixModelBrie,
+        default=MixModelWood,
         description="Selection between Wood's or Brie model. Wood's model gives more "
         "radical response to adding small amounts of gas in brine or oil",
     )
