@@ -188,10 +188,8 @@ def normalize_mineral_fractions(
     normalize_sum = 1.0 if mineral_fractions else 1.0 - porosity
 
     # Check for single or list of names and fractions
-    if isinstance(names, str):
-        names = [names]
-    if isinstance(fracs, np.ma.MaskedArray):
-        fracs = [fracs]
+    names = [names] if isinstance(names, str) else names
+    fracs = [fracs] if isinstance(fracs, np.ma.MaskedArray) else fracs
 
     # Demand values in the range [0.0, 1.0]
     for i, frac in enumerate(fracs):
@@ -204,7 +202,7 @@ def normalize_mineral_fractions(
             fracs[i] = np.ma.MaskedArray(np.ma.clip(frac, 0.0, 1.0))
 
     # Adjust values so that no cells exceed normalize_sum
-    tot_fractions = np.ma.sum(fracs, axis=0)
+    tot_fractions = sum(fracs)
     if np.ma.any(tot_fractions > normalize_sum):
         warn(
             "sum of fractions has values above limit, rescaled to range",
@@ -213,13 +211,21 @@ def normalize_mineral_fractions(
         scale_factor = np.ma.max(tot_fractions / normalize_sum)
         for i, frac in enumerate(fracs):
             fracs[i] /= scale_factor
-        tot_fractions = np.ma.minimum(tot_fractions, normalize_sum)
 
-    # ToDo: recalculate from volume fractrions to mineral fractions
     # Add a complement fraction if needed
-    comp_fraction = normalize_sum - np.ma.sum(fracs, axis=0)
+    comp_fraction = normalize_sum - sum(fracs)
     if np.any(comp_fraction > 0.0):
         names = names + [complement]
         fracs = fracs + [comp_fraction]
 
+    # Rescale from volume fractions to mineral fractions if needed
+    if not mineral_fractions:
+        for i, frac in enumerate(fracs):
+            fracs[i] /= normalize_sum
+
+    # Final check that all fractions sum to 1.0 for all cells
+    try:
+        np.testing.assert_allclose(sum(fracs), 1.0, rtol=1.0e-6, atol=1.0e-6)
+    except AssertionError as e:
+        raise ValueError(f"mineral fractions do not sum to 1: {e}") from e
     return names, fracs
