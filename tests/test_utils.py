@@ -127,15 +127,15 @@ def test_verify_mineral_inputs():
 def test_normalize_mineral_fractions():
     # Basic case - fractions sum to less than 1
     names = ["shale"]
-    fracs = [np.ma.array([0.67])]
+    fracs = [np.ma.array([0.63])]
     por = np.ma.array([0.3])
     result_names, result_fracs = normalize_mineral_fractions(
         names, fracs, "quartz", por, False
     )
     assert result_names == ["shale", "quartz"]
-    assert_array_almost_equal(result_fracs[0], 0.67)
-    assert_array_almost_equal(result_fracs[1], 0.03)
-    assert_array_almost_equal(np.ma.sum(result_fracs), 0.7)
+    assert_array_almost_equal(result_fracs[0], 0.9)
+    assert_array_almost_equal(result_fracs[1], 0.1)
+    assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
 
     # Test clipping of negative values
     names = ["shale"]
@@ -145,8 +145,8 @@ def test_normalize_mineral_fractions():
             names, fracs, "quartz", por, False
         )
     assert_array_almost_equal(result_fracs[0], 0.0)
-    assert_array_almost_equal(result_fracs[1], 0.7)
-    assert_array_almost_equal(np.ma.sum(result_fracs), 0.7)
+    assert_array_almost_equal(result_fracs[1], 1.0)
+    assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
 
     # Test clipping of values > 1
     names = ["shale"]
