@@ -72,8 +72,6 @@ fluids:
   condensate:
     gas_gravity: 0.763
     reference_density: 865.0
-    gor: 623.0
-
   fluid_mix_method:
     method: brie
     brie_exponent: 3.0

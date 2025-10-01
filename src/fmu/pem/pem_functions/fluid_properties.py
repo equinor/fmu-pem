@@ -55,6 +55,8 @@ def effective_fluid_properties(
         # saturation
         sat_wat, sat_gas, sat_oil = _saturation_check(prop.swat, prop.sgas)
 
+        # RS is one of the required properties from the restart file. If it is not
+        # present, an error will be raised during file import.
         gor = prop.rs
 
         fluid_keys = ("vp", "density", "bulk_modulus")

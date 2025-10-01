@@ -96,7 +96,8 @@ def read_sim_grid_props(
     RST_PROPS = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
 
     # Restart properties - set strict to False, False in case RV is not included in
-    # the UNRST file
+    # the UNRST file. NB: This has the effect that other missing parameters will not
+    # raise an error here, but that is handled by the following try-except statement.
     rst_props = xtgeo.gridproperties_from_file(
         restart_property_file,
         fformat="unrst",
@@ -106,7 +107,10 @@ def read_sim_grid_props(
         strict=(False, False),
     )
 
-    rst_list = create_rst_list(rst_props, seis_dates, RST_PROPS)
+    try:
+        rst_list = create_rst_list(rst_props, seis_dates, RST_PROPS)
+    except (AttributeError, TypeError) as e:
+        raise ValueError(f"eclipse simulator restart file is missing parameters: {e}")
 
     return sim_grid, init_props, rst_list
 

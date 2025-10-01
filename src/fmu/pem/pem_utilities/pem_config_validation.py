@@ -193,7 +193,9 @@ class Brine(BaseModel):
     salinity: float = Field(
         default=35000.0,
         gt=0.0,
-        description="Salinity of brine, with unit `ppm` (parts per million)",
+        description="Salinity of brine, with unit `ppm` (parts per million)."
+        "The composition (NaCl, CaCl2, KCl) is of secondary"
+        " importance, unless the salinity is extremely high.",
     )
     perc_na: float = Field(
         ge=0.0,
@@ -205,7 +207,7 @@ class Brine(BaseModel):
         ge=0.0,
         le=100.0,
         default=0.0,
-        description="Percentage of `CaCl` in the dissolved salts in brine",
+        description="Percentage of `CaCl2` in the dissolved salts in brine",
     )
     perc_k: float = Field(
         ge=0.0,
@@ -248,13 +250,6 @@ class Oil(BaseModel):
         le=950,
         description="Oil density in `kg/m³` at standard conditions, i.e. `15.6 °C`"
         "and `101 kPa`",
-    )
-    gor: float = Field(
-        default=123.0,
-        ge=0.0,
-        description="Gas-oil volume ratio in `liter/liter` when the oil it brought to "
-        "the surface at standard conditions. This is normally read from the "
-        "simulator model restart file (Rs parameter).",
     )
 
 
@@ -476,7 +471,9 @@ class PemConfig(BaseModel):
         "physics model",
     )
     fluids: Fluids = Field(
-        description="Settings related to fluid composition",
+        description="Settings related to fluid composition. By default, brine, oil and"
+        "gas parameters are set, but only the fluid phases that are present in the "
+        "reservoir will be used in calculation of effective fluid properties",
     )
     pressure: OverburdenPressureTrend | OverburdenPressureConstant = Field(
         default_factory=OverburdenPressureTrend,

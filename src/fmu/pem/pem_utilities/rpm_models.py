@@ -201,4 +201,3 @@ class RegressionRPM(BaseModel):
     model_config = ConfigDict(title="Regression Model")
     model_name: Literal[RPMType.REGRESSION]
     parameters: RegressionModels
-

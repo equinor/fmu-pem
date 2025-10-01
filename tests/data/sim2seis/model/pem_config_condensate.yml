@@ -65,15 +65,12 @@ fluids:
   oil:
     gas_gravity: 0.763
     reference_density: 865.0
-    gor: 123.0
   gas:
     type: gas
     gas_gravity: 0.763
   condensate:
     gas_gravity: 0.763
     reference_density: 865.0
-    gor: 623.0
-
   fluid_mix_method:
     method: brie
     brie_exponent: 3.0
