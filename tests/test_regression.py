@@ -51,7 +51,10 @@ def setup_config(data_dir):
     config_mock = MagicMock()
     config_mock.rock_matrix.model.parameters.sandstone.vp_weights = [3930.0, -2267.0]
     config_mock.rock_matrix.model.parameters.sandstone.vs_weights = [2284.0, -779.0]
-    config_mock.rock_matrix.model.parameters.sandstone.rho_weights = [2602.0, -2411.0]
+    config_mock.rock_matrix.model.parameters.sandstone.rho_model.rho_weights = [
+        2602.0,
+        -2411.0,
+    ]
     config_mock.rock_matrix.model.parameters.sandstone.mode = "vp_vs"
     config_mock.rock_matrix.model.parameters.sandstone.rho_regression = True
     config_mock.rock_matrix.model.parameters.shale = (

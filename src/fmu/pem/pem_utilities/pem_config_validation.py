@@ -25,7 +25,13 @@ from .enum_defs import (
     OverburdenPressureTypes,
     TemperatureMethod,
 )
-from .rpm_models import MineralProperties, PatchyCementRPM, RegressionRPM, TMatrixRPM
+from .rpm_models import (
+    MineralProperties,
+    OptionalField,
+    PatchyCementRPM,
+    RegressionRPM,
+    TMatrixRPM,
+)
 
 
 class FractionFiles(BaseModel):
@@ -295,14 +301,16 @@ class Fluids(BaseModel):
     brine: Brine = Field(
         description="Brine model parameters.",
     )
-    oil: Oil = Field(description="Oil model parameters")
+    oil: Oil = Field(
+        description="Oil model parameters. Note that GOR (gas-oil ratio) is read from"
+        " eclipse restart file"
+    )
     gas: Gas = Field(description="Gas model parameters")
-    condensate: Oil | None = Field(
-        default=None,
+    condensate: OptionalField | Oil = Field(
         title="Condensate properties",
         description="Condensate model requires a similar set of parameters as"
         "the oil model, this is an optional setting for condensate"
-        "cases",
+        " cases",
     )
     fluid_mix_method: MixModelWood | MixModelBrie = Field(
         default_factory=MixModelWood,

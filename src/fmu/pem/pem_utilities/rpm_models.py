@@ -11,6 +11,10 @@ from typing_extensions import Annotated
 from fmu.pem.pem_utilities.enum_defs import CoordinationNumberFunction, RPMType
 
 
+class OptionalField(BaseModel):
+    model_config = ConfigDict(title="This field is optional")
+
+
 class MineralProperties(BaseModel):
     bulk_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Unit: `Pa`")
     shear_modulus: float = Field(gt=1.0e9, lt=5.0e11, description="Unit: `Pa`")
@@ -82,7 +86,7 @@ class TMatrixParams(BaseModel):
         default="PETEC",
         description="When T Matrix model is calibrated and optimised based on well "
         "data, a selection is made on how much information will be "
-        "available when the calibrated model is applied to a PEM model"
+        "available when the calibrated model is applied to a PEM model",
     )
     angle: float = Field(
         default=90.0,
@@ -118,55 +122,86 @@ class TMatrixParams(BaseModel):
 
 class RhoRegressionMixin(BaseModel):
     rho_weights: List[float] = Field(
-        default=[
-            1.0,
-        ],
-        description="List of float values for polynomial regression for density "
-        "based on porosity",
+        description="\n\n".join(
+            [
+                "Polynomial coefficients for matrix density as a function of porosity:",
+                "`rho(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
+                "List order: `[w0, w1, w2, ..., wn]`",
+                "where `phi` is porosity (fraction) and `rho` is in kg/m³.",
+            ]
+        )
     )
     rho_regression: bool = Field(
         default=False,
         description="Matrix density is normally estimated from "
         "mineral composition and the density of each mineral. "
         "Setting this to True will estimate matrix "
-        "density based on porosity alone. In that case, check the "
-        "rho regression parameters",
+        "density based on porosity alone. In that case, weights "
+        "for the polynomial expression must be provided.",
     )
 
 
-class VpVsRegressionParams(RhoRegressionMixin):
+class VpVsRegressionParams(BaseModel):
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
     vp_weights: List[float] = Field(
-        default=None,
-        description="List of float values for polynomial regression for Vp "
-        "based on porosity",
+        description="\n\n".join(
+            [
+                "Polynomial coefficients for vp as a function of porosity:",
+                "`vp(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
+                "List order: `[w0, w1, w2, ..., wn]`",
+                "where `phi` is porosity (fraction) and `vp` is in m/s.",
+            ]
+        ),
     )
     vs_weights: List[float] = Field(
-        default=None,
-        description="List of float values for polynomial regression for Vs "
-        "based on porosity",
+        description="\n\n".join(
+            [
+                "Polynomial coefficients for vs as a function of porosity:",
+                "`vs(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
+                "List order: `[w0, w1, w2, ..., wn]`",
+                "where `phi` is porosity (fraction) and `vs` is in m/s.",
+            ]
+        ),
     )
     mode: Literal["vp_vs"] = Field(
         default="vp_vs",
-        description="Regression mode mode must be set to 'vp_vs' for "
-        "estimation of Vp and Vs based on porosity",
+        description="Mode for Vp/Vs regression. 'vp_vs' indicates that both "
+        "Vp and Vs are modeled as polynomial functions of porosity "
+        "using the provided coefficients.",
+    )
+    rho_model: OptionalField | RhoRegressionMixin = Field(
+        description="Optional model for rho regression. "
     )
 
 
-class KMuRegressionParams(RhoRegressionMixin):
+class KMuRegressionParams(BaseModel):
     k_weights: List[float] = Field(
-        default=None,
-        description="List of float values for polynomial regression for bulk modulus "
-        "based on porosity",
+        description="\n\n".join(
+            [
+                "Polynomial coefficients for bulk modulus as a function of porosity:",
+                "`k(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
+                "List order: `[w0, w1, w2, ..., wn]`",
+                "where `phi` is porosity (fraction) and `k` is in Pa.",
+            ]
+        ),
     )
     mu_weights: List[float] = Field(
-        default=None,
-        description="List of float values for polynomial regression for shear modulus "
-        "based on porosity",
+        description="\n\n".join(
+            [
+                "Polynomial coefficients for shear modulus as a function of porosity:",
+                "`mu(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
+                "List order: `[w0, w1, w2, ..., wn]`",
+                "where `phi` is porosity (fraction) and `mu` is in Pa.",
+            ]
+        ),
     )
     mode: Literal["k_mu"] = Field(
         default="k_mu",
         description="Regression mode mode must be set to 'k_mu' for "
         "estimation of bulk and shear modulus based on porosity",
+    )
+    rho_model: OptionalField | RhoRegressionMixin = Field(
+        description="Optional model for rho regression. "
     )
 
 

@@ -76,7 +76,7 @@ def dry_rock_regression(
         # rho_regression = False, use mineral density
         rho_dry = rho_min * (1 - porosity)
     else:
-        rho_dry = gen_regression(porosity, params.rho_weights)
+        rho_dry = gen_regression(porosity, params.rho_model.rho_weights)
 
     if (
         params.mode == "vp_vs"
@@ -232,19 +232,20 @@ def run_regression_models(
                 bulk_modulus=k_dry, shear_modulus=mu, dens=dry_rho
             )
 
-        k_sat = gassmann(dry_props.bulk_modulus, tmp_por, tmp_fl_prop_k, tmp_min_k)
-        rho_sat = dry_props.dens + tmp_por * tmp_fl_prop_rho
-        vp, vs = velocity(k_sat, dry_props.shear_modulus, rho_sat)[0:2]
+        # Perform pressure correction on dry rock properties
+        dry_vp, dry_vs, _, _ = velocity(
+            dry_props.bulk_modulus, dry_props.shear_modulus, dry_props.dens
+        )
         if time_step > 0 and config.rock_matrix.pressure_sensitivity:
             # Inputs must be numpy arrays, not masked arrays
-            vp, vs, rho_sat, _, _ = carbonate_pressure_model(
+            dry_vp, dry_vs, dry_rho, _, _ = carbonate_pressure_model(
                 tmp_fl_prop_rho,
-                vp.data,
-                vs.data,
-                rho_sat,
-                vp.data,
-                vs.data,
-                rho_sat,
+                dry_vp.data,
+                dry_vs.data,
+                dry_props.dens.data,
+                dry_vp.data,
+                dry_vs.data,
+                dry_props.dens.data,
                 tmp_por,
                 tmp_pres_over,
                 tmp_pres_form,
@@ -254,6 +255,16 @@ def run_regression_models(
                 config.paths.rel_path_pem.absolute(),
                 False,
             )
+            k_dry, mu = moduli(dry_vp, dry_vs, dry_props.dens.data)
+            dry_props = DryRockProperties(
+                bulk_modulus=k_dry, shear_modulus=mu, dens=dry_rho
+            )
+
+        # Saturate rock
+        k_sat = gassmann(dry_props.bulk_modulus, tmp_por, tmp_fl_prop_k, tmp_min_k)
+        rho_sat = dry_props.dens + tmp_por * tmp_fl_prop_rho
+        vp, vs = velocity(k_sat, dry_props.shear_modulus, rho_sat)[0:2]
+
         vp, vs, rho_sat = reverse_filter_and_restore(mask, vp, vs, rho_sat)
         props = SaturatedRockProperties(vp=vp, vs=vs, dens=rho_sat)
         saturated_props.append(props)
