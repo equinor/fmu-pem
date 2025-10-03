@@ -43,12 +43,6 @@ class CoordinationNumberConstVal(BaseModel):
 
 
 class PatchyCementParams(BaseModel):
-    upper_bound_cement_fraction: float = Field(
-        default=0.1,
-        description="There is an upper limit for the constant cement model, which "
-        "is part of the Patchy Cement model. Values higher than 0.1 can "
-        "lead to the model reaching saturation",
-    )
     cement_fraction: float = Field(
         default=0.04,
         gt=0,

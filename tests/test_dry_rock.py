@@ -15,7 +15,6 @@ def test_dryrock_missing_rpm_model():
         "model": {
             "model_name": None,
             "parameters": {
-                "upper_bound_cement_fraction": 0.1,
                 "cement_fraction": 0.04,
                 "critical_porosity": 0.4,
                 "shear_reduction": 0.5,

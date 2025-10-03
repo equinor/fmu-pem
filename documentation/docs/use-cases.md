@@ -15,8 +15,8 @@ described in a chapter below.
 4. [Estimate effective fluid properties for each date](./fluid_properties.md)
 5. [Estimate effective pressure for each date](effective-pressure.md)
 6. [Estimate effective properties for saturated rock](./saturated-rock.md)
-7. (Optional) estimate difference properties
-8. Save intermediate (optional) and final estimates
+7. [(Optional) estimate difference properties](./difference-properties.md)
+8. [Save intermediate (optional) and final estimates](./save-results.md)
 
 Each step is described in some detail in the links.
 
