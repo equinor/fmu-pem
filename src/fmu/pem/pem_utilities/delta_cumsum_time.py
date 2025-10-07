@@ -88,8 +88,7 @@ def estimate_sum_delta_time(
 
     Args:
         constant_props: constant properties, here the delta Z property of the eclipse
-            grid is used sat_rock_props: effective properties for the saturated rock per
-            restart date
+            grid is used
         sat_rock_props: effective properties for the saturated rock per restart date
         config: configuration parameters
 

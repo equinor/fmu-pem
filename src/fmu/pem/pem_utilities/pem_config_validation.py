@@ -19,6 +19,8 @@ from fmu.pem import INTERNAL_EQUINOR
 
 from .enum_defs import (
     CO2Models,
+    DifferenceAttribute,
+    DifferenceMethod,
     FluidMixModel,
     GasModels,
     MineralMixModel,
@@ -490,7 +492,7 @@ class PemConfig(BaseModel):
     results: Results = Field(
         description="Flags for saving results of the PEM",
     )
-    diff_calculation: Dict[str, List[Literal["ratio", "diff", "diffpercent"]]] = Field(
+    diff_calculation: Dict[DifferenceAttribute, List[DifferenceMethod]] = Field(
         description="Difference properties of the PEM can be calculated for the dates "
         "in the Eclipse `.UNRST` file. The settings decide which parameters "
         "difference properties will be generated for, and what kind of "

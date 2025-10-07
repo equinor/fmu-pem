@@ -63,3 +63,33 @@ class CoordinationNumberFunction(str, Enum):
 class TemperatureMethod(str, Enum):
     CONSTANT = "constant"
     FROMSIM = "from_sim"
+
+
+class DifferenceMethod(str, Enum):
+    DIFF = "diff"
+    DIFFPERCENT = "diffpercent"
+    RATIO = "ratio"
+
+
+class DifferenceAttribute(str, Enum):
+    AI = "ai"
+    VPVS = "vpvs"
+    SI = "si"
+    VP = "vp"
+    VS = "vs"
+    DENS = "dens"
+    TWT = "twt"
+    SGAS = "sgas"
+    SWAT = "swat"
+    SOIL = "soil"
+    RS = "rs"
+    RV = "rv"
+    PRESSURE = "pressure"
+    SALT = "salt"
+    TEMP = "temp"
+    TWTPP = "twtpp"
+    TWTSS = "twtss"
+    TWTPS = "twtps"
+    FORMATION_PRESSURE = "formation_pressure"
+    EFFECTIVE_PRESSURE = "effective_pressure"
+    OVERBURDEN_PRESSURE = "overburden_pressure"
