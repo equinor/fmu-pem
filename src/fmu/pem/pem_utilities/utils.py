@@ -1,13 +1,11 @@
 import os
 from contextlib import contextmanager
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import xtgeo
 
-from .pem_class_definitions import MatrixProperties
-from .pem_config_validation import PemConfig
+from .pem_class_definitions import MatrixProperties, PressureProperties
 
 
 @contextmanager
@@ -29,7 +27,7 @@ def restore_dir(path: Path) -> None:
 
 
 def to_masked_array(
-    value: Union[float, int], masked_array: np.ma.MaskedArray
+    value: float | int, masked_array: np.ma.MaskedArray
 ) -> np.ma.MaskedArray:
     """Create a masked array with a constant value from an int or float and a template
     masked array
@@ -46,7 +44,7 @@ def to_masked_array(
 
 def filter_and_one_dim(
     *args: np.ma.MaskedArray, return_numpy_array: bool = False
-) -> tuple[np.ma.MaskedArray, ...]:
+) -> tuple[np.ma.MaskedArray | np.ndarray, ...]:
     """Filters multiple masked arrays by removing masked values and flattens them to 1D.
 
     Typically used in preparation for calling the rock-physics library.
@@ -78,7 +76,7 @@ def filter_and_one_dim(
 
 def reverse_filter_and_restore(
     mask: np.ndarray, *args: np.ndarray
-) -> Tuple[np.ma.MaskedArray, ...]:
+) -> tuple[np.ma.MaskedArray, ...]:
     """Restores 1D filtered arrays back to their original shape with masking.
 
     Typically called with results returned from the rock-physics library.
@@ -170,10 +168,10 @@ def ntg_to_shale_fraction(
 
 
 def get_shale_fraction(
-    vol_fractions: List[np.ma.MaskedArray],
+    vol_fractions: list[np.ma.MaskedArray],
     fraction_names: list[str],
-    shale_fraction_names: Optional[str | list[str]],
-) -> Optional[np.ma.MaskedArray]:
+    shale_fraction_names: str | list[str] | None = None,
+) -> np.ma.MaskedArray | None:
     """
 
     Args:
@@ -227,11 +225,11 @@ def estimate_cement(
     cement_mu = to_masked_array(shear_modulus, grid)
     cement_rho = to_masked_array(density, grid)
     return MatrixProperties(
-        bulk_modulus=cement_k, shear_modulus=cement_mu, dens=cement_rho
+        bulk_modulus=cement_k, shear_modulus=cement_mu, density=cement_rho
     )
 
 
-def update_dict_list(base_list: List[dict], add_list: List[dict]) -> List[dict]:
+def update_dict_list(base_list: list[dict], add_list: list[dict]) -> list[dict]:
     """Update/add new key/value pairs to dicts in list
 
     Args:
@@ -260,3 +258,21 @@ def _verify_update_inputs(base, add_list):
         and all(isinstance(item, dict) for item in add_list)
     ):
         raise TypeError(f"{__file__}: all items in input lists are not dict")
+
+
+def convert_pressures_to_pa(
+    press_bar: list[PressureProperties],
+) -> list[PressureProperties]:
+    pressure_pa = []
+    for pres in press_bar:
+        tmp_over = pres.overburden_pressure * 1.0e5
+        tmp_form = pres.formation_pressure * 1.0e5
+        tmp_eff = pres.effective_pressure * 1.0e5
+        pressure_pa.append(
+            PressureProperties(
+                overburden_pressure=tmp_over,
+                formation_pressure=tmp_form,
+                effective_pressure=tmp_eff,
+            )
+        )
+    return pressure_pa

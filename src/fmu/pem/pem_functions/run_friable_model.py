@@ -1,27 +1,36 @@
 from dataclasses import asdict
-from typing import List, Union
 
 import numpy as np
-from rock_physics_open.sandstone_models import friable_model
+from rock_physics_open.equinor_utilities.std_functions import (
+    gassmann,
+    velocity,
+)
+from rock_physics_open.sandstone_models import friable_model_dry
 
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
     MatrixProperties,
-    PemConfig,
     PressureProperties,
+    RockMatrixProperties,
     SaturatedRockProperties,
     filter_and_one_dim,
     reverse_filter_and_restore,
 )
+from fmu.pem.pem_utilities.enum_defs import (
+    ParameterTypes,
+)
+
+from ..pem_utilities.utils import convert_pressures_to_pa
+from .pressure_sensitivity import apply_dry_rock_pressure_sensitivity_model
 
 
 def run_friable(
     mineral: MatrixProperties,
-    fluid: Union[list[EffectiveFluidProperties], EffectiveFluidProperties],
+    fluid: list[EffectiveFluidProperties] | EffectiveFluidProperties,
     porosity: np.ma.MaskedArray,
-    pressure: Union[list[PressureProperties], PressureProperties],
-    config: PemConfig,
-) -> List[SaturatedRockProperties]:
+    pressure: list[PressureProperties] | PressureProperties,
+    rock_matrix: RockMatrixProperties,
+) -> list[SaturatedRockProperties]:
     """
     Prepare inputs and parameters for running the Friable sandstone model
 
@@ -31,7 +40,7 @@ def run_friable(
             properties in a list
         porosity: porosity fraction
         pressure: steps in effective pressure in [bar] due to Eclipse standard
-        config: parameters for the PEM
+        rock_matrix: parameters rock matrix
 
     Returns:
         saturated rock properties with vp [m/s], vs [m/s], density [kg/m^3], ai
@@ -40,9 +49,19 @@ def run_friable(
     # Mineral and porosity are assumed to be single objects, fluid and
     # effective_pressure can be lists
     fluid, pressure = _verify_inputs(fluid, pressure)
+    # Convert all pressures to Pa - bar is the standard in simulation models
+    pressure_pa = convert_pressures_to_pa(pressure)
+    initial_effective_pressure = pressure_pa[0].effective_pressure
+    # Container for saturated properties
     saturated_props = []
-    friable_params = config.rock_matrix.model.parameters
-    for fl_prop, pres in zip(fluid, pressure):
+
+    # to please the IDE:
+    k_dry = None
+    mu = None
+    k_init = None
+    mu_init = None
+
+    for time_step, (fl_prop, pres) in enumerate(zip(fluid, pressure_pa)):
         (
             mask,
             tmp_min_k,
@@ -52,36 +71,73 @@ def run_friable(
             tmp_fl_prop_rho,
             tmp_por,
             tmp_pres,
+            init_press,
         ) = filter_and_one_dim(
             mineral.bulk_modulus,
             mineral.shear_modulus,
-            mineral.dens,
+            mineral.density,
             fl_prop.bulk_modulus,
-            fl_prop.dens,
+            fl_prop.density,
             porosity,
-            pres.effective_pressure * 1.0e5,
+            pres.effective_pressure,
+            initial_effective_pressure,
+            return_numpy_array=True,
         )
-        """Estimation of effective mineral properties must be able to handle cases where
-         there is a more complex combination of minerals than the standard sand/shale
-         case. For carbonates the input can be based on minerals (e.g. calcite,
-         dolomite, quartz, smectite, ...) or PRTs (petrophysical rock types) that each
-         have been assigned elastic properties to."""
-        vp, vs, rho, _, _ = friable_model(
-            tmp_min_k,
-            tmp_min_mu,
-            tmp_min_rho,
-            tmp_fl_prop_k,
-            tmp_fl_prop_rho,
-            tmp_por,
-            tmp_pres,
-            friable_params.critical_porosity,
-            friable_params.coordination_number_function.fcn,
-            friable_params.coordination_number,
-            friable_params.shear_reduction,
-        )
-        vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho)
-        props = SaturatedRockProperties(vp=vp, vs=vs, dens=rho)
-        saturated_props.append(props)
+        # At initial pressure, there is no need to estimate pressure effect on dry rock.
+        # If there is no pressure sensitivity, we use the initial pressure for the dry
+        # rock also after start of production, and the only differences will be due to
+        # changes in fluid properties or saturation
+        if time_step == 0:
+            k_dry, mu = friable_model_dry(
+                k_min=tmp_min_k,
+                mu_min=tmp_min_mu,
+                phi=tmp_por,
+                p_eff=init_press,
+                phi_c=rock_matrix.model.parameters.critical_porosity,
+                coord_num_func=rock_matrix.model.parameters.coordination_number_function,
+                n=rock_matrix.model.parameters.coord_num,
+                shear_red=rock_matrix.model.parameters.shear_reduction,
+            )
+            # For use at depleted pressure
+            k_init = k_dry
+            mu_init = mu
+        if time_step > 0 and rock_matrix.pressure_sensitivity:
+            # estimate the properties for the initial pressure by friable model,
+            # then apply correction for depletion
+
+            # Prepare in situ properties
+            in_situ_dict = {
+                ParameterTypes.K.value: k_init,
+                ParameterTypes.MU.value: mu_init,
+                ParameterTypes.RHO.value: tmp_min_rho,
+                ParameterTypes.POROSITY.value: tmp_por,
+            }
+            tmp_matrix = MatrixProperties(
+                bulk_modulus=tmp_min_k,
+                shear_modulus=tmp_min_mu,
+                density=tmp_min_rho,
+            )
+            depl_props = apply_dry_rock_pressure_sensitivity_model(
+                model=rock_matrix.pressure_sensitivity_model,
+                initial_eff_pressure=init_press,
+                depleted_eff_pressure=tmp_pres,
+                in_situ_dict=in_situ_dict,
+                mineral_properties=tmp_matrix,
+                cement_properties=rock_matrix.minerals[rock_matrix.cement],
+            )
+            k_dry = depl_props[ParameterTypes.K.value]
+            mu = depl_props[ParameterTypes.MU.value]
+
+        # Saturate rock
+        k_sat = gassmann(k_dry, tmp_por, tmp_fl_prop_k, tmp_min_k)
+        rho_sat = (1.0 - tmp_por) * tmp_min_rho + tmp_por * tmp_fl_prop_rho
+        vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
+
+        # Restore original size and shape
+        vp, vs, rho_sat = reverse_filter_and_restore(mask, vp, vs, rho_sat)
+        # Add results to list
+        saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
+
     return saturated_props
 
 

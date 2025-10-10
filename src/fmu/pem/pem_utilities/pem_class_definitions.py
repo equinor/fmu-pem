@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
 import numpy as np
 from numpy.ma import MaskedArray
@@ -11,7 +10,7 @@ class SimInitProperties:
     poro: MaskedArray
     depth: MaskedArray
     ntg: MaskedArray
-    ntg_pem: Optional[MaskedArray] = None
+    ntg_pem: MaskedArray | None = None
 
     @property
     def delta_z(self) -> MaskedArray:
@@ -54,12 +53,18 @@ class SimRstProperties:
 # Elastic properties for matrix, i.e. mixed minerals and volume fractions
 @dataclass
 class MatrixProperties:
-    bulk_modulus: MaskedArray
-    shear_modulus: MaskedArray
-    dens: MaskedArray
+    bulk_modulus: MaskedArray | np.ndarray
+    shear_modulus: MaskedArray | np.ndarray
+    density: MaskedArray | np.ndarray
+
+    def __post_init__(self):
+        self.vs = np.sqrt(self.shear_modulus * self.density)
+        self.vp = np.sqrt(
+            (self.bulk_modulus + 4 / 3 * self.shear_modulus) / self.density
+        )
 
 
-# Separate class for dry rock, i.e. with porosity, can use MatrixProperties as base
+# Separate class for dry rock, can use MatrixProperties as base
 # class
 @dataclass
 class DryRockProperties(MatrixProperties):
@@ -71,11 +76,11 @@ class DryRockProperties(MatrixProperties):
 @dataclass
 class EffectiveFluidProperties:
     bulk_modulus: MaskedArray
-    dens: MaskedArray
+    density: MaskedArray
 
     @property
     def vp(self):
-        return np.sqrt(self.bulk_modulus / self.dens)
+        return np.sqrt(self.bulk_modulus / self.density)
 
 
 # Pressure properties - overburden, formation and effective (strictly speaking
@@ -102,12 +107,12 @@ class TwoWayTime:
 class SaturatedRockProperties:
     vp: MaskedArray
     vs: MaskedArray
-    dens: MaskedArray
+    density: MaskedArray
     ai: MaskedArray = field(init=False)
     si: MaskedArray = field(init=False)
     vpvs: MaskedArray = field(init=False)
 
     def __post_init__(self):
-        self.ai = self.vp * self.dens
-        self.si = self.vs * self.dens
+        self.ai = self.vp * self.density
+        self.si = self.vs * self.density
         self.vpvs = self.vp / self.vs

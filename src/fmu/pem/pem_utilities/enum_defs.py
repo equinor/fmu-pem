@@ -93,3 +93,33 @@ class DifferenceAttribute(str, Enum):
     FORMATION_PRESSURE = "formation_pressure"
     EFFECTIVE_PRESSURE = "effective_pressure"
     OVERBURDEN_PRESSURE = "overburden_pressure"
+
+
+class RegressionPressureModelTypes(str, Enum):
+    EXPONENTIAL = "exponential"
+    POLYNOMIAL = "polynomial"
+
+
+class PhysicsPressureModelTypes(str, Enum):
+    FRIABLE = "friable"
+    PATCHY_CEMENT = "patchy_cement"
+
+
+class RegressionPressureParameterTypes(str, Enum):
+    VP_VS = "vp_vs"
+    K_MU = "k_mu"
+
+
+class ParameterTypes(str, Enum):
+    VP = "vp"
+    VS = "vs"
+    K = "k"
+    MU = "mu"
+    RHO = "rho"
+    POROSITY = "poro"
+
+
+class Sim2SeisRequiredParams(str, Enum):
+    VP = "vp"
+    VS = "vs"
+    DENSITY = "density"

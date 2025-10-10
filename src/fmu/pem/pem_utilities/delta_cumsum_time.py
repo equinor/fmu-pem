@@ -1,5 +1,3 @@
-from typing import Dict, List, Union
-
 import numpy as np
 
 from .pem_class_definitions import (
@@ -12,7 +10,7 @@ from .pem_config_validation import PemConfig
 
 def estimate_delta_time(
     delta_z: np.ma.MaskedArray, vp: np.ma.MaskedArray, vs: np.ma.MaskedArray
-) -> Dict[str, np.ma.MaskedArray]:
+) -> dict[str, np.ma.MaskedArray]:
     """Estimate seismic TWT parameters - PP, PS, SS modes
 
     Args:
@@ -29,7 +27,7 @@ def estimate_delta_time(
     return {"twtpp": dt_pp, "twtss": dt_ss, "twtps": (dt_pp + dt_ss) / 2.0}
 
 
-def _verify_delta_t(arrays: List[np.ma.MaskedArray]) -> None:
+def _verify_delta_t(arrays: list[np.ma.MaskedArray]) -> None:
     for arr in arrays:
         if not isinstance(arr, np.ma.MaskedArray):
             raise TypeError(
@@ -45,8 +43,8 @@ def _verify_delta_t(arrays: List[np.ma.MaskedArray]) -> None:
 
 
 def calculate_time_cumsum(
-    props: Union[list, dict], conf_params: PemConfig
-) -> list[Dict[str, np.ma.MaskedArray]]:
+    props: list | dict, conf_params: PemConfig
+) -> list[dict[str, np.ma.MaskedArray]]:
     """
     Function to calculate cumulative sum of time difference properties
 
@@ -81,9 +79,9 @@ def _verify_cumsum_inputs(input_set):
 
 def estimate_sum_delta_time(
     constant_props: SimInitProperties,
-    sat_rock_props: List[SaturatedRockProperties],
+    sat_rock_props: list[SaturatedRockProperties],
     config: PemConfig,
-) -> List[TwoWayTime]:
+) -> list[TwoWayTime]:
     """Calculate TWT (two-way-time) for seismic signal for each restart date
 
     Args:

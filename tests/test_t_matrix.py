@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from fmu.pem.pem_functions.run_t_matrix_and_pressure import (
-    run_t_matrix_and_pressure_models,
+from fmu.pem.pem_functions.run_t_matrix_model import (
+    run_t_matrix_model,
 )
 from fmu.pem.pem_utilities import restore_dir
 from fmu.pem.pem_utilities.pem_class_definitions import (
@@ -21,7 +21,7 @@ def valid_mineral_properties():
     return DryRockProperties(
         bulk_modulus=np.ma.array([37e9, 38e9], mask=[False, False]),
         shear_modulus=np.ma.array([44e9, 45e9], mask=[False, False]),
-        dens=np.ma.array([2650.0, 2660.0], mask=[False, False]),
+        density=np.ma.array([2650.0, 2660.0], mask=[False, False]),
     )
 
 
@@ -30,11 +30,11 @@ def valid_fluid_properties():
     return [
         EffectiveFluidProperties(
             bulk_modulus=np.ma.array([2.2e9, 2.3e9], mask=[False, False]),
-            dens=np.ma.array([1000.0, 1010.0], mask=[False, False]),
+            density=np.ma.array([1000.0, 1010.0], mask=[False, False]),
         ),
         EffectiveFluidProperties(
             bulk_modulus=np.ma.array([1.8e9, 1.9e9], mask=[False, False]),
-            dens=np.ma.array([950.0, 960.0], mask=[False, False]),
+            density=np.ma.array([950.0, 960.0], mask=[False, False]),
         ),
     ]
 
@@ -80,11 +80,11 @@ def list_fluid_properties():
     return [
         EffectiveFluidProperties(
             bulk_modulus=np.ma.array([2.2e9, 2.3e9], mask=[False, False]),
-            dens=np.ma.array([1000.0, 1010.0], mask=[False, False]),
+            density=np.ma.array([1000.0, 1010.0], mask=[False, False]),
         ),
         EffectiveFluidProperties(
             bulk_modulus=np.ma.array([1.5e9, 1.6e9], mask=[False, False]),
-            dens=np.ma.array([900.0, 910.0], mask=[False, False]),
+            density=np.ma.array([900.0, 910.0], mask=[False, False]),
         ),
     ]
 
@@ -114,7 +114,7 @@ def test_run_t_matrix_and_pressure_models_valid_input(
     valid_config_mock,
 ):
     """Test run_t_matrix_and_pressure_models with valid inputs."""
-    results = run_t_matrix_and_pressure_models(
+    results = run_t_matrix_model(
         valid_mineral_properties,
         valid_fluid_properties,
         valid_porosity,
@@ -138,7 +138,7 @@ def test_run_t_matrix_and_pressure_models_invalid_input_type(
     """Test run_t_matrix_and_pressure_models with invalid input
     types to ensure it raises a ValueError."""
     with pytest.raises(ValueError):
-        run_t_matrix_and_pressure_models(
+        run_t_matrix_model(
             valid_mineral_properties,
             "invalid_fluid_type",  # type: ignore
             valid_porosity,
@@ -161,10 +161,10 @@ def test_run_t_matrix_and_pressure_models_invalid_masked_array(
     inputs to ensure it raises a ValueError."""
     invalid_fluid_properties = EffectiveFluidProperties(
         bulk_modulus=np.array([2.2e9]),  # type: ignore
-        dens=np.array([1000]),  # type: ignore
+        density=np.array([1000]),  # type: ignore
     )
     with pytest.raises(ValueError), restore_dir(valid_config_mock.paths.rel_path_pem):
-        run_t_matrix_and_pressure_models(
+        run_t_matrix_model(
             valid_mineral_properties,
             invalid_fluid_properties,
             valid_porosity,
@@ -186,7 +186,7 @@ def test_run_t_matrix_and_pressure_models_with_list_inputs(
 ):
     """Test run_t_matrix_and_pressure_models with lists of
     EffectiveFluidProperties and PressureProperties."""
-    results = run_t_matrix_and_pressure_models(
+    results = run_t_matrix_model(
         valid_mineral_properties,
         list_fluid_properties,
         valid_porosity,

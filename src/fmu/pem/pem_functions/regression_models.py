@@ -4,9 +4,6 @@ Regression based on polynomial models for saturated sandstones. The models are
 based on porosity polynomials to estimate either Vp and Vs, or K and Mu.
 """
 
-from pathlib import Path
-from typing import List, Union
-
 import numpy as np
 import numpy.typing as npt
 from rock_physics_open.equinor_utilities.std_functions import (
@@ -16,7 +13,6 @@ from rock_physics_open.equinor_utilities.std_functions import (
     velocity,
     voigt_reuss_hill,
 )
-from rock_physics_open.t_matrix_models import carbonate_pressure_model
 
 from fmu.pem.pem_utilities import (
     DryRockProperties,
@@ -28,10 +24,18 @@ from fmu.pem.pem_utilities import (
     filter_and_one_dim,
     reverse_filter_and_restore,
 )
-from fmu.pem.pem_utilities.enum_defs import MineralMixModel
+from fmu.pem.pem_utilities.enum_defs import (
+    MineralMixModel,
+    ParameterTypes,
+    PhysicsPressureModelTypes,
+)
 from fmu.pem.pem_utilities.rpm_models import (
     KMuRegressionParams,
     VpVsRegressionParams,
+)
+
+from .pressure_sensitivity import (
+    apply_dry_rock_pressure_sensitivity_model,
 )
 
 
@@ -48,14 +52,15 @@ def gen_regression(
         Vp [m/s]
     """
     pol = np.polynomial.Polynomial(polynom_weights)
-    return pol(porosity)
+    poly_val: np.ndarray = pol(porosity)
+    return poly_val
 
 
 def dry_rock_regression(
-    porosity: npt.NDArray[np.float64] | np.ma.MaskedArray,
-    rho_min: npt.NDArray[np.float64] | np.ma.MaskedArray,
+    porosity: npt.NDArray[np.float64],
+    rho_min: npt.NDArray[np.float64],
     params: VpVsRegressionParams | KMuRegressionParams,
-) -> DryRockProperties:
+) -> tuple[npt.NDArray[np.float64], ...]:
     """
     Calculates dry rock properties based on porosity and polynomial weights.
 
@@ -72,8 +77,8 @@ def dry_rock_regression(
         ValueError: If an invalid mode is provided or necessary weights for
         the selected mode are missing.
     """
-    if not params.rho_regression:
-        # rho_regression = False, use mineral density
+    if not params.rho_model:
+        # rho_model = False, use mineral density
         rho_dry = rho_min * (1 - porosity)
     else:
         rho_dry = gen_regression(porosity, params.rho_model.rho_weights)
@@ -96,32 +101,26 @@ def dry_rock_regression(
     else:
         raise ValueError("Invalid mode or missing weights for the selected mode.")
 
-    return DryRockProperties(
-        bulk_modulus=np.ma.MaskedArray(k_dry),
-        shear_modulus=np.ma.MaskedArray(mu),
-        dens=np.ma.MaskedArray(rho_dry),
-    )
+    return k_dry, mu, rho_dry
 
 
 def run_regression_models(
-    mineral: MatrixProperties,
+    matrix: MatrixProperties,
     fluid_properties: list[EffectiveFluidProperties],
     porosity: np.ma.MaskedArray,
     pressure: list[PressureProperties],
     config: PemConfig,
-    vsh: Union[np.ma.MaskedArray, None] = None,
-    pres_model_vp: Path = Path("carbonate_pressure_model_vp_exp.pkl"),
-    pres_model_vs: Path = Path("carbonate_pressure_model_vs_exp.pkl"),
-) -> List[SaturatedRockProperties]:
+    vsh: np.ma.MaskedArray | None = None,
+) -> list[SaturatedRockProperties]:
     """Run regression models for saturated rock properties.
 
     Args:
-        mineral: Mineral properties containing bulk modulus (k) [Pa],
+        matrix: Effective mineral properties containing bulk modulus (k) [Pa],
             shear modulus (mu) [Pa] and density (rho_sat) [kg/m3]
-        fluid_properties: List of fluid properties,
+        fluid_properties: list of fluid properties,
             each containing bulk modulus (k) [Pa] and density (rho_sat) [kg/m3]
         porosity: Porosity as a masked array [fraction]
-        pressure: List of pressure properties containing effective pressure values
+        pressure: list of pressure properties containing effective pressure values
             [bar] following Eclipse reservoir simulator convention
         config: Parameters for the PEM
         vsh: Volume of shale as a masked array [fraction], optional
@@ -132,7 +131,7 @@ def run_regression_models(
 
 
     Returns:
-        List[SaturatedRockProperties]: Saturated rock properties for each time step.
+        list[SaturatedRockProperties]: Saturated rock properties for each time step.
             Only fluid properties change between time steps in this model.
     """
 
@@ -148,10 +147,12 @@ def run_regression_models(
         multiple_lithologies = False
     else:
         multiple_lithologies = True
+
     # Convert pressure from bar to Pa
     pres_ovb = pressure[0].overburden_pressure * 1.0e5
     pres_form = pressure[0].formation_pressure * 1.0e5
     for time_step, fl_prop in enumerate(fluid_properties):
+        # Prepare data using filter_and_one_dim
         if time_step > 0 and config.rock_matrix.pressure_sensitivity:
             pres_depl = pressure[time_step].formation_pressure * 1.0e5
             (
@@ -167,11 +168,11 @@ def run_regression_models(
                 tmp_pres_form,
                 tmp_pres_depl,
             ) = filter_and_one_dim(
-                mineral.bulk_modulus,
-                mineral.shear_modulus,
-                mineral.dens,
+                matrix.bulk_modulus,
+                matrix.shear_modulus,
+                matrix.density,
                 fl_prop.bulk_modulus,
-                fl_prop.dens,
+                fl_prop.density,
                 porosity,
                 vsh,
                 pres_ovb,
@@ -190,83 +191,103 @@ def run_regression_models(
                 tmp_por,
                 tmp_vsh,
             ) = filter_and_one_dim(
-                mineral.bulk_modulus,
-                mineral.shear_modulus,
-                mineral.dens,
+                matrix.bulk_modulus,
+                matrix.shear_modulus,
+                matrix.density,
                 fl_prop.bulk_modulus,
-                fl_prop.dens,
+                fl_prop.density,
                 porosity,
                 vsh,
+                return_numpy_array=True,
             )
+
         if not multiple_lithologies:
-            dry_props = dry_rock_regression(
+            k_dry, mu, rho_dry = dry_rock_regression(
                 tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.sandstone
             )
         else:
-            dry_props_sand = dry_rock_regression(
+            k_sand, mu_sand, rho_sand = dry_rock_regression(
                 tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.sandstone
             )
-            dry_props_shale = dry_rock_regression(
+            k_shale, mu_shale, rho_shale = dry_rock_regression(
                 tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.shale
             )
-            dry_rho = (
-                dry_props_sand.dens * (1.0 - tmp_vsh) + dry_props_shale.dens * tmp_vsh
-            )
+            rho_dry = rho_sand * (1.0 - tmp_vsh) + rho_shale * tmp_vsh
             if config.rock_matrix.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
                 k_dry, mu = hashin_shtrikman_average(
-                    dry_props_sand.bulk_modulus,
-                    dry_props_shale.bulk_modulus,
-                    dry_props_sand.shear_modulus,
-                    dry_props_shale.shear_modulus,
-                    (1.0 - tmp_vsh),
+                    k_sand, k_shale, mu_sand, mu_shale, (1.0 - tmp_vsh)
                 )
             else:
                 k_dry, mu = voigt_reuss_hill(
-                    dry_props_sand.bulk_modulus,
-                    dry_props_shale.bulk_modulus,
-                    dry_props_sand.shear_modulus,
-                    dry_props_shale.shear_modulus,
-                    (1.0 - tmp_vsh),
+                    k_sand, k_shale, mu_sand, mu_shale, (1.0 - tmp_vsh)
                 )
-            dry_props = DryRockProperties(
-                bulk_modulus=k_dry, shear_modulus=mu, dens=dry_rho
-            )
+            # dry_props = DryRockProperties(
+            #     bulk_modulus=k_dry, shear_modulus=mu, density=dry_rho
+            # )
 
         # Perform pressure correction on dry rock properties
-        dry_vp, dry_vs, _, _ = velocity(
-            dry_props.bulk_modulus, dry_props.shear_modulus, dry_props.dens
-        )
         if time_step > 0 and config.rock_matrix.pressure_sensitivity:
-            # Inputs must be numpy arrays, not masked arrays
-            dry_vp, dry_vs, dry_rho, _, _ = carbonate_pressure_model(
-                tmp_fl_prop_rho,
-                dry_vp.data,
-                dry_vs.data,
-                dry_props.dens.data,
-                dry_vp.data,
-                dry_vs.data,
-                dry_props.dens.data,
-                tmp_por,
-                tmp_pres_over,
-                tmp_pres_form,
-                tmp_pres_depl,
-                pres_model_vp,
-                pres_model_vs,
-                config.paths.rel_path_pem.absolute(),
-                False,
+            # Prepare in-situ properties dictionary based on what we have
+            in_situ_dict = {
+                ParameterTypes.K.value: k_dry,
+                ParameterTypes.MU.value: mu,
+                ParameterTypes.RHO.value: rho_dry,
+                ParameterTypes.POROSITY.value: tmp_por,
+            }
+
+            mineral_props = None
+            cement_props = None
+
+            # Regression model requirements are met as default, but in the case of a
+            # "physics model" (friable or patchy cement), extra matrix properties are
+            # needed
+            if (
+                hasattr(config.rock_matrix.pressure_sensitivity_model, "model_type")
+                and config.rock_matrix.pressure_sensitivity_model.model_type
+                in PhysicsPressureModelTypes
+            ):
+                # Create mineral properties from matrix properties
+                mineral_props = MatrixProperties(
+                    bulk_modulus=tmp_min_k,
+                    shear_modulus=tmp_min_mu,
+                    density=tmp_min_rho,
+                )
+
+                # If patchy cement model, create cement properties
+                if (
+                    config.rock_matrix.pressure_sensitivity_model.model_type
+                    == PhysicsPressureModelTypes.PATCHY_CEMENT
+                ):
+                    # Use specified cement mineral
+                    cement_props = config.rock_matrix.minerals[
+                        config.rock_matrix.cement
+                    ]
+
+            # Apply pressure sensitivity model
+            depleted_props = apply_dry_rock_pressure_sensitivity_model(
+                model=config.rock_matrix.pressure_sensitivity_model,
+                initial_eff_pressure=(
+                    tmp_pres_over - tmp_pres_form
+                ),  # effective initial pressure
+                depleted_eff_pressure=(
+                    tmp_pres_over - tmp_pres_depl
+                ),  # effective depleted pressure
+                in_situ_dict=in_situ_dict,
+                mineral_properties=mineral_props,
+                cement_properties=cement_props,
             )
-            k_dry, mu = moduli(dry_vp, dry_vs, dry_props.dens.data)
-            dry_props = DryRockProperties(
-                bulk_modulus=k_dry, shear_modulus=mu, dens=dry_rho
-            )
+
+            # Update dry properties with pressure-corrected values
+            k_dry = depleted_props[ParameterTypes.K.value]
+            mu = depleted_props[ParameterTypes.MU.value]
+            rho_dry = depleted_props[ParameterTypes.RHO.value]
 
         # Saturate rock
-        k_sat = gassmann(dry_props.bulk_modulus, tmp_por, tmp_fl_prop_k, tmp_min_k)
-        rho_sat = dry_props.dens + tmp_por * tmp_fl_prop_rho
-        vp, vs = velocity(k_sat, dry_props.shear_modulus, rho_sat)[0:2]
+        k_sat = gassmann(k_dry, tmp_por, tmp_fl_prop_k, tmp_min_k)
+        rho_sat = rho_dry + tmp_por * tmp_fl_prop_rho
+        vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
 
         vp, vs, rho_sat = reverse_filter_and_restore(mask, vp, vs, rho_sat)
-        props = SaturatedRockProperties(vp=vp, vs=vs, dens=rho_sat)
-        saturated_props.append(props)
+        saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
 
     return saturated_props

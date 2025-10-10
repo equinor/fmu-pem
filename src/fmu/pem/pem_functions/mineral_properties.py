@@ -10,7 +10,6 @@ read from file, or calculated from porosity.
 """
 
 from pathlib import Path
-from typing import List, Tuple, Union
 from warnings import warn
 
 import numpy as np
@@ -38,7 +37,7 @@ from fmu.pem.pem_utilities.pem_config_validation import (
 
 def effective_mineral_properties(
     root_dir: Path, config: PemConfig, sim_init: SimInitProperties, sim_grid: Grid
-) -> Tuple[Union[np.ma.MaskedArray, None], MatrixProperties]:
+) -> tuple[np.ma.MaskedArray | None, MatrixProperties]:
     """Estimate effective mineral properties for each grid cell
 
     Args:
@@ -65,8 +64,8 @@ def effective_mineral_properties(
 
 
 def estimate_effective_mineral_properties(
-    fraction_names: Union[str, List[str]],
-    fractions: Union[np.ma.MaskedArray, List[np.ma.MaskedArray]],
+    fraction_names: str | list[str],
+    fractions: np.ma.MaskedArray | list[np.ma.MaskedArray],
     pem_config: PemConfig,
     porosity: np.ma.MaskedArray,
 ) -> MatrixProperties:
@@ -128,7 +127,7 @@ def estimate_effective_mineral_properties(
         mask, eff_k, eff_mu, eff_rho
     )
     return MatrixProperties(
-        bulk_modulus=eff_min_k, shear_modulus=eff_min_mu, dens=eff_min_rho
+        bulk_modulus=eff_min_k, shear_modulus=eff_min_mu, density=eff_min_rho
     )
 
 
@@ -161,7 +160,7 @@ def normalize_mineral_fractions(
     complement: str,
     porosity: np.ma.MaskedArray,
     mineral_fractions: bool,
-) -> Tuple[list[str], list[np.ma.MaskedArray]]:
+) -> tuple[list[str], list[np.ma.MaskedArray]]:
     """Normalizes mineral fractions and adds complement mineral if needed.
 
     If the fractions are volume fractions, porosity must be taken into account
@@ -180,9 +179,9 @@ def normalize_mineral_fractions(
         complement: Name of mineral to use as complement if sum < 1.0
 
     Returns:
-        Tuple containing:
-            - List of mineral names (with complement added if needed)
-            - List of normalized mineral fractions as masked arrays
+        tuple containing:
+            - list of mineral names (with complement added if needed)
+            - list of normalized mineral fractions as masked arrays
     """
     # Decide the mode of normalization - volume or mineral fractions
     normalize_sum = 1.0 if mineral_fractions else 1.0 - porosity

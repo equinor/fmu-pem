@@ -1,5 +1,3 @@
-from typing import List
-
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
     MatrixProperties,
@@ -12,13 +10,14 @@ from fmu.pem.pem_utilities import (
 from fmu.pem.pem_utilities.rpm_models import (
     FriableRPM,
     PatchyCementRPM,
-    RegressionModels,
+    RegressionRPM,
+    TMatrixRPM,
 )
 
 from .regression_models import run_regression_models
 from .run_friable_model import run_friable
 from .run_patchy_cement_model import run_patchy_cement
-from .run_t_matrix_and_pressure import run_t_matrix_and_pressure_models
+from .run_t_matrix_model import run_t_matrix_model
 
 
 def estimate_saturated_rock(
@@ -27,7 +26,7 @@ def estimate_saturated_rock(
     eff_pres: list[PressureProperties],
     matrix_props: MatrixProperties,
     fluid_props: list[EffectiveFluidProperties],
-) -> List[SaturatedRockProperties]:
+) -> list[SaturatedRockProperties]:
     """Wrapper to call rock physics model
 
     Args:
@@ -55,7 +54,7 @@ def estimate_saturated_rock(
             cement_properties,
             sim_init.poro,
             eff_pres,
-            config,
+            config.rock_matrix,
         )
     elif isinstance(config.rock_matrix.model, FriableRPM):
         # Friable sandstone model
@@ -64,9 +63,9 @@ def estimate_saturated_rock(
             fluid_props,
             sim_init.poro,
             eff_pres,
-            config,
+            config.rock_matrix,
         )
-    elif isinstance(config.rock_matrix.model, RegressionModels):
+    elif isinstance(config.rock_matrix.model, RegressionRPM):
         # Regression models for dry rock properties, saturation by Gassmann
         sat_rock_props = run_regression_models(
             matrix_props,
@@ -76,10 +75,10 @@ def estimate_saturated_rock(
             config,
             vsh=sim_init.ntg_pem,
         )
-    else:
+    elif isinstance(config.rock_matrix.model, TMatrixRPM):
         # Using default values for T-Matrix parameter file and vp and vs pressure
         # model files
-        sat_rock_props = run_t_matrix_and_pressure_models(
+        sat_rock_props = run_t_matrix_model(
             matrix_props,
             fluid_props,
             sim_init.poro,
@@ -87,4 +86,6 @@ def estimate_saturated_rock(
             eff_pres,
             config,
         )
+    else:
+        raise ValueError(f"unknown rock model type: {config.rock_matrix.model}")
     return sat_rock_props

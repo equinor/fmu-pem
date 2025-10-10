@@ -1,6 +1,5 @@
 # pylint: disable=missing-module-docstring
 import warnings
-from typing import Tuple, Union
 
 import numpy as np
 from rock_physics_open import fluid_models as flag
@@ -37,7 +36,7 @@ def effective_fluid_properties(
 
     Parameters
     ----------
-    props : Union
+    props :
         list of dicts or a single dict with saturation, GOR and pressure per
         time step
     fluid_params : Fluids class
@@ -248,7 +247,7 @@ def effective_fluid_properties(
             mask, mixed_fluid_density, mixed_fluid_bulk_modulus
         )
         fluid_props = EffectiveFluidProperties(
-            dens=mixed_fluid_density,
+            density=mixed_fluid_density,
             bulk_modulus=mixed_fluid_bulk_modulus,
         )
         prop_list.append(fluid_props)
@@ -257,7 +256,7 @@ def effective_fluid_properties(
 
 def _saturation_check(
     s_water: np.ma.MaskedArray, s_gas: np.ma.MaskedArray
-) -> Tuple[np.ma.MaskedArray, ...]:
+) -> tuple[np.ma.MaskedArray, ...]:
     s_water = np.ma.MaskedArray(np.ma.clip(s_water, 0.0, 1.0))
     s_gas = np.ma.MaskedArray(np.ma.clip(s_gas, 0.0, 1.0))
     max_water_gas_factor = np.ma.max(s_water + s_gas)
@@ -268,7 +267,7 @@ def _saturation_check(
     return s_water, s_gas, s_oil  # type: ignore
 
 
-def _verify_inputs(inp_props):
+def _verify_inputs(inp_props: list[Fluids] | Fluids) -> list[Fluids]:
     if isinstance(inp_props, list):
         if not all(isinstance(prop, SimRstProperties) for prop in inp_props):
             raise ValueError(
@@ -277,7 +276,7 @@ def _verify_inputs(inp_props):
                 f"is {[type(prop) for prop in inp_props]}"
             )
         return inp_props
-    if isinstance(inp_props, dict):
+    if isinstance(inp_props, Fluids):
         return [
             inp_props,
         ]

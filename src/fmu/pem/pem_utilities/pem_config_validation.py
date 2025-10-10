@@ -1,7 +1,7 @@
 import os
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Self, Union
+from typing import Any, Self
 
 import numpy as np
 from pydantic import (
@@ -25,12 +25,16 @@ from .enum_defs import (
     GasModels,
     MineralMixModel,
     OverburdenPressureTypes,
+    RPMType,
     TemperatureMethod,
 )
 from .rpm_models import (
+    FriableRPM,
     MineralProperties,
     OptionalField,
     PatchyCementRPM,
+    PhysicsModelPressureSensitivity,
+    RegressionPressureSensitivity,
     RegressionRPM,
     TMatrixRPM,
 )
@@ -72,11 +76,23 @@ class RockMatrixProperties(BaseModel):
 
     model_config = ConfigDict(title="Rock matrix properties:")
 
-    model: Union[PatchyCementRPM, TMatrixRPM, RegressionRPM] = Field(
-        description="Selection of parameter set for rock physics model",
-        default_factory=PatchyCementRPM,
+    model: FriableRPM | PatchyCementRPM | TMatrixRPM | RegressionRPM = Field(
+        description="Selection of rock physics model and parameter set",
     )
-    minerals: Dict[str, MineralProperties] = Field(
+    pressure_sensitivity: bool = Field(
+        default=True,
+        description="All RPM models can be run with or without pressure sensitivity.",
+    )
+    pressure_sensitivity_model: (
+        RegressionPressureSensitivity | PhysicsModelPressureSensitivity | OptionalField
+    ) = Field(
+        default=OptionalField(),
+        description="For most RPM models, it is possible to choose between a "
+        "regression based pressure sensitivity model from plug measurements "
+        "or a theoretical one. For `T Matrix` model a calibrated model is set "
+        "as default, and any model selection in this interface will be disregarded.",
+    )
+    minerals: dict[str, MineralProperties] = Field(
         default={
             "shale": {
                 "bulk_modulus": 25.0e9,
@@ -98,14 +114,9 @@ class RockMatrixProperties(BaseModel):
                 "shear_modulus": 45.0e9,
                 "density": 2870.0,
             },
-            "stevensite": {
-                "bulk_modulus": 32.5e9,
-                "shear_modulus": 45.0e9,
-                "density": 2490.0,
-            },
         },
         description="Define minerals relevant for the field. Default values are set "
-        "for `shale`, `quartz`, `calcite`, `dolomite` and `stevensite` (you can't "
+        "for `shale`, `quartz`, `calcite` and `dolomite` (you can't "
         "delete these minerals, but you can override their default values and/or "
         "ignore their definition).",
     )
@@ -114,14 +125,14 @@ class RockMatrixProperties(BaseModel):
         "in the geomodel, but they must be resampled to the simulator grid"
         "when used in PEM",
     )
-    fraction_names: List[str] = Field(
+    fraction_names: list[str] = Field(
         description="Fraction names must match the names in the volume fractions file",
     )
-    fraction_minerals: List[str] = Field(
+    fraction_minerals: list[str] = Field(
         description="The list of minerals matching the fractions' definition. Each "
         "mineral must be defined in the mineral properties dictionary"
     )
-    shale_fractions: List[str] = Field(
+    shale_fractions: list[str] = Field(
         description="List the fractions that should be regarded as non-net reservoir"
     )
     complement: str = Field(
@@ -129,12 +140,7 @@ class RockMatrixProperties(BaseModel):
         "up to 1.0, the remainder is filled with the complement mineral, "
         "e.g. when using net-to-gross instead of volume fractions"
     )
-    pressure_sensitivity: bool = Field(
-        default=True,
-        description="For the RPM models where pressure sensitivity is not part of "
-        "the model, as for friable and patchy cement models, a separate "
-        "pressure sensitivity model, based on plug measurements is added",
-    )
+
     cement: str = Field(
         default="quartz",
         description="For the patchy cement model, the cement mineral must be defined, "
@@ -158,6 +164,13 @@ class RockMatrixProperties(BaseModel):
                 )
         return v
 
+    @field_validator("model", mode="before")
+    @classmethod
+    def model_check(cls, v: dict, info: ValidationInfo) -> dict:
+        if v["model_name"] not in list(RPMType):
+            raise ValueError(f"unknown model: {v['model_name']}")
+        return v
+
     @field_validator("complement", mode="before")
     @classmethod
     def complement_fraction_check(cls, v: list, info: ValidationInfo) -> list:
@@ -175,12 +188,16 @@ class RockMatrixProperties(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def mineral_fraction_check(self):
+    def _validate_rock_matrix_properties(self):
         for frac_min in self.fraction_minerals:
             if frac_min not in self.minerals:
                 raise ValueError(
                     f"{__file__}: volume fraction mineral {frac_min} is not defined"
                 )
+        if self.model.model_name != RPMType.T_MATRIX and (
+            self.pressure_sensitivity and not self.pressure_sensitivity_model
+        ):
+            raise ValueError("a model is required when pressure sensitivity is set")
         return self
 
 
@@ -362,12 +379,12 @@ class Fluids(BaseModel):
         return self
 
 
-def possible_date_string(date_strings: List[str]) -> bool:
+def possible_date_string(date_strings: list[str]) -> bool:
     """
     Validate a list of date strings in YYYYMMDD format.
 
     Args:
-        date_strings: List of strings to validate
+        date_strings: list of strings to validate
 
     Returns:
         bool: True if all strings are valid dates
@@ -395,17 +412,17 @@ def possible_date_string(date_strings: List[str]) -> bool:
 
 class FromGlobal(BaseModel):
     grid_model: str
-    seis_dates: List[str]
-    diff_dates: List[List[str]]
-    global_config: Dict[str, Any]
+    seis_dates: list[str]
+    diff_dates: list[list[str]]
+    global_config: dict[str, Any]
 
     @field_validator("seis_dates", mode="before")
-    def check_date_string(cls, v: List[str]) -> List[str]:
+    def check_date_string(cls, v: list[str]) -> list[str]:
         possible_date_string(v)
         return v
 
     @field_validator("diff_dates", mode="before")
-    def check_diffdate_string(cls, v: List[List[str]]) -> List[List[str]]:
+    def check_diffdate_string(cls, v: list[list[str]]) -> list[list[str]]:
         for ll in v:
             possible_date_string(ll)
         return v
@@ -492,7 +509,7 @@ class PemConfig(BaseModel):
     results: Results = Field(
         description="Flags for saving results of the PEM",
     )
-    diff_calculation: Dict[DifferenceAttribute, List[DifferenceMethod]] = Field(
+    diff_calculation: dict[DifferenceAttribute, list[DifferenceMethod]] = Field(
         description="Difference properties of the PEM can be calculated for the dates "
         "in the Eclipse `.UNRST` file. The settings decide which parameters "
         "difference properties will be generated for, and what kind of "
@@ -505,7 +522,7 @@ class PemConfig(BaseModel):
     )
 
     @field_validator("paths", mode="before")
-    def check_and_create_directories(cls, v: Dict, info: ValidationInfo):
+    def check_and_create_directories(cls, v: dict, info: ValidationInfo):
         if v is None:
             return PemPaths()
         for key, path in v.items():
@@ -517,7 +534,7 @@ class PemConfig(BaseModel):
         return v
 
     @field_validator("diff_calculation", mode="before")
-    def to_list(cls, v: Dict) -> Dict:
+    def to_list(cls, v: dict) -> dict:
         v_keys = [key.lower() for key in v]
         v_val = list(v.values())
         for i, val_item in enumerate(v_val):

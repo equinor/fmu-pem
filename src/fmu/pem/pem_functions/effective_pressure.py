@@ -1,5 +1,3 @@
-from typing import List, Union
-
 import numpy as np
 
 from fmu.pem.pem_utilities import (
@@ -19,10 +17,10 @@ from .density import estimate_bulk_density
 def estimate_pressure(
     config: PemConfig,
     sim_init: SimInitProperties,
-    sim_rst: List[SimRstProperties],
+    sim_rst: list[SimRstProperties],
     matrix_props: MatrixProperties,
     fluid_props: list[EffectiveFluidProperties],
-) -> List[PressureProperties]:
+) -> list[PressureProperties]:
     """Estimate effective and overburden pressure.
     Effective pressure is defined as overburden pressure minus formation (or pore)
     pressure multiplied with the Biot factor
@@ -85,7 +83,7 @@ def estimate_pressure(
 def estimate_effective_pressure(
     formation_pressure: np.ma.MaskedArray,
     bulk_density: np.ma.MaskedArray,
-    reference_overburden_pressure: Union[np.ma.MaskedArray, float],
+    reference_overburden_pressure: np.ma.MaskedArray | float,
     biot_coeff: float = 1.0,
 ) -> PressureProperties:
     """Estimate effective pressure from reference overburden pressure, formation
@@ -119,7 +117,7 @@ def estimate_effective_pressure(
 
 
 def _verify_ovb_press(
-    ref_pres: Union[float, np.ma.MaskedArray], reference_cube: np.ma.MaskedArray
+    ref_pres: float | np.ma.MaskedArray, reference_cube: np.ma.MaskedArray
 ) -> np.ma.MaskedArray:
     if isinstance(ref_pres, float):
         return to_masked_array(ref_pres, reference_cube)

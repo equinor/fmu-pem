@@ -20,7 +20,76 @@ rock_matrix:
       perm: 100.0
       visco: 10.0
       tau: 1.0e-7
-  pressure_sensitivity: True  # mainly for regression models
+  pressure_sensitivity: True
+
+#rock_matrix:
+#  model:
+#    model_name: regression
+#    parameters:
+#      sandstone:
+#        vp_weights: [3500.0, -200.0]
+#        vs_weights: [1750.0, -100.0]
+#      shale:
+#        vp_weights: [ 1500.0, -50.0 ]
+#        vs_weights: [ 750.0, -10.0 ]
+#  pressure_sensitivity: True
+
+#rock_matrix:
+#  model:
+#    model_name: friable
+#    parameters:
+#      critical_porosity: 0.45
+#      shear_reduction: 0.35
+#  pressure_sensitivity: True
+
+#rock_matrix:
+#  model:
+#    model_name: patchy_cement
+#    parameters:
+#      critical_porosity: 0.45
+#      shear_reduction: 0.35
+#      cement_fraction: 0.04
+#  pressure_sensitivity: True
+
+  # User-defined pressure-sensitivity model
+
+#  pressure_sensitivity_model:
+#    mode: vp_vs
+#    model_type: polynomial
+#    parameters:
+#      vp:
+#        weights: [3250.50,1.875]
+#        model_max_pressure: 40.0  # MPa
+#      vs:
+#        weights: [1750.48,1.25]
+#        model_max_pressure: 40.0  # MPa
+
+  pressure_sensitivity_model:
+    mode: vp_vs
+    model_type: exponential
+    parameters:
+      vp:
+        a_factor: 0.0822648
+        b_factor: 7.02268939
+        model_max_pressure: 40.0  # MPa
+      vs:
+        a_factor: 0.09164501
+        b_factor: 8.23144402
+        model_max_pressure: 40.0  # MPa
+
+#  pressure_sensitivity_model:
+#    model_type: friable
+#    parameters:
+#      critical_porosity: 0.45
+#      shear_reduction: 0.35
+
+#  pressure_sensitivity_model:
+#    model_type: patchy_cement
+#    parameters:
+#      critical_porosity: 0.45
+#      shear_reduction: 0.35
+#      cement_fraction: 0.04
+
  # Example setup of volume fractions and matching minerals
   volume_fractions:
     rel_path_fractions: ../../sim2seis/input/pem
@@ -58,7 +127,7 @@ rock_matrix:
 # varied in the model, salinity will also be taken from model if flag is set
 fluids:
   brine:
-    salinity: 350000
+    salinity: 35000
     perc_na: 100.0
     perc_ca: 0.0
     perc_k: 0.0
@@ -104,13 +173,9 @@ results:
 
 # For 4D parameters: settings for which difference parameters to calculate
 diff_calculation:
-  AI: [diffpercent, ratio]
-  SI: [diffpercent, ratio]
-  VPVS: [ratio]
+  DENS: [ diffpercent ]
+  VP: [ diffpercent ]
+  VS: [ diffpercent ]
+  SI: [diff, diffpercent, ratio]
   TWTPP: [diff]
-  DENS: [diffpercent]
-  VP: [diffpercent]
-  VS: [diffpercent]
   PRESSURE: [diff]
-  SWAT: [diff]
-  SGAS: [diff]

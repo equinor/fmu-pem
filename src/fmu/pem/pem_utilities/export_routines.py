@@ -1,10 +1,10 @@
 import warnings
 from dataclasses import asdict
 from pathlib import Path
-from typing import List, Union
 
 import xtgeo
 
+from .enum_defs import Sim2SeisRequiredParams
 from .pem_class_definitions import (
     EffectiveFluidProperties,
     MatrixProperties,
@@ -23,8 +23,8 @@ def save_results(
     sim_grid: xtgeo.grid3d.Grid,
     eff_pres_props: list[PressureProperties],
     sat_rock_props: list[SaturatedRockProperties],
-    difference_props: List[dict],
-    difference_date_strs: List[str],
+    difference_props: list[dict],
+    difference_date_strs: list[str],
     matrix_props: MatrixProperties,
     fluid_props: list[EffectiveFluidProperties],
 ) -> None:
@@ -66,7 +66,7 @@ def save_results(
         {
             k: v
             for (k, v) in asdict(sat_prop).items()  # type: ignore
-            if k.upper() in ["VP", "VS", "DENS"]
+            if k in list(Sim2SeisRequiredParams)
         }
         for sat_prop in sat_rock_props
     ]
@@ -162,10 +162,10 @@ def save_results(
 
 def export_results_roxar(
     prj: object,
-    result_props: Union[List[dict], dict],
+    result_props: list[dict] | dict,
     grid: xtgeo.grid3d.Grid,
     rms_grid_name: str,
-    time_steps: Union[List[str], None] = None,
+    time_steps: list[str] | None = None,
     name_suffix: str = "",
     force_write_grid: bool = False,
 ) -> None:
@@ -218,11 +218,11 @@ def _verify_gridmodel(prj: object, rms_grid_model_name: str, grid: xtgeo.grid3d.
 
 
 def export_results_disk(
-    result_props: Union[List[dict], dict],
+    result_props: list[dict] | dict,
     grid: xtgeo.grid3d.Grid,
     grid_name: str,
     results_dir: Path,
-    time_steps: Union[List[str], None] = None,
+    time_steps: list[str] | None = None,
     name_suffix: str = "",
     export_format: str = "roff",
 ) -> None:

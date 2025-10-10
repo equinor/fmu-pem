@@ -1,4 +1,6 @@
 /.venv/
+/venv/
+/venv_external/
 /.vscode/
 # Local debug scripts etc
 Notebooks_and_scripts/
@@ -9,6 +11,9 @@ Notebooks/
 /dist/
 /src/fmu_pem.egg-info/
 **/__pycache__/
+**/*_cache/
+/.idea/
+/.vscode/
 src/fmu/pem/version.py
 
 # npm and node relevant build files
@@ -19,3 +24,8 @@ dist
 fmu-pem-schema.json
 **/.vitepress/dist
 **/.vitepress/cache
+/ERT/storage/
+/ERT/logs/
+/ERT/.runpath_list
+/logs/
+/tests/data/sim2seis/input/pem/venv_ext/

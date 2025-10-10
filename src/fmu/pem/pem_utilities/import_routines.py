@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List, Tuple
 
 import numpy as np
 import xtgeo
@@ -17,7 +16,7 @@ def read_geogrid(root_dir: Path, config: PemConfig) -> dict:
         config: PEM specific parameters
 
     Returns:
-        Dict object with porosity
+        dict object with porosity
     """
     with restore_dir(root_dir.joinpath(config.paths.rel_path_geogrid)):
         return {"poro": xtgeo.gridproperty_from_file("geogrid--phit.roff").values}
@@ -46,16 +45,16 @@ def read_init_properties(
 
 def create_rst_list(
     rst_props: xtgeo.GridProperties,
-    seis_dates: List[str],
-    rst_prop_names: List[str],
-) -> List[SimRstProperties]:
+    seis_dates: list[str],
+    rst_prop_names: list[str],
+) -> list[SimRstProperties]:
     """Create list of SimRstProperties from raw restart properties
     Args:
         rst_props: Raw restart properties
-        seis_dates: List of dates to process
-        rst_prop_names: List of property names to include
+        seis_dates: list of dates to process
+        rst_prop_names: list of property names to include
     Returns:
-        List[SimRstProperties]: List of processed restart properties by date
+        list[SimRstProperties]: list of processed restart properties by date
     """
     return [
         SimRstProperties(
@@ -73,15 +72,15 @@ def read_sim_grid_props(
     egrid_file: Path,
     init_property_file: Path,
     restart_property_file: Path,
-    seis_dates: List[str],
-) -> Tuple[xtgeo.Grid, SimInitProperties, List[SimRstProperties]]:
+    seis_dates: list[str],
+) -> tuple[xtgeo.Grid, SimInitProperties, list[SimRstProperties]]:
     """Read grid and properties from simulation run, both initial and restart properties
 
     Args:
         egrid_file: Path to the EGRID file
         init_property_file: Path to the INIT file
         restart_property_file: Path to the UNRST file
-        seis_dates: List of dates for which to read restart properties
+        seis_dates: list of dates for which to read restart properties
 
     Returns:
         sim_grid: grid definition for eclipse input

@@ -1,10 +1,9 @@
 from dataclasses import asdict
-from typing import Tuple
 
 from .pem_config_validation import PemConfig
 
 
-def calculate_diff_properties(props: list, conf_params: PemConfig) -> Tuple[list, list]:
+def calculate_diff_properties(props: list, conf_params: PemConfig) -> tuple[list, list]:
     """
     Function to calculate difference attributes between grid properties
 
@@ -37,8 +36,8 @@ def calculate_diff_properties(props: list, conf_params: PemConfig) -> Tuple[list
     for monitor, base in conf_params.global_params.diff_dates:  # type: ignore
         tmp_dict = {}
         for k, v_base in props[lookup[base]].items():
-            if k.upper() in conf_params.diff_calculation:
-                operations = conf_params.diff_calculation[k.upper()]
+            if k in conf_params.diff_calculation:
+                operations = conf_params.diff_calculation[k]
                 v_monitor = props[lookup[monitor]][k]
                 for op in operations:
                     if op in locals():
@@ -85,9 +84,7 @@ def _filter_diff_inputs(prop_list_list, conf):
     for prop_list in prop_list_list:
         for i, prop_set in enumerate(prop_list):
             tmp_dict = {
-                k: v
-                for k, v in asdict(prop_set).items()
-                if k.upper() in conf.diff_calculation
+                k: v for k, v in asdict(prop_set).items() if k in conf.diff_calculation
             }
             if tmp_dict:
                 return_list[i].update(tmp_dict)

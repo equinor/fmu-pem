@@ -20,7 +20,12 @@ from .pem_class_definitions import (
     SimInitProperties,
     SimRstProperties,
 )
-from .pem_config_validation import Fluids, PemConfig, possible_date_string
+from .pem_config_validation import (
+    Fluids,
+    PemConfig,
+    RockMatrixProperties,
+    possible_date_string,
+)
 from .update_grid import update_inactive_grid_cells
 from .utils import (
     estimate_cement,
@@ -35,6 +40,7 @@ from .utils import (
 
 __all__ = [
     "PemConfig",
+    "RockMatrixProperties",
     "Fluids",
     "calculate_diff_properties",
     "estimate_cement",

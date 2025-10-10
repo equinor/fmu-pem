@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List, Union
 
 import numpy as np
 from rock_physics_open.t_matrix_models import (
@@ -21,18 +20,18 @@ from fmu.pem.pem_utilities import (
 from .run_patchy_cement_model import _verify_inputs
 
 
-def run_t_matrix_and_pressure_models(
+def run_t_matrix_model(
     mineral_properties: MatrixProperties,
-    fluid_properties: Union[list[EffectiveFluidProperties], EffectiveFluidProperties],
+    fluid_properties: list[EffectiveFluidProperties] | EffectiveFluidProperties,
     porosity: np.ma.MaskedArray,
-    vsh: Union[None, np.ma.MaskedArray],
-    pressure: Union[list[PressureProperties], PressureProperties],
+    vsh: None | np.ma.MaskedArray,
+    pressure: list[PressureProperties] | PressureProperties,
     config: PemConfig,
     petec_parameter_file: Path = Path("t_mat_params_petec.pkl"),
     exp_parameter_file: Path = Path("t_mat_params_exp.pkl"),
     pres_model_vp: Path = Path("carbonate_pressure_model_vp_exp.pkl"),
     pres_model_vs: Path = Path("carbonate_pressure_model_vs_exp.pkl"),
-) -> List[SaturatedRockProperties]:
+) -> list[SaturatedRockProperties]:
     """Model for carbonate rock with possibility to estimate changes due to
     production, i.e., saturation changes, changes in the fluids due to pore pressure
     change and also changes in the properties of the matrix by increase in effective
@@ -40,10 +39,17 @@ def run_t_matrix_and_pressure_models(
 
     The first timestep is regarded as in situ conditions for the pressure
     substitution, any later timestep also takes into account the changes in effective
-    pressure from the initial one.
+    pressure from the initial one. Pressure sensitivity can be deselected in the
+    configuration of the PEM.
 
     Calibration of parameters for the T-Matrix model must be made before running the
     forward model, this is only possible in RokDoc with 1D match to logs.
+
+    Notice that t-matrix differs from the other saturated rock physics models in that
+    there is no intermediate step for dry rock properties. For this reason, the pressure
+    sensitive model is fixed, as this is a model that is adapted to saturated carbonate
+    rocks. This model can be overridden by saving an alternative model with the same
+    format as the default ones.
 
     Args:
         mineral_properties: bulk modulus (k) [Pa], shear modulus (mu) [Pa],
@@ -105,9 +111,9 @@ def run_t_matrix_and_pressure_models(
             ) = filter_and_one_dim(
                 mineral_properties.bulk_modulus,
                 mineral_properties.shear_modulus,
-                mineral_properties.dens,
+                mineral_properties.density,
                 fl_prop.bulk_modulus,
-                fl_prop.dens,
+                fl_prop.density,
                 porosity,
                 vsh,
                 pres_ovb,
@@ -128,9 +134,9 @@ def run_t_matrix_and_pressure_models(
             ) = filter_and_one_dim(
                 mineral_properties.bulk_modulus,
                 mineral_properties.shear_modulus,
-                mineral_properties.dens,
+                mineral_properties.density,
                 fl_prop.bulk_modulus,
-                fl_prop.dens,
+                fl_prop.density,
                 porosity,
                 vsh,
             )
@@ -162,7 +168,7 @@ def run_t_matrix_and_pressure_models(
                 t_mat_params.freq,
                 str(exp_parameter_file),
             )
-        if time_step > 0:
+        if time_step > 0 and config.rock_matrix.pressure_sensitivity:
             vp, vs, rho, _, _ = carbonate_pressure_model(
                 tmp_fl_rho,
                 vp,
@@ -181,6 +187,6 @@ def run_t_matrix_and_pressure_models(
                 False,
             )
         vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho)
-        props = SaturatedRockProperties(vp=vp, vs=vs, dens=rho)
+        props = SaturatedRockProperties(vp=vp, vs=vs, density=rho)
         saturated_props.append(props)
     return saturated_props

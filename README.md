@@ -28,8 +28,8 @@ Calibration of the rock physics models is normally carried out in
 prior to running the PEM. Fluid and mineral properties can be found in the RokDoc project, or
 from LFP logs, if they are available.
 
-> [!NOTE]  
-> The fluid models contained in this module may not cover all possible cases. Gas condensate, very heavy oil, 
+> [!NOTE]
+> The fluid models contained in this module may not cover all possible cases. Gas condensate, very heavy oil,
 > or reservoir pressure under hydrocarbon bubble point will need additional proprietary code to run.
 >
 > Equinor users can install additional proprietary models using
