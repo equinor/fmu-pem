@@ -119,8 +119,8 @@ class RhoRegressionMixin(BaseModel):
         description="\n\n".join(
             [
                 "Polynomial coefficients for matrix density as a function of porosity:",
-                "`rho(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
-                "List order: `[w0, w1, w2, ..., wn]`",
+                "`rho(phi) = w1 + w2*phi + w3*phi^2 + ... + wn*phi^n`",
+                "List order: `[w1, w2, w3, ..., wn]`",
                 "where `phi` is porosity (fraction) and `rho` is in kg/m³.",
             ]
         )
@@ -141,8 +141,8 @@ class VpVsRegressionParams(BaseModel):
         description="\n\n".join(
             [
                 "Polynomial coefficients for vp as a function of porosity:",
-                "`vp(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
-                "List order: `[w0, w1, w2, ..., wn]`",
+                "`vp(phi) = w1 + w2*phi + w3*phi^2 + ... + wn*phi^n`",
+                "List order: `[w1, w2, w3, ..., wn]`",
                 "where `phi` is porosity (fraction) and `vp` is in m/s.",
             ]
         ),
@@ -151,8 +151,8 @@ class VpVsRegressionParams(BaseModel):
         description="\n\n".join(
             [
                 "Polynomial coefficients for vs as a function of porosity:",
-                "`vs(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
-                "List order: `[w0, w1, w2, ..., wn]`",
+                "`vs(phi) = w1 + w2*phi + w3*phi^2 + ... + wn*phi^n`",
+                "List order: `[w1, w2, w3, ..., wn]`",
                 "where `phi` is porosity (fraction) and `vs` is in m/s.",
             ]
         ),
@@ -173,8 +173,8 @@ class KMuRegressionParams(BaseModel):
         description="\n\n".join(
             [
                 "Polynomial coefficients for bulk modulus as a function of porosity:",
-                "`k(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
-                "List order: `[w0, w1, w2, ..., wn]`",
+                "`k(phi) = w1 + w2*phi + w3*phi^2 + ... + wn*phi^n`",
+                "List order: `[w1, w2, w3, ..., wn]`",
                 "where `phi` is porosity (fraction) and `k` is in Pa.",
             ]
         ),
@@ -183,8 +183,8 @@ class KMuRegressionParams(BaseModel):
         description="\n\n".join(
             [
                 "Polynomial coefficients for shear modulus as a function of porosity:",
-                "`mu(phi) = w0 + w1*phi + w2*phi^2 + ... + wn*phi^n`",
-                "List order: `[w0, w1, w2, ..., wn]`",
+                "`mu(phi) = w1 + w2*phi + w3*phi^2 + ... + wn*phi^n`",
+                "List order: `[w1, w2, w3, ..., wn]`",
                 "where `phi` is porosity (fraction) and `mu` is in Pa.",
             ]
         ),
