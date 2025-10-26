@@ -30,6 +30,10 @@ export const YamlEdit = () => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
+  // Each time user reads YAML from disk, we remount the Form component
+  // by setting key to an integer increasing by 1 on each read. The Form component
+  // otherwise does not react to change in initial formData. 
+  const [numberRead, setNumberRead] = React.useState(0)
   const [initialConfig, setInitialConfig] = React.useState({});
 
   const userInputRef = React.useRef({});
@@ -63,6 +67,7 @@ export const YamlEdit = () => {
                 }
                 const content = readerEvent.target.result as string;
                 setInitialConfig(YAML.parse(content));
+                setNumberRead(() => numberRead + 1);
               };
             };
             input.click();
@@ -118,6 +123,7 @@ export const YamlEdit = () => {
       <div className="flex justify-center my-20">
         <div className="p-10 shadow-lg rounded bg-slate-50 border-2 border-slate-50" style={{minWidth: 800}}>
           <Form
+            key={numberRead}
             schema={pemSchema}
             validator={validator}
             formData={initialConfig}
