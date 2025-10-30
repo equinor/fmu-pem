@@ -9,22 +9,25 @@ from .utils import restore_dir
 
 
 def read_init_properties(
-    property_file: Path, sim_grid: xtgeo.Grid
+    property_file: Path,
+    sim_grid: xtgeo.Grid,
+    fipnum_param: str,
 ) -> SimInitProperties:
     """Read initial properties from INIT file
     Args:
         property_file: Full path to the .INIT file
         sim_grid: The simulation grid to use for reading properties
+        fipnum_param: Name for zone/region parameter, normally 'FIPNUM'
     Returns:
         SimInitProperties: The loaded initial grid properties
     """
-    INIT_PROPS = ["PORO", "DEPTH"]
+    init_props = ["PORO", "DEPTH", "PVTNUM"] + [fipnum_param]
     sim_init_props = xtgeo.gridproperties_from_file(
-        property_file, fformat="init", names=INIT_PROPS, grid=sim_grid
+        property_file, fformat="init", names=init_props, grid=sim_grid
     )
     props_dict = {
         sim_init_props[name].name.lower(): sim_init_props[name].values
-        for name in INIT_PROPS
+        for name in init_props
     }
     return SimInitProperties(**props_dict)
 
@@ -60,6 +63,7 @@ def read_sim_grid_props(
     init_property_file: Path,
     restart_property_file: Path,
     seis_dates: list[str],
+    fipnum_name: str = "FIPNUM",
 ) -> tuple[xtgeo.Grid, SimInitProperties, list[SimRstProperties]]:
     """Read grid and properties from simulation run, both initial and restart properties
 
@@ -77,10 +81,12 @@ def read_sim_grid_props(
     """
     sim_grid = xtgeo.grid_from_file(rel_dir_sim_files / egrid_file)
 
-    init_props = read_init_properties(rel_dir_sim_files / init_property_file, sim_grid)
+    init_props = read_init_properties(
+        rel_dir_sim_files / init_property_file, sim_grid, fipnum_name
+    )
 
     # TEMP will only be available for eclipse-300
-    RST_PROPS = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
+    rst_props_names = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
 
     # Restart properties - set strict to False, False in case RV is not included in
     # the UNRST file. NB: This has the effect that other missing parameters will not
@@ -88,14 +94,14 @@ def read_sim_grid_props(
     rst_props = xtgeo.gridproperties_from_file(
         rel_dir_sim_files / restart_property_file,
         fformat="unrst",
-        names=RST_PROPS,
+        names=rst_props_names,
         dates=seis_dates,
         grid=sim_grid,
         strict=(False, False),
     )
 
     try:
-        rst_list = create_rst_list(rst_props, seis_dates, RST_PROPS)
+        rst_list = create_rst_list(rst_props, seis_dates, rst_props_names)
     except (AttributeError, TypeError) as e:
         raise ValueError(f"eclipse simulator restart file is missing parameters: {e}")
 

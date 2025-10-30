@@ -114,7 +114,6 @@ def estimate_effective_mineral_properties(
         mu_list.append(to_masked_array(mineral.shear_modulus, fractions[0]))
         rho_list.append(to_masked_array(mineral.density, fractions[0]))
 
-    # ToDo: check mixing functions - high values for K
     if matrix_params.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
         eff_k, eff_mu = multi_hashin_shtrikman(
             *[arr for prop in zip(k_list, mu_list, fractions) for arr in prop]

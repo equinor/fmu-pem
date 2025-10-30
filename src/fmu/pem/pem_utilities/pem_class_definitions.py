@@ -1,15 +1,46 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields
 
 import numpy as np
 from numpy.ma import MaskedArray
 
 
+class PropertiesSubgridMasked:
+    """
+    Class to derive object properties in a subgrid. The mask is assumed to
+    come from a numpy masked array.
+
+    In a numpy masked array, True means masked, False means not masked
+
+    Args:
+        self: object with np.ndarray or np.ma.MaskedArray attributes
+        mask: Boolean mask to apply
+        invert: If True, invert the mask with ~mask
+
+    Returns:
+        New instance of the same type with masked arrays
+    """
+
+    def masked_where(self, mask: np.ndarray, invert_mask: bool = True):
+        actual_mask = ~mask if invert_mask else mask
+
+        field_values = {}
+        for field in fields(self):
+            value = getattr(self, field.name)
+            if value is None:
+                field_values[field.name] = None
+            else:
+                field_values[field.name] = np.ma.masked_where(actual_mask, value.data)
+        return type(self)(**field_values)
+
+
 # Eclipse simulator file classes - SimInitProperties and time step SimRstProperties
 @dataclass
-class SimInitProperties:
+class SimInitProperties(PropertiesSubgridMasked):
     poro: MaskedArray
     depth: MaskedArray
     vsh_pem: MaskedArray | None = None
+    pvtnum: MaskedArray | None = None
+    fipnum: MaskedArray | None = None
 
     @property
     def delta_z(self) -> MaskedArray:
@@ -38,7 +69,7 @@ class SimInitProperties:
 
 
 @dataclass
-class SimRstProperties:
+class SimRstProperties(PropertiesSubgridMasked):
     swat: MaskedArray
     sgas: MaskedArray
     soil: MaskedArray
@@ -51,7 +82,7 @@ class SimRstProperties:
 
 # Elastic properties for matrix, i.e. mixed minerals and volume fractions
 @dataclass
-class EffectiveMineralProperties:
+class EffectiveMineralProperties(PropertiesSubgridMasked):
     bulk_modulus: MaskedArray | np.ndarray
     shear_modulus: MaskedArray | np.ndarray
     density: MaskedArray | np.ndarray
@@ -73,7 +104,7 @@ class DryRockProperties(EffectiveMineralProperties):
 # Acoustic properties for mixed fluids. If non-Newtonian fluids are to be considered,
 # shear modulus and vs must be added
 @dataclass
-class EffectiveFluidProperties:
+class EffectiveFluidProperties(PropertiesSubgridMasked):
     bulk_modulus: MaskedArray
     density: MaskedArray
 
@@ -85,7 +116,7 @@ class EffectiveFluidProperties:
 # Pressure properties - overburden, formation and effective (strictly speaking
 # differential) pressure
 @dataclass
-class PressureProperties:
+class PressureProperties(PropertiesSubgridMasked):
     formation_pressure: MaskedArray
     effective_pressure: MaskedArray
     overburden_pressure: MaskedArray
@@ -103,15 +134,31 @@ class TwoWayTime:
 # to be defined, others can be derived from them, but this construction is needed
 # to have all properties recognised by dataclasses.asdict()
 @dataclass
-class SaturatedRockProperties:
+class SaturatedRockProperties(PropertiesSubgridMasked):
     vp: MaskedArray
     vs: MaskedArray
     density: MaskedArray
-    ai: MaskedArray = field(init=False)
-    si: MaskedArray = field(init=False)
-    vpvs: MaskedArray = field(init=False)
+    ai: MaskedArray | None = None
+    si: MaskedArray | None = None
+    vpvs: MaskedArray | None = None
 
     def __post_init__(self):
+        """Calculate derived properties from independent variables.
+
+        This runs both at initialization and can be called manually after
+        updating vp/vs/density arrays (e.g., after zone merging).
+        """
+        self.recalculate_derived()
+
+    def recalculate_derived(self):
+        """Recalculate derived properties (ai, si, vpvs) from current vp, vs, density.
+
+        Call this method after modifying vp, vs, or density arrays to update
+        the derived properties.
+        """
         self.ai = self.vp * self.density
         self.si = self.vs * self.density
-        self.vpvs = self.vp / self.vs
+        # Division may not preserve masks properly; explicitly combine masks
+        vpvs_data = self.vp.data / self.vs.data
+        vpvs_mask = np.logical_or(self.vp.mask, self.vs.mask)
+        self.vpvs = np.ma.MaskedArray(vpvs_data, mask=vpvs_mask)

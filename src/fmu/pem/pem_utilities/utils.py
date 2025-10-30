@@ -1,7 +1,6 @@
 import os
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import xtgeo
@@ -10,7 +9,7 @@ from .pem_class_definitions import EffectiveMineralProperties, PressurePropertie
 
 
 @contextmanager
-def restore_dir(path: Path) -> None:
+def restore_dir(path: Path) -> None:  # type: ignore[return-value]
     """restore_dir run block of code from a given path, restore original path
 
     Args:
@@ -43,12 +42,40 @@ def to_masked_array(
     return np.ma.MaskedArray(value * np.ones_like(masked_array), mask=masked_array.mask)
 
 
+def get_masked_array_mask(masked_array: np.ma.MaskedArray) -> np.ndarray:
+    """Extract mask from MaskedArray or create default mask."""
+    return (
+        masked_array.mask
+        if hasattr(masked_array, "mask")
+        else np.zeros_like(masked_array.data, dtype=bool)
+    )
+
+
+def set_mask(
+    masked_template: np.ma.MaskedArray,
+    prop_array: np.ma.MaskedArray | None,
+) -> np.ma.MaskedArray | None:
+    """Check for existence of mask in masked_template, return prop_array
+    with masked values. In case prop_array is None, return None"""
+    if prop_array is None:
+        return None
+    return np.ma.masked_where(
+        masked_template.mask
+        if hasattr(masked_template, "mask")
+        else np.zeros_like(prop_array),
+        prop_array,
+    )
+
+
 def filter_and_one_dim(
     *args: np.ma.MaskedArray, return_numpy_array: bool = False
 ) -> tuple[np.ma.MaskedArray | np.ndarray, ...]:
     """Filters multiple masked arrays by removing masked values and flattens them to 1D.
 
-    Typically used in preparation for calling the rock-physics library.
+    If no elements are masked (i.e., mask is scalar False), this function will still
+    flatten the arrays to 1D by treating all entries as valid. This ensures
+    downstream rock physics functions always receive 1D arrays, avoiding shape
+    issues (e.g. (1, nx, ny, nz)) when no masking occurs.
 
     Args:
         *args: One or more masked arrays of identical shape. Each array contains data
@@ -58,21 +85,29 @@ def filter_and_one_dim(
 
     Returns:
         tuple containing:
-            - mask: Boolean array of the same shape as inputs where True indicates
-              positions that were masked in any of the input arrays
-            - filtered arrays: One or more 1D arrays containing only the unmasked values
-              from each input array, in their original order
+            - mask: Boolean array of same shape where True indicates masked positions
+            - filtered arrays: 1D arrays containing the unmasked values from each arg
     """
     if not np.all([isinstance(arg, np.ma.MaskedArray) for arg in args]):
         raise ValueError(f"{__file__}: all inputs should be numpy masked arrays")
+
+    # Combine masks
     mask = args[0].mask
     for i in range(1, len(args)):
         mask = np.logical_or(mask, args[i].mask)
+
+    # If mask is scalar (no masked elements), expand to full-shape False array
+    if np.isscalar(mask):  # covers True/False scalar
+        # All values valid -> create explicit False mask array matching input shape
+        mask = np.zeros(args[0].shape, dtype=bool)
+
+    # Extract unmasked (valid) entries and flatten to 1D
     if return_numpy_array:
-        out_args = [arg[~mask].data for arg in args]
+        out_args = [arg.data[~mask] for arg in args]
     else:
         out_args = [arg[~mask] for arg in args]
-    return mask, *out_args
+
+    return mask, *out_args  # type: ignore[return-value]
 
 
 def reverse_filter_and_restore(
@@ -244,19 +279,23 @@ def _verify_update_inputs(base, add_list):
         raise TypeError(f"{__file__}: all items in input lists are not dict")
 
 
-def convert_pressures_to_pa(
+def bar_to_pa(
+    pres_bar: float | np.ndarray | np.ma.MaskedArray,
+) -> float | np.ndarray | np.ma.MaskedArray:
+    return pres_bar * 1.0e5
+
+
+def convert_single_pressure_to_pa(
+    single_press_bar: PressureProperties,
+) -> list[PressureProperties]:
+    return PressureProperties(
+        effective_pressure=bar_to_pa(single_press_bar.effective_pressure),
+        formation_pressure=bar_to_pa(single_press_bar.formation_pressure),
+        overburden_pressure=bar_to_pa(single_press_bar.overburden_pressure),
+    )
+
+
+def convert_pressures_list_to_pa(
     press_bar: list[PressureProperties],
 ) -> list[PressureProperties]:
-    pressure_pa = []
-    for pres in press_bar:
-        tmp_over = pres.overburden_pressure * 1.0e5
-        tmp_form = pres.formation_pressure * 1.0e5
-        tmp_eff = pres.effective_pressure * 1.0e5
-        pressure_pa.append(
-            PressureProperties(
-                overburden_pressure=tmp_over,
-                formation_pressure=tmp_form,
-                effective_pressure=tmp_eff,
-            )
-        )
-    return pressure_pa
+    return [convert_single_pressure_to_pa(pres) for pres in press_bar]

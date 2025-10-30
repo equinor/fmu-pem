@@ -15,7 +15,7 @@ from fmu.pem.pem_utilities import (
     reverse_filter_and_restore,
 )
 from fmu.pem.pem_utilities.enum_defs import ParameterTypes
-from fmu.pem.pem_utilities.utils import convert_pressures_to_pa
+from fmu.pem.pem_utilities.utils import convert_pressures_list_to_pa
 
 from .pressure_sensitivity import apply_dry_rock_pressure_sensitivity_model
 
@@ -47,7 +47,7 @@ def run_patchy_cement(
     # effective_pressure can be lists
     fluid, pressure = _verify_inputs(fluid, pressure)
     # Convert all pressures to Pa - bar is the standard in simulation models
-    pressure_pa = convert_pressures_to_pa(pressure)
+    pressure_pa = convert_pressures_list_to_pa(pressure)
     initial_effective_pressure = pressure_pa[0].effective_pressure
     # Container for saturated properties
     saturated_props = []

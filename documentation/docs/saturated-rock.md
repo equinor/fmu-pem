@@ -11,7 +11,54 @@ using Gassmann fluid substitution for the saturation step (fluid substitution).
 As fluid saturation and pore pressure change during production, it is necessary to calculate the properties of
 saturated rocks for all selected time steps in the reservoir simulator.
 
+## Zone-Based Model Selection
+
+`fmu-pem` supports **zone-based rock physics model selection**, allowing different FIPNUM zones to use different models
+and parameters. This enables more accurate representation of geological heterogeneity by applying the most appropriate
+model to each reservoir zone or segment.
+
+**Key features:**
+
+- Different rock physics models per FIPNUM zone (Friable, Patchy Cement, T-Matrix, or Regression)
+- Zone-specific model parameters and pressure sensitivity settings
+- Automatic validation of zone coverage and overlap detection
+- Consistent pattern with fluid properties and overburden pressure
+
+**Example configuration:**
+
+```yaml
+rock_matrix:
+  zone_regions:
+    # Zone 1: Friable sandstone for shallow zones
+    - fipnum: "1-5"
+      model:
+        model_name: "friable"
+        parameters:
+          critical_porosity: 0.40
+          coordination_number_function: "constant"
+          coord_num: 9.0
+          shear_reduction: 1.0
+      pressure_sensitivity: true
+
+    # Zone 2: Patchy cement for deeper cemented zones
+    - fipnum: "6-10"
+      model:
+        model_name: "patchy-cement"
+        parameters:
+          critical_porosity: 0.40
+          cement_fraction: 0.02
+          # ... other parameters
+      pressure_sensitivity: false
+
+    # Zone 3: T-Matrix for carbonate zones
+    - fipnum: "11-15"
+      model:
+        model_name: "t-matrix"
+        # T-Matrix specific parameters
+```
+
 ## Model calibration
+
 This section applies to internal use of `fmu-pem` within Equinor.
 
 It is recommended to calibrate rock physics models in RokDoc. Both `RokDoc-plugins` and `fmu-pem` use the same
@@ -84,35 +131,39 @@ sandstones. The current implementation of T-Matrix does not include any pressure
 sensitivity step is added as post-processing.
 
 Key concepts:
-* Geometry: Each inclusion is idealised as an ellipsoid defined by a single aspect ratio (shortest axis / longest axis).
+
+- Geometry: Each inclusion is idealised as an ellipsoid defined by a single aspect ratio (shortest axis / longest axis).
 A spherical pore has aspect ratio 1.0; a thin fracture may have an aspect ratio ≪ 1 (e.g. 1e-4).
-* Compliance effect: Lower aspect ratios (flatter inclusions) increase the compliance (soften the aggregate response)
+
+- Compliance effect: Lower aspect ratios (flatter inclusions) increase the compliance (soften the aggregate response)
 more than higher aspect ratios.
-* Practical limits: The model becomes unreliable if a large fraction of total porosity is assigned extremely flat (very
+- Practical limits: The model becomes unreliable if a large fraction of total porosity is assigned extremely flat (very
 low aspect ratio) inclusions. In practice, most porosity is assigned aspect ratios ≥ 0.5, with a controlled fraction at
 lower values to capture fractures or crack-like pores.
-* Parameter richness: Required inputs include background (frame) elastic moduli, inclusion aspect ratios, inclusion volume
+- Parameter richness: Required inputs include background (frame) elastic moduli, inclusion aspect ratios, inclusion volume
 fractions, and inclusion (or pore fluid) elastic properties. Some parameters cannot be constrained from conventional
 well logs alone and may need core, CT scan, petrographic or laboratory measurements.
-* Optimisation workflow: In RokDoc-plugins two usage contexts are distinguished:
-  * Exploration (EXP): Sparse constraints; more parameters solved via optimisation.
-  * Appraisal / production (PETEC): Better mineralogical, saturation and fluid property control; fewer free parameters.
+- Optimisation workflow: In RokDoc-plugins two usage contexts are distinguished:
+  - Exploration (EXP): Sparse constraints; more parameters solved via optimisation.
+  - Appraisal / production (PETEC): Better mineralogical, saturation and fluid property control; fewer free parameters.
   Resulting optimised parameter files can be supplied directly to `fmu-pem`.
 
 In practice:
-* Select parameters that can be fixed from data (e.g. mineral frame moduli, fluid properties). This is common to all
+
+- Select parameters that can be fixed from data (e.g. mineral frame moduli, fluid properties). This is common to all
 saturated rock models.
-* Assign geologically plausible aspect ratio populations (fractures vs equant pores).
-* Use optimisation to solve for poorly constrained fractions or aspect ratios within reasonable bounds.
-* Leave truly insensitive parameters at default values after sensitivity screening.
+- Assign geologically plausible aspect ratio populations (fractures vs equant pores).
+- Use optimisation to solve for poorly constrained fractions or aspect ratios within reasonable bounds.
+- Leave truly insensitive parameters at default values after sensitivity screening.
 
 Limitations:
-* Assumes dilute or moderately interacting inclusions; extreme crack densities reduce accuracy.
-* Single aspect ratio per inclusion population simplifies reality and may under-represent multimodal pore systems.
-* Strong anisotropy from aligned fractures is only approximated unless explicit orientational distributions are
+
+- Assumes dilute or moderately interacting inclusions; extreme crack densities reduce accuracy.
+- Single aspect ratio per inclusion population simplifies reality and may under-represent multimodal pore systems.
+- Strong anisotropy from aligned fractures is only approximated unless explicit orientational distributions are
 incorporated.
 
-#### Literature
+### Literature
 
 The theory for T-Matrix can be found in the papers and in the references therein:
 

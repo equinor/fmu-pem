@@ -4,6 +4,13 @@ from .delta_cumsum_time import (
     estimate_sum_delta_time,
 )
 from .export_routines import save_results
+from .fipnum_pvtnum_utilities import (
+    detect_overlaps,
+    input_num_string_to_list,
+    missing_num_areas,
+    num_boolean_array,
+    validate_zone_coverage,
+)
 from .import_config import get_global_params_and_dates, read_pem_config
 from .import_routines import (
     import_fractions,
@@ -27,11 +34,16 @@ from .pem_config_validation import (
 )
 from .update_grid import update_inactive_grid_cells
 from .utils import (
+    bar_to_pa,
+    convert_pressures_list_to_pa,
+    convert_single_pressure_to_pa,
     estimate_cement,
     filter_and_one_dim,
+    get_masked_array_mask,
     get_shale_fraction,
     restore_dir,
     reverse_filter_and_restore,
+    set_mask,
     to_masked_array,
     update_dict_list,
 )
@@ -41,7 +53,11 @@ __all__ = [
     "RockMatrixProperties",
     "MineralProperties",
     "Fluids",
+    "bar_to_pa",
     "calculate_diff_properties",
+    "convert_pressures_list_to_pa",
+    "convert_single_pressure_to_pa",
+    "detect_overlaps",
     "estimate_cement",
     "estimate_sum_delta_time",
     "estimate_delta_time",
@@ -49,6 +65,9 @@ __all__ = [
     "get_global_params_and_dates",
     "get_shale_fraction",
     "import_fractions",
+    "input_num_string_to_list",
+    "missing_num_areas",
+    "num_boolean_array",
     "possible_date_string",
     "read_pem_config",
     "read_sim_grid_props",
@@ -56,8 +75,11 @@ __all__ = [
     "reverse_filter_and_restore",
     "save_results",
     "to_masked_array",
+    "get_masked_array_mask",
+    "set_mask",
     "update_dict_list",
     "update_inactive_grid_cells",
+    "validate_zone_coverage",
     "DryRockProperties",
     "EffectiveFluidProperties",
     "EffectiveMineralProperties",

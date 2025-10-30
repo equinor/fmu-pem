@@ -28,29 +28,52 @@ rock_matrix:
   complement: quartz  # if not all fractions add up to 1.0
   minerals:
     shale:
-      bulk_modulus: 25000000000.0
-      shear_modulus: 12000000000.0
+      bulk_modulus: 25_000_000_000.0
+      shear_modulus: 12_000_000_000.0
       density: 2680.0
     quartz:
-      bulk_modulus: 36800000000.0
-      shear_modulus: 44000000000.0
+      bulk_modulus: 36_800_000_000.0
+      shear_modulus: 44_000_000_000.0
       density: 2650.0
     calcite:
-      bulk_modulus: 76800000000.0
-      shear_modulus: 32000000000.0
+      bulk_modulus: 76_800_000_000.0
+      shear_modulus: 32_000_000_000.0
       density: 2710.0
     dolomite:
-      bulk_modulus: 94900000000.0
-      shear_modulus: 45000000000.0
+      bulk_modulus: 94_900_000_000.0
+      shear_modulus: 45_000_000_000.0
       density: 2870.0
     stevensite:
-      bulk_modulus: 32500000000.0
-      shear_modulus: 11600000000.0
+      bulk_modulus: 32_500_000_000.0
+      shear_modulus: 11_600_000_000.0
       density: 2490.0
   cement: quartz  # used by the patchy cement model
   mineral_mix_model: voigt-reuss-hill  # Alternative hashin-shtrikman-average  voigt-reuss-hill
   zone_regions:
-  - fipnum: " "
+  - fipnum: "1-10"
+    model:
+      model_name: t_matrix  # One of patchy_cement, friable, t_matrix or regression
+      parameters:
+        t_mat_model_version: PETEC  # One of 'PETEC' or 'EXP'
+        angle: 90.0
+        freq: 100.0
+        perm: 100.0
+        visco: 10.0
+        tau: 1.0e-7
+    pressure_sensitivity: True
+    pressure_sensitivity_model:
+      mode: vp_vs
+      model_type: exponential
+      parameters:
+        vp:
+          a_factor: 0.0822648
+          b_factor: 7.02268939
+          model_max_pressure: 40.0  # MPa
+        vs:
+          a_factor: 0.09164501
+          b_factor: 8.23144402
+          model_max_pressure: 40.0  # MPa
+  - fipnum: "11-21"
     model:
       model_name: t_matrix  # One of patchy_cement, friable, t_matrix or regression
       parameters:
@@ -74,70 +97,11 @@ rock_matrix:
           b_factor: 8.23144402
           model_max_pressure: 40.0  # MPa
 
-#rock_matrix:
-# - fipnum: "*"
-#   model:
-#     model_name: regression
-#     parameters:
-#       sandstone:
-#         vp_weights: [3500.0, -200.0]
-#         vs_weights: [1750.0, -100.0]
-#       shale:
-#         vp_weights: [ 1500.0, -50.0 ]
-#         vs_weights: [ 750.0, -10.0 ]
-#   pressure_sensitivity: True
-
-#rock_matrix:
-# - fipnum: "*"
-#   model:
-#     model_name: friable
-#     parameters:
-#       critical_porosity: 0.45
-#       shear_reduction: 0.35
-#   pressure_sensitivity: True
-
-#rock_matrix:
-# - fipnum: "*"
-#   model:
-#     model_name: patchy_cement
-#     parameters:
-#       critical_porosity: 0.45
-#       shear_reduction: 0.35
-#       cement_fraction: 0.04
-#   pressure_sensitivity: True
-
-# User-defined pressure-sensitivity model
-
-#  pressure_sensitivity_model:
-#    mode: vp_vs
-#    model_type: polynomial
-#    parameters:
-#      vp:
-#        weights: [3250.50,1.875]
-#        model_max_pressure: 40.0  # MPa
-#      vs:
-#        weights: [1750.48,1.25]
-#        model_max_pressure: 40.0  # MPa
-
-
-#    pressure_sensitivity_model:
-#      model_type: friable
-#      parameters:
-#        critical_porosity: 0.45
-#        shear_reduction: 0.35
-
-#    pressure_sensitivity_model:
-#      model_type: patchy_cement
-#      parameters:
-#        critical_porosity: 0.45
-#        shear_reduction: 0.35
-#        cement_fraction: 0.04
-
 # Fluid definition: each fluid for FLAG modelling must have their parameters defined, temperature and pressure will be
 # varied in the model, salinity will also be taken from model if flag is set
 fluids:
   pvt_zones:
-  - pvtnum: "*"
+  - pvtnum: "1"
     brine:
       salinity: 35000
       perc_na: 100.0
@@ -152,8 +116,31 @@ fluids:
     condensate:
       gas_gravity: 0.763
       reference_density: 865.0
-    calculate_condensate: False
     gas_saturation_is_co2: False
+    calculate_condensate: True
+    # Factor for deviation from an ideal gas
+    gas_z_factor: 1.0
+    temperature:
+      type: constant
+      # type: from_sim - alternative
+      temperature_value: 75
+  - pvtnum: "2"
+    brine:
+      salinity: 35000
+      perc_na: 100.0
+      perc_ca: 0.0
+      perc_k: 0.0
+    oil:
+      gas_gravity: 0.763
+      reference_density: 865.0
+    gas:
+      type: gas
+      gas_gravity: 0.763
+    condensate:
+      gas_gravity: 0.763
+      reference_density: 865.0
+    gas_saturation_is_co2: False
+    calculate_condensate: True
     # Factor for deviation from an ideal gas
     gas_z_factor: 1.0
     temperature:
@@ -168,12 +155,14 @@ fluids:
   # CO2 model is either the one from FLAG or the Span-Wagner model {'flag', 'span_wagner'}
   # The FLAG model is significantly faster, but the Span-Wagner model is considered to be more accurate
   co2_model: flag
-
-
 # Overburden pressure may be set to a constant, but it is better estimated from a depth trend
 # Unit is Pa
 pressure:
-  - fipnum: "*"
+  - fipnum: "1-10"
+    type: trend
+    intercept: 20.0e6
+    gradient: 9174.3
+  - fipnum: "11-21"
     type: trend
     intercept: 20.0e6
     gradient: 9174.3

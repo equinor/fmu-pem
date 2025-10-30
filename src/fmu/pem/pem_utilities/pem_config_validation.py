@@ -28,6 +28,10 @@ from .enum_defs import (
     RPMType,
     TemperatureMethod,
 )
+from .fipnum_pvtnum_utilities import (
+    detect_overlaps,
+    input_num_string_to_list,
+)
 from .rpm_models import (
     FriableRPM,
     MineralProperties,
@@ -38,6 +42,8 @@ from .rpm_models import (
     RegressionRPM,
     TMatrixRPM,
 )
+
+REGEX_FIPNUM_PVTNUM = r"^(?:\*|(?:\d+(?:-\d+)?)(?:,(?:\d+(?:-\d+)?))*)$"
 
 
 class EclipseFiles(BaseModel):
@@ -82,7 +88,7 @@ class FractionFiles(BaseModel):
         description="Fractions can either be mineral fractions or volume fractions."
         "If they are mineral fractions,the sum of fractions and a"
         "complement is 1.0. If they are volume fractions, the sum of"
-        "fractions, a complementand porosity is 1.0."
+        "fractions, a complement and porosity is 1.0."
         "Default value is False.",
     )
 
@@ -97,16 +103,19 @@ class FractionFiles(BaseModel):
         return self
 
 
-class RockMatrixProperties(BaseModel):
-    """Configuration for rock matrix properties.
-
-    Contains parameters necessary for defining matrix properties for
-    different rock types, including sandstones, carbonates,
-    and other lithologies.
-    """
-
-    model_config = ConfigDict(title="Rock matrix properties:")
-
+class ZoneRegionMatrixParams(BaseModel):
+    fipnum: str = Field(
+        description="Each grid cell in a reservoir model is assigned a FIPNUM "
+        "integer, where each FIPNUM integer represents a combination of zone and "
+        "segment. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM integers "
+        "where a defined rock matrix should be used. Explicit definitions like "
+        "`1-10,15` matches the FIPNUMs "
+        "`1, 2, ..., 10, 15`. By doing it this way you can have different "
+        "rock physics models for e.g. individual zones and segments. "
+        "Leaving this field empty means that all zones and segments are"
+        "treated as one",
+        pattern=REGEX_FIPNUM_PVTNUM,
+    )
     model: FriableRPM | PatchyCementRPM | TMatrixRPM | RegressionRPM = Field(
         description="Selection of rock physics model and parameter set",
     )
@@ -122,6 +131,28 @@ class RockMatrixProperties(BaseModel):
         "regression based pressure sensitivity model from plug measurements "
         "or a theoretical one. For `T Matrix` model a calibrated model is set "
         "as default, and any model selection in this interface will be disregarded.",
+    )
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def model_check(cls, v: dict, info: ValidationInfo) -> dict:
+        if v["model_name"] not in list(RPMType):
+            raise ValueError(f"unknown model: {v['model_name']}")
+        return v
+
+
+class RockMatrixProperties(BaseModel):
+    """Configuration for rock matrix properties.
+
+    Contains parameters necessary for defining matrix properties for
+    different rock types, including sandstones, carbonates,
+    and other lithologies.
+    """
+
+    model_config = ConfigDict(title="Rock matrix properties:")
+
+    zone_regions: list[ZoneRegionMatrixParams] = Field(
+        description="Per-zone or -region parameters"
     )
     minerals: dict[str, MineralProperties] = Field(
         default={
@@ -151,6 +182,12 @@ class RockMatrixProperties(BaseModel):
         "delete these minerals, but you can override their default values and/or "
         "ignore their definition).",
     )
+    cement: str = Field(
+        default="quartz",
+        description="For the patchy cement model, the cement mineral must be defined, "
+        "and its properties must be defined in the mineral properties' "
+        "dictionary",
+    )
     volume_fractions: FractionFiles = Field(
         description="Choice of volume fraction files. Volume fractions are defined"
         "in the geomodel, but they must be resampled to the simulator grid"
@@ -171,18 +208,55 @@ class RockMatrixProperties(BaseModel):
         "up to 1.0, the remainder is filled with the complement mineral, "
         "e.g. when using net-to-gross instead of volume fractions"
     )
-
-    cement: str = Field(
-        default="quartz",
-        description="For the patchy cement model, the cement mineral must be defined, "
-        "and its properties must be defined in the mineral properties' "
-        "dictionary",
-    )
     mineral_mix_model: MineralMixModel = Field(
         default="voigt-reuss-hill",
         description="Effective medium model selection: either "
         "`hashin-shtrikman-average` or `voigt-reuss-hill`",
     )
+
+    @field_validator("zone_regions", mode="before")
+    @classmethod
+    def fipnum_check(cls, v: list[dict]) -> list[dict]:
+        """
+        At this point in time we don't have access to the simulator init file,
+        so we just have to guess that it contains all numbers from 1 to the
+        max number given in the strings. Validate that there are no overlaps.
+
+        Validation must be made here, not under individual ZoneRegion objects
+        to get the combined information in all ZoneRegion groups.
+
+        Earlier wildcard symbol was '*'. Empty string (new wildcard) is
+        changed into '*' for backward compatibility
+        """
+        fipnum_strings = [rock["fipnum"] for rock in v]
+        # Enforce single wildcard usage
+        if any(s is None or not str(s).strip() or s == "*" for s in fipnum_strings):
+            if len(v) > 1:
+                raise ValueError(
+                    "Setting wildcard ('*' or empty string) means that "
+                    "all FIPNUM should be treated as one group, no "
+                    "other groups can be specified"
+                )
+            # Enforce old style wildcard
+            v[0]["fipnum"] = "*"
+            return v
+        # Build temporary range to detect overlaps
+        tmp_max = 1
+        tmp_num_array = [1]
+        for num_string in fipnum_strings:
+            num_array = input_num_string_to_list(num_string, tmp_num_array)
+            if tmp_max < max(num_array):
+                tmp_max = max(num_array)
+                tmp_num_array = list(range(1, tmp_max + 1))
+        if detect_overlaps(fipnum_strings, tmp_num_array):
+            raise ValueError(f"Overlaps in group definitions: {fipnum_strings}")
+        return v
+
+    @field_validator("cement", mode="before")
+    def cement_check(cls, v: str, info: ValidationInfo) -> str:
+        if v not in info.data["minerals"]:
+            raise ValueError(f'{__file__}: cement mineral "{v}" not listed in minerals')
+        return v
 
     @field_validator("shale_fractions", mode="before")
     @classmethod
@@ -195,27 +269,14 @@ class RockMatrixProperties(BaseModel):
                 )
         return v
 
-    @field_validator("model", mode="before")
-    @classmethod
-    def model_check(cls, v: dict, info: ValidationInfo) -> dict:
-        if v["model_name"] not in list(RPMType):
-            raise ValueError(f"unknown model: {v['model_name']}")
-        return v
-
     @field_validator("complement", mode="before")
     @classmethod
-    def complement_fraction_check(cls, v: list, info: ValidationInfo) -> list:
+    def complement_fraction_check(cls, v: str, info: ValidationInfo) -> str:
         if v not in info.data["minerals"]:
             raise ValueError(
                 f'{__file__}: shale fraction mineral "{v}" not listed in fraction '
                 f"minerals"
             )
-        return v
-
-    @field_validator("cement", mode="before")
-    def cement_check(cls, v: list, info: ValidationInfo) -> list:
-        if v not in info.data["minerals"]:
-            raise ValueError(f'{__file__}: cement mineral "{v}" not listed in minerals')
         return v
 
     @model_validator(mode="after")
@@ -225,22 +286,42 @@ class RockMatrixProperties(BaseModel):
                 raise ValueError(
                     f"{__file__}: volume fraction mineral {frac_min} is not defined"
                 )
-        if self.model.model_name != RPMType.T_MATRIX and (
-            self.pressure_sensitivity and not self.pressure_sensitivity_model
-        ):
-            raise ValueError("a model is required when pressure sensitivity is set")
+        for fipnum_group in self.zone_regions:
+            if fipnum_group.model.model_name != RPMType.T_MATRIX and (
+                fipnum_group.pressure_sensitivity
+                and not fipnum_group.pressure_sensitivity_model
+            ):
+                raise ValueError("a model is required when pressure sensitivity is set")
         return self
 
 
 # Pressure
 class OverburdenPressureTrend(BaseModel):
     type: SkipJsonSchema[OverburdenPressureTypes] = "trend"
+    fipnum: str = Field(
+        description="Each grid cell in a reservoir model is assigned a FIPNUM "
+        "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
+        "integers where a given overburden pressure should be used. Explicit "
+        "definitions like `1-10,15` matches the PVTNUMs `1, 2, ..., 10, 15`. "
+        "Leaving this field empty means that all zones and segments are"
+        "treated as one",
+        pattern=REGEX_FIPNUM_PVTNUM,
+    )
     intercept: float = Field(description="Intercept in pressure depth trend")
     gradient: float = Field(description="Gradient in pressure depth trend")
 
 
 class OverburdenPressureConstant(BaseModel):
     type: SkipJsonSchema[OverburdenPressureTypes] = "constant"
+    fipnum: str = Field(
+        description="Each grid cell in a reservoir model is assigned a FIPNUM "
+        "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
+        "integers where a given overburden pressure should be used. Explicit "
+        "definitions like `1-10,15` matches the FIPNUMs `1, 2, ..., 10, 15`. "
+        "Leaving this field empty means that all zones and segments are"
+        "treated as one",
+        pattern=REGEX_FIPNUM_PVTNUM,
+    )
     value: float = Field(description="Constant pressure")
 
 
@@ -345,9 +426,15 @@ class TemperatureFromSim(BaseModel):
     type: SkipJsonSchema[TemperatureMethod] = "from_sim"
 
 
-# Note that CO2 does not require a separate definition here, as it's properties only
-# depend on temperature and pressure
-class Fluids(BaseModel):
+class PVTZone(BaseModel):
+    pvtnum: str = Field(
+        description="Each grid cell in a reservoir model is assigned a PVTNUM "
+        "integer. `fmu-pem` reuses PVTNUM by letting you define the PVTNUM "
+        "integers where a given fluid definition should be used. Explicit "
+        "definitions like `1-10,15` matches the PVTNUMs `1, 2, ..., 10, 15`. "
+        "Leaving this field empty means that all PVTNUM zones are treated as one",
+        pattern=REGEX_FIPNUM_PVTNUM,
+    )
     brine: Brine = Field(
         description="Brine model parameters.",
     )
@@ -355,29 +442,14 @@ class Fluids(BaseModel):
         description="Oil model parameters. Note that GOR (gas-oil ratio) is read from"
         " eclipse restart file"
     )
+    # Note that CO2 does not require a separate definition here, as it's properties only
+    # depend on temperature and pressure
     gas: Gas = Field(description="Gas model parameters")
     condensate: OptionalField | Oil = Field(
         title="Condensate properties",
         description="Condensate model requires a similar set of parameters as"
         "the oil model, this is an optional setting for condensate"
         " cases",
-    )
-    fluid_mix_method: MixModelWood | MixModelBrie = Field(
-        default_factory=MixModelWood,
-        description="Selection between Wood's or Brie model. Wood's model gives more "
-        "radical response to adding small amounts of gas in brine or oil",
-    )
-    temperature: ConstantTemperature | TemperatureFromSim = Field(
-        description="In most cases it is sufficient with a constant temperature "
-        "setting for the reservoir. If temperature is modelled in the "
-        "simulation model, it is preferred to use that"
-    )
-    salinity_from_sim: bool = Field(
-        default=False,
-        description="In most cases it is sufficient with a constant salinity "
-        "setting for the reservoir, unless there is large contrast"
-        "between formation water and injected water. If salinity is "
-        "modelled in the simulation model, it is preferred to use that",
     )
     gas_saturation_is_co2: bool = Field(
         default=False,
@@ -394,11 +466,11 @@ class Fluids(BaseModel):
         description="Factor for deviation from an ideal gas in terms of volume change "
         "as a function of temperature and pressure",
     )
-    co2_model: CO2Models = Field(
-        default="span_wagner",
-        description="Selection of model for CO₂ properties, `span_wagner` equation "
-        "of state model or `flag`. Note that access to flag model depends "
-        "on licence",
+    # Temperature may be set per zone
+    temperature: ConstantTemperature | TemperatureFromSim = Field(
+        description="In most cases it is sufficient with a constant temperature "
+        "setting for the reservoir. If temperature is modelled in the "
+        "simulation model, it is preferred to use that"
     )
 
     @model_validator(mode="after")
@@ -408,6 +480,71 @@ class Fluids(BaseModel):
                 "Missing model for condensate, proprietary model required"
             )
         return self
+
+
+class Fluids(BaseModel):
+    pvt_zones: list[PVTZone] = Field(
+        description="Define fluid parameters for each phase in each PVT zone "
+        "or group of PVT zones"
+    )
+    fluid_mix_method: MixModelWood | MixModelBrie = Field(
+        default_factory=MixModelWood,
+        description="Selection between Wood's or Brie model. Wood's model gives more "
+        "radical response to adding small amounts of gas in brine or oil",
+    )
+    # Handling of salinity will be a common factor, not zone-based
+    salinity_from_sim: bool = Field(
+        default=False,
+        description="In most cases it is sufficient with a constant salinity "
+        "setting for the reservoir, unless there is large contrast"
+        "between formation water and injected water. If salinity is "
+        "modelled in the simulation model, it is preferred to use that",
+    )
+    co2_model: CO2Models = Field(
+        default="span_wagner",
+        description="Selection of model for CO₂ properties, `span_wagner` equation "
+        "of state model or `flag`. Note that access to flag model depends "
+        "on licence",
+    )
+
+    @field_validator("pvt_zones", mode="before")
+    @classmethod
+    def pvtnum_check(cls, v: list[dict]) -> list[dict]:
+        """
+        At this point in time we don't have access to the simulator init file,
+        so we just have to guess that it contains all numbers from 1 to the
+        max number given in the strings. Validate that there are no overlaps.
+
+        Validation must be made here, not under individual PVTZone objects
+        to get the combined information in all PVTZone groups.
+
+        Earlier wildcard symbol was '*'. Empty string (new wildcard) is
+        changed into '*' for backward compatibility
+        """
+        pvtnum_strings = [zone["pvtnum"] for zone in v]
+        # Enforce single wildcard usage
+        if any(s is None or not str(s).strip() or s == "*" for s in pvtnum_strings):
+            if len(v) > 1:
+                raise ValueError(
+                    "Setting wildcard ('*' or empty string) means that "
+                    "all PVTNUM should be treated as one group, no "
+                    "other groups can be specified"
+                )
+            # Enforce old style wildcard
+            v[0]["pvtnum"] = "*"
+            return v
+        # Build temporary range to detect overlaps
+        tmp_max = 1
+        tmp_num_array = [1]
+        for num_string in pvtnum_strings:
+            nums = input_num_string_to_list(num_string, tmp_num_array)
+            m = max(nums)
+            if m > tmp_max:
+                tmp_max = m
+                tmp_num_array = list(range(1, tmp_max + 1))
+        if detect_overlaps(pvtnum_strings, tmp_num_array):
+            raise ValueError(f"Overlaps in PVT zone definitions: {pvtnum_strings}")
+        return v
 
 
 def possible_date_string(date_strings: list[str]) -> bool:
@@ -524,12 +661,18 @@ class PemConfig(BaseModel):
         description="Settings related to effective mineral properties and rock "
         "physics model",
     )
-    fluids: Fluids = Field(
-        description="Settings related to fluid composition. By default, brine, oil and"
-        "gas parameters are set, but only the fluid phases that are present in the "
-        "reservoir will be used in calculation of effective fluid properties",
+    alternative_fipnum_name: SkipJsonSchema[str] = Field(
+        default="fipnum".upper(),  # Should be upper case
+        description="If it is needed to deviate from Equinor standard to use "
+        "FIPNUM for zone/region class indicator",
     )
-    pressure: OverburdenPressureTrend | OverburdenPressureConstant = Field(
+    fluids: Fluids = Field(
+        description="Values for brine, oil and gas are required, but only the fluid "
+        "phases that are present in the simulation model will in practice be used in "
+        "calculation of effective fluid properties. You can have multiple fluid PVT "
+        "definitions, representing e.g. different regions and/or zones in your model.",
+    )
+    pressure: list[OverburdenPressureTrend | OverburdenPressureConstant] = Field(
         default_factory=OverburdenPressureTrend,
         description="Definition of overburden pressure model - constant or trend",
     )

@@ -1,5 +1,5 @@
 import warnings
-from dataclasses import astuple
+from dataclasses import asdict
 
 import numpy as np
 import xtgeo
@@ -34,7 +34,8 @@ def update_inactive_grid_cells(
     init_mask = np.zeros_like(grid.actnum_array).astype(bool)
 
     for prop in props:
-        for prop_arr in astuple(prop):  # noqa: type
+        # Iterate over all properties (vp, vs, density, ai, si, vpvs)
+        for prop_arr in asdict(prop).values():
             init_mask = np.logical_or(init_mask, prop_arr.mask.astype(bool))
 
     # To match the logic in xtgeo grid actnum, the mask must be inverted

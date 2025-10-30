@@ -41,6 +41,14 @@ export default defineConfig({
                     {text: 'ERT configuration', link: '/ert-configuration'},
                     {text: 'PEM configuration', link: '/pem-configuration'}
                 ]
+            },
+            {
+                text: 'Developer Documentation',
+                items: [
+                    {text: 'Zone-Aware Fluid Properties', link: '/zone-aware-fluids'},
+                    {text: 'Zone-Based Saturated Rock Properties', link: '/zone-based-saturated-rock'},
+                    {text: 'Zone Implementation Roadmap', link: '/zone-implementation-roadmap'}
+                ]
             }
         ],
         socialLinks: [

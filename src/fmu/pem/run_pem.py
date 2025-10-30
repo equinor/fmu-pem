@@ -36,15 +36,10 @@ def pem_fcn(
         init_property_file=config.eclipse_files.init_property_file,
         restart_property_file=config.eclipse_files.restart_property_file,
         seis_dates=config.global_params.seis_dates,
+        fipnum_name=config.alternative_fipnum_name,
     )
 
     # Calculate rock properties - fluids and minerals
-    # Fluid properties calculated for all time-steps
-    fluid_properties = pem_fcns.effective_fluid_properties(
-        restart_props=time_step_props,
-        fluid_params=config.fluids,
-    )
-
     # Effective mineral (matrix) properties - one set valid for all time-steps
     vsh, matrix_properties = pem_fcns.effective_mineral_properties(
         root_dir=start_dir,
@@ -55,31 +50,34 @@ def pem_fcn(
     # VSH is exported with other constant results, add it to the constant properties
     constant_props.vsh_pem = vsh
 
+    # Fluid properties calculated for all time-steps
+    fluid_properties = pem_fcns.effective_fluid_properties_zoned(
+        restart_props=time_step_props,
+        fluids=config.fluids,
+        pvtnum=constant_props.pvtnum,
+    )
+
     # Estimate effective pressure
-    if hasattr(config.rock_matrix.model.parameters, "cement_fraction"):
-        cem_frac = config.rock_matrix.model.parameters.cement_fraction
-    else:
-        cem_frac = None
     eff_pres = pem_fcns.estimate_pressure(
-        rpm_model=config.rock_matrix.model.model_name,
-        cement_fraction=cem_frac,
-        cement_density=config.rock_matrix.minerals[config.rock_matrix.cement].density,
+        rock_matrix=config.rock_matrix,
         overburden_pressure=config.pressure,
         sim_init=constant_props,
         sim_rst=time_step_props,
         matrix_props=matrix_properties,
         fluid_props=fluid_properties,
         sim_dates=config.global_params.seis_dates,
+        fipnum=constant_props.fipnum,
     )
 
     # Estimate saturated rock properties
     sat_rock_props = pem_fcns.estimate_saturated_rock(
         rock_matrix=config.rock_matrix,
         sim_init=constant_props,
-        eff_pres=eff_pres,
+        press_props=eff_pres,
         matrix_props=matrix_properties,
         fluid_props=fluid_properties,
         model_directory=config.paths.rel_path_pem,
+        fipnum_param=constant_props.fipnum,
     )
 
     # Delta and cumulative time estimates (only TWT properties are kept)

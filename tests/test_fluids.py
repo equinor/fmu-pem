@@ -3,7 +3,7 @@ import pytest
 
 from fmu.pem import INTERNAL_EQUINOR
 from fmu.pem.pem_functions import fluid_properties
-from fmu.pem.pem_functions.fluid_properties import effective_fluid_properties
+from fmu.pem.pem_functions.fluid_properties import effective_fluid_properties_zoned
 from fmu.pem.pem_utilities import EffectiveFluidProperties, SimRstProperties
 from fmu.pem.pem_utilities.enum_defs import CO2Models, FluidMixModel, TemperatureMethod
 
@@ -46,20 +46,34 @@ class StubTemperatureCfg:
     temperature_value = 60.0
 
 
-class StubFluids:
-    """Composite stub for fluids - mimic Pydantic object"""
+class StubMixMethodWood:
+    """Stub for Wood mixing method"""
 
+    method = FluidMixModel.WOOD
+
+
+class StubPVTZone:
+    """Stub PVT zone - mimics PVTZone from pem_config_validation"""
+
+    pvtnum = "*"
     brine = StubBrine()
     gas = StubGasParams()
     oil = StubOilParams()
     condensate = StubCondensateParams()
-    salinity_from_sim = True
     temperature = StubTemperatureCfg()
     gas_saturation_is_co2 = False
-    co2_model = CO2Models.FLAG
     gas_z_factor = 1.0
-    fluid_mix_method = FluidMixModel.WOOD
-    calculate_condensate = True
+    calculate_condensate = False  # Disabled by default, enabled in condensate test
+    co2_model = CO2Models.FLAG
+
+
+class StubFluids:
+    """Composite stub for fluids - mimic Pydantic object with pvt_zones"""
+
+    pvt_zones = [StubPVTZone()]
+    salinity_from_sim = True
+    co2_model = CO2Models.FLAG
+    fluid_mix_method = StubMixMethodWood()
 
 
 # SimRstProperties stub with inheritance
@@ -84,6 +98,17 @@ class StubSimRstProperties(SimRstProperties):
 @pytest.fixture
 def fluids():
     return StubFluids()
+
+
+@pytest.fixture
+def pvtnum_grid():
+    """Create a single-zone PVTNUM grid matching restart property shape."""
+    # Shape (3,) to match test data (3 cells)
+    shape = (3,)
+    # All cells belong to PVTNUM=1, no masking
+    data = np.ones(shape, dtype=int)
+    mask = np.zeros(shape, dtype=bool)
+    return np.ma.masked_array(data, mask=mask)
 
 
 @pytest.fixture
@@ -187,9 +212,13 @@ def mock_flag_models(monkeypatch):
         )
 
 
-def test_accepts_single_and_list(sim_props_no_condensate, fluids):
-    res_single = effective_fluid_properties(sim_props_no_condensate, fluids)
-    res_list = effective_fluid_properties([sim_props_no_condensate], fluids)
+def test_accepts_single_and_list(sim_props_no_condensate, fluids, pvtnum_grid):
+    res_single = effective_fluid_properties_zoned(
+        sim_props_no_condensate, fluids, pvtnum_grid
+    )
+    res_list = effective_fluid_properties_zoned(
+        [sim_props_no_condensate], fluids, pvtnum_grid
+    )
     assert isinstance(res_single[0], EffectiveFluidProperties)
     assert np.allclose(res_single[0].density, res_list[0].density)
 
@@ -197,15 +226,18 @@ def test_accepts_single_and_list(sim_props_no_condensate, fluids):
 @pytest.mark.skipif(
     not INTERNAL_EQUINOR, reason="Condensate only inside Equinor context"
 )
-def test_condensate_overwrite(sim_props_with_condensate, fluids):
-    res = effective_fluid_properties(sim_props_with_condensate, fluids)[0]
+def test_condensate_overwrite(sim_props_with_condensate, fluids, pvtnum_grid):
+    fluids.pvt_zones[0].calculate_condensate = True
+    res = effective_fluid_properties_zoned(
+        sim_props_with_condensate, fluids, pvtnum_grid
+    )[0]
     assert res.density[0] == pytest.approx(200.0)
     assert res.density[1] == pytest.approx(600.0)
 
 
-def test_co2_path(sim_props_no_condensate, fluids, monkeypatch):
+def test_co2_path(sim_props_no_condensate, fluids, pvtnum_grid, monkeypatch):
     calls = {"co2": 0}
-    fluids.gas_saturation_is_co2 = True
+    fluids.pvt_zones[0].gas_saturation_is_co2 = True
 
     def co2_properties(temp, pres):
         calls["co2"] += 1
@@ -220,20 +252,30 @@ def test_co2_path(sim_props_no_condensate, fluids, monkeypatch):
             fluid_properties.span_wagner, "co2_properties", co2_properties
         )
 
-    effective_fluid_properties(sim_props_no_condensate, fluids)
+    effective_fluid_properties_zoned(sim_props_no_condensate, fluids, pvtnum_grid)
     assert calls["co2"] == 1
 
 
-def test_density_and_bulk_shapes(sim_props_no_condensate, fluids):
-    res = effective_fluid_properties(sim_props_no_condensate, fluids)[0]
+def test_density_and_bulk_shapes(sim_props_no_condensate, fluids, pvtnum_grid):
+    res = effective_fluid_properties_zoned(
+        sim_props_no_condensate, fluids, pvtnum_grid
+    )[0]
     assert res.density.shape == res.bulk_modulus.shape
     assert res.density.ndim == 1
     assert np.all(res.bulk_modulus > 0.0)
+    # Verify masked arrays are returned
+    assert isinstance(res.density, np.ma.MaskedArray)
+    assert isinstance(res.bulk_modulus, np.ma.MaskedArray)
 
 
-def test_list_multiple(sim_props_no_condensate, sim_props_with_condensate, fluids):
-    results = effective_fluid_properties(
-        [sim_props_no_condensate, sim_props_with_condensate], fluids
+def test_list_multiple(
+    sim_props_no_condensate, sim_props_with_condensate, fluids, pvtnum_grid
+):
+    results = effective_fluid_properties_zoned(
+        [sim_props_no_condensate, sim_props_with_condensate], fluids, pvtnum_grid
     )
     assert len(results) == 2
     assert all(isinstance(r, EffectiveFluidProperties) for r in results)
+    # Verify all results are masked arrays
+    assert all(isinstance(r.density, np.ma.MaskedArray) for r in results)
+    assert all(isinstance(r.bulk_modulus, np.ma.MaskedArray) for r in results)

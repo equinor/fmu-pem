@@ -1,17 +1,25 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
     EffectiveMineralProperties,
-    PemConfig,
     PressureProperties,
     SimInitProperties,
     SimRstProperties,
+    bar_to_pa,
     to_masked_array,
 )
 from fmu.pem.pem_utilities.enum_defs import (
     OverburdenPressureTypes,
     RPMType,
+)
+from fmu.pem.pem_utilities.fipnum_pvtnum_utilities import (
+    input_num_string_to_list,
+    validate_zone_coverage,
 )
 from fmu.pem.pem_utilities.pem_config_validation import (
     OverburdenPressureConstant,
@@ -20,74 +28,151 @@ from fmu.pem.pem_utilities.pem_config_validation import (
 
 from .density import estimate_bulk_density
 
+if TYPE_CHECKING:
+    from fmu.pem.pem_utilities import RockMatrixProperties
+
 
 def estimate_pressure(
-    rpm_model: RPMType,
-    cement_fraction: float | None,
-    cement_density: float | None,
-    overburden_pressure: OverburdenPressureTrend | OverburdenPressureConstant,
+    rock_matrix: "RockMatrixProperties",
+    overburden_pressure: list[OverburdenPressureTrend | OverburdenPressureConstant],
     sim_init: SimInitProperties,
     sim_rst: list[SimRstProperties],
     matrix_props: EffectiveMineralProperties,
     fluid_props: list[EffectiveFluidProperties],
     sim_dates: list[str],
+    fipnum: np.ma.MaskedArray,
 ) -> list[PressureProperties]:
-    """Estimate effective and overburden pressure.
+    """Estimate effective and overburden pressure with per-zone overburden pressure
+    definitions.
+
     Effective pressure is defined as overburden pressure minus formation (or pore)
-    pressure multiplied with the Biot factor
+    pressure multiplied with the Biot factor. Overburden pressure is zone-aware
+    (defined per FIPNUM group) but constant in time, while effective pressure
+    varies with time as formation pressure changes.
+
+    This function now supports zone-based rock physics models. Each zone can have
+    its own model type (e.g., Patchy Cement, Friable), which affects bulk density
+    calculation for overburden pressure estimation.
 
     Args:
-        rpm_model: model for saturated rock properties
-        cement_fraction: volume fraction of cement, if patchy cement model is set
-        cement_density: cement mineral density, if patchy cement model is set
-        overburden_pressure: trend or constant value for overburden pressure
+        rock_matrix: rock matrix properties with zone-specific model definitions
+        overburden_pressure: list of trend or constant value for overburden pressure
+            per FIPNUM zone group
         sim_init: initial properties from simulation model
-        sim_rst: restart properties from the simulation model
-        matrix_props: rock properties
-        fluid_props: effective fluid properties
+        sim_rst: restart properties from the simulation model (time-dependent)
+        matrix_props: effective mineral properties
+        fluid_props: effective fluid properties (time-dependent)
         sim_dates: list of dates for simulation
+        fipnum: grid parameter with zone/region information
 
     Returns:
-        effective pressure [bar], overburden_pressure [bar]
+        List of PressureProperties for each time step containing effective pressure
+        [bar], formation pressure [bar], and overburden_pressure [bar]
 
     Raises:
-        ValueError: If sim_rst is an empty list.
+        ValueError: If FIPNUM zone definitions are invalid or if effective pressure
+            is negative for any cells.
     """
-    # Effective pressure, get formation pressures and convert to Pa from bar
-    # Saturated rock bulk density bulk
-    fl_density = [fluid.density for fluid in fluid_props]
-    b_patchy_cement = rpm_model == RPMType.PATCHY_CEMENT
-    bulk_density = estimate_bulk_density(
-        porosity=sim_init.poro,
-        fluid_density=fl_density,
-        mineral_density=matrix_props.density,
-        patchy_cement=b_patchy_cement,
-        cement_fraction=cement_fraction,
-        cement_density=cement_density,
+    # Validate zone coverage
+    fipnum_strings: list[str] = [zone.fipnum for zone in overburden_pressure]
+    validate_zone_coverage(fipnum_strings, fipnum, zone_name="FIPNUM")
+
+    # Get FIPNUM grid data and mask
+    fipnum_data = fipnum.data
+    fipnum_mask = (
+        fipnum.mask
+        if hasattr(fipnum, "mask")
+        else np.zeros_like(fipnum_data, dtype=bool)
     )
 
-    if overburden_pressure.type == OverburdenPressureTypes.CONSTANT:
-        eff_pres = [
-            estimate_effective_pressure(
-                formation_pressure=sim_date.pressure * 1.0e5,
-                bulk_density=dens,  # type: ignore
-                reference_overburden_pressure=overburden_pressure.value,
+    # Get actual FIPNUM values present in grid for use with input_num_string_to_list
+    actual_fipnum_values = list(np.unique(fipnum_data[~fipnum_mask]).astype(int))
+
+    # Calculate bulk density for all time steps (needed for overburden pressure
+    # calculation)
+    # Bulk density calculation needs to be zone-aware for patchy cement models
+    fl_density = [fluid.density for fluid in fluid_props]
+
+    # Check if any zone uses patchy cement model and needs special handling
+    bulk_density = []
+    for fl_dens in fl_density:
+        bulk_dens_grid = np.ma.masked_array(
+            np.zeros(sim_init.poro.shape, dtype=float), mask=fipnum_mask
+        )
+
+        # Calculate bulk density per zone based on zone-specific model
+        for zone_region in rock_matrix.zone_regions:
+            # Get all FIPNUM values for this zone using input_num_string_to_list
+            fipnum_values = input_num_string_to_list(
+                zone_region.fipnum, actual_fipnum_values
             )
-            for (sim_date, dens) in zip(sim_rst, bulk_density)
-        ]
-    else:  # overburden_pressure.type == 'trend':
-        eff_pres = [
-            estimate_effective_pressure(
-                formation_pressure=sim_date.pressure * 1.0e5,
-                bulk_density=dens,  # type: ignore
-                reference_overburden_pressure=overburden_pressure_from_trend(
-                    inter=overburden_pressure.intercept,
-                    grad=overburden_pressure.gradient,
-                    depth=sim_init.depth,
-                ),
+
+            # Build combined mask for all FIPNUMs in this zone using vectorized
+            # operation
+            zone_mask = np.isin(fipnum_data, fipnum_values) & ~fipnum_mask
+
+            # Check if this zone uses patchy cement model
+            is_patchy_cement = zone_region.model.model_name == RPMType.PATCHY_CEMENT
+
+            if is_patchy_cement:
+                # Get cement fraction and density for patchy cement model
+                cement_fraction = zone_region.model.parameters.cement_fraction
+                cement_density = rock_matrix.minerals[rock_matrix.cement].density
+            else:
+                cement_fraction = None
+                cement_density = None
+
+            # Calculate bulk density for this zone
+            zone_bulk_density = estimate_bulk_density(
+                porosity=np.ma.masked_where(~zone_mask, sim_init.poro),
+                fluid_density=[np.ma.masked_where(~zone_mask, fl_dens)],
+                mineral_density=np.ma.masked_where(~zone_mask, matrix_props.density),
+                patchy_cement=is_patchy_cement,
+                cement_fraction=cement_fraction,
+                cement_density=cement_density,
             )
-            for (sim_date, dens) in zip(sim_rst, bulk_density)
-        ]
+
+            # Merge zone bulk density into full grid
+            bulk_dens_grid[zone_mask] = zone_bulk_density[0][zone_mask]
+
+            bulk_density.append(bulk_dens_grid)
+
+    # Calculate overburden pressure per zone (time-independent)
+    # Initialize overburden pressure grid
+    overburden_pressure_grid = np.ma.masked_array(
+        np.full(sim_init.depth.shape, np.nan, dtype=float), mask=fipnum_mask
+    )
+
+    for zone in overburden_pressure:
+        # Get all FIPNUM values for this zone using input_num_string_to_list
+        fipnum_values = input_num_string_to_list(zone.fipnum, actual_fipnum_values)
+
+        # Build combined mask for all FIPNUMs in this zone using vectorized operation
+        mask_cells = np.isin(fipnum_data, fipnum_values) & ~fipnum_mask
+
+        if zone.type == OverburdenPressureTypes.CONSTANT:
+            # Constant overburden pressure for this zone (convert from bar to Pa)
+            overburden_pressure_grid[mask_cells] = bar_to_pa(zone.value)
+        else:  # zone.type == OverburdenPressureTypes.TREND
+            # Calculate overburden pressure from trend for this zone (already in Pa)
+            zone_ovb_pres = overburden_pressure_from_trend(
+                inter=zone.intercept,
+                grad=zone.gradient,
+                depth=sim_init.depth,
+            )
+            overburden_pressure_grid[mask_cells] = zone_ovb_pres[mask_cells]
+
+    # Calculate effective pressure for each time step
+    # Formation pressure changes with time, but overburden pressure is constant
+    eff_pres = [
+        estimate_effective_pressure(
+            formation_pressure=bar_to_pa(sim_date.pressure),
+            bulk_density=dens,
+            reference_overburden_pressure=overburden_pressure_grid,
+        )
+        for (sim_date, dens) in zip(sim_rst, bulk_density)
+    ]
+
     # Sanity check on results - effective pressure should not be negative
     for i, pres in enumerate(eff_pres):
         if np.any(pres.effective_pressure < 0.0):
@@ -98,7 +183,7 @@ def estimate_pressure(
                 f"bar, the number of cells with negative effective pressure is "
                 f"{np.sum(pres.effective_pressure < 0.0)}"
             )
-    # Add effective pressure to RST properties
+
     return eff_pres
 
 
