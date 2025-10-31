@@ -15,11 +15,10 @@ from rock_physics_open.equinor_utilities.std_functions import (
 )
 
 from fmu.pem.pem_utilities import (
-    DryRockProperties,
     EffectiveFluidProperties,
-    MatrixProperties,
-    PemConfig,
+    EffectiveMineralProperties,
     PressureProperties,
+    RockMatrixProperties,
     SaturatedRockProperties,
     filter_and_one_dim,
     reverse_filter_and_restore,
@@ -105,11 +104,11 @@ def dry_rock_regression(
 
 
 def run_regression_models(
-    matrix: MatrixProperties,
+    matrix: EffectiveMineralProperties,
     fluid_properties: list[EffectiveFluidProperties],
     porosity: np.ma.MaskedArray,
     pressure: list[PressureProperties],
-    config: PemConfig,
+    rock_matrix: RockMatrixProperties,
     vsh: np.ma.MaskedArray | None = None,
 ) -> list[SaturatedRockProperties]:
     """Run regression models for saturated rock properties.
@@ -122,13 +121,8 @@ def run_regression_models(
         porosity: Porosity as a masked array [fraction]
         pressure: list of pressure properties containing effective pressure values
             [bar] following Eclipse reservoir simulator convention
-        config: Parameters for the PEM
+        rock_matrix: rock matrix properties
         vsh: Volume of shale as a masked array [fraction], optional
-        pres_model_vp: Path to the pressure sensitivity model file for P-wave velocity
-            (default: "carbonate_pressure_model_vp_exp_2023.pkl")
-        pres_model_vs: Path to the pressure sensitivity model file for S-wave velocity
-            (default: "carbonate_pressure_model_vs_exp_2023.pkl")
-
 
     Returns:
         list[SaturatedRockProperties]: Saturated rock properties for each time step.
@@ -153,7 +147,7 @@ def run_regression_models(
     pres_form = pressure[0].formation_pressure * 1.0e5
     for time_step, fl_prop in enumerate(fluid_properties):
         # Prepare data using filter_and_one_dim
-        if time_step > 0 and config.rock_matrix.pressure_sensitivity:
+        if time_step > 0 and rock_matrix.pressure_sensitivity:
             pres_depl = pressure[time_step].formation_pressure * 1.0e5
             (
                 mask,
@@ -203,17 +197,17 @@ def run_regression_models(
 
         if not multiple_lithologies:
             k_dry, mu, rho_dry = dry_rock_regression(
-                tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.sandstone
+                tmp_por, tmp_min_rho, rock_matrix.model.parameters.sandstone
             )
         else:
             k_sand, mu_sand, rho_sand = dry_rock_regression(
-                tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.sandstone
+                tmp_por, tmp_min_rho, rock_matrix.model.parameters.sandstone
             )
             k_shale, mu_shale, rho_shale = dry_rock_regression(
-                tmp_por, tmp_min_rho, config.rock_matrix.model.parameters.shale
+                tmp_por, tmp_min_rho, rock_matrix.model.parameters.shale
             )
             rho_dry = rho_sand * (1.0 - tmp_vsh) + rho_shale * tmp_vsh
-            if config.rock_matrix.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
+            if rock_matrix.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
                 k_dry, mu = hashin_shtrikman_average(
                     k_sand, k_shale, mu_sand, mu_shale, (1.0 - tmp_vsh)
                 )
@@ -221,12 +215,9 @@ def run_regression_models(
                 k_dry, mu = voigt_reuss_hill(
                     k_sand, k_shale, mu_sand, mu_shale, (1.0 - tmp_vsh)
                 )
-            # dry_props = DryRockProperties(
-            #     bulk_modulus=k_dry, shear_modulus=mu, density=dry_rho
-            # )
 
         # Perform pressure correction on dry rock properties
-        if time_step > 0 and config.rock_matrix.pressure_sensitivity:
+        if time_step > 0 and rock_matrix.pressure_sensitivity:
             # Prepare in-situ properties dictionary based on what we have
             in_situ_dict = {
                 ParameterTypes.K.value: k_dry,
@@ -241,13 +232,13 @@ def run_regression_models(
             # Regression model requirements are met as default, but in the case of a
             # "physics model" (friable or patchy cement), extra matrix properties are
             # needed
-            if (
-                hasattr(config.rock_matrix.pressure_sensitivity_model, "model_type")
-                and config.rock_matrix.pressure_sensitivity_model.model_type
-                in PhysicsPressureModelTypes
+            if hasattr(
+                rock_matrix.pressure_sensitivity_model, "model_type"
+            ) and rock_matrix.pressure_sensitivity_model.model_type in list(
+                PhysicsPressureModelTypes
             ):
                 # Create mineral properties from matrix properties
-                mineral_props = MatrixProperties(
+                mineral_props = EffectiveMineralProperties(
                     bulk_modulus=tmp_min_k,
                     shear_modulus=tmp_min_mu,
                     density=tmp_min_rho,
@@ -255,17 +246,15 @@ def run_regression_models(
 
                 # If patchy cement model, create cement properties
                 if (
-                    config.rock_matrix.pressure_sensitivity_model.model_type
+                    rock_matrix.pressure_sensitivity_model.model_type
                     == PhysicsPressureModelTypes.PATCHY_CEMENT
                 ):
                     # Use specified cement mineral
-                    cement_props = config.rock_matrix.minerals[
-                        config.rock_matrix.cement
-                    ]
+                    cement_props = rock_matrix.minerals[rock_matrix.cement]
 
             # Apply pressure sensitivity model
             depleted_props = apply_dry_rock_pressure_sensitivity_model(
-                model=config.rock_matrix.pressure_sensitivity_model,
+                model=rock_matrix.pressure_sensitivity_model,
                 initial_eff_pressure=(
                     tmp_pres_over - tmp_pres_form
                 ),  # effective initial pressure

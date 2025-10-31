@@ -7,7 +7,7 @@ import pytest
 from fmu.pem.pem_functions.run_patchy_cement_model import run_patchy_cement
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PressureProperties,
     SaturatedRockProperties,
 )
@@ -15,7 +15,7 @@ from fmu.pem.pem_utilities import (
 
 @pytest.fixture
 def valid_mineral():
-    return MatrixProperties(
+    return EffectiveMineralProperties(
         bulk_modulus=np.ma.array([37e9, 38e9], mask=[False, False]),
         shear_modulus=np.ma.array([44e9, 45e9], mask=[False, False]),
         density=np.ma.array([2650.0, 2660.0], mask=[False, False]),
@@ -32,7 +32,7 @@ def valid_fluid():
 
 @pytest.fixture
 def valid_cement():
-    return MatrixProperties(
+    return EffectiveMineralProperties(
         bulk_modulus=np.ma.array([10e9, 11e9], mask=[False, False]),
         shear_modulus=np.ma.array([15e9, 16e9], mask=[False, False]),
         density=np.ma.array([2550.0, 2560.0], mask=[False, False]),
@@ -57,7 +57,7 @@ def valid_pressure():
 
 @pytest.fixture
 def valid_matrix_mock():
-    matrix_mock = MagicMock(spec=MatrixProperties)
+    matrix_mock = MagicMock(spec=EffectiveMineralProperties)
     matrix_mock.pressure_sensitivity = False
     matrix_mock.model = MagicMock()
     matrix_mock.model.parameters = MagicMock(

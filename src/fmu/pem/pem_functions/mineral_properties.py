@@ -1,12 +1,6 @@
 """
 Effective mineral properties are calculated from the individual mineral properties of
-the volume fractions. In the case that only a single net-to-gross fraction is
-available, this is transformed to shale and sand fractions. A net-to-gross fraction
-can also be estimated from porosity property.
-
-If the ntg_calculation_flag is set in the PEM configuration parameter file, this will
-override settings for volume fractions. In that case net-to-gross fraction is either
-read from file, or calculated from porosity.
+the volume fractions.
 """
 
 from pathlib import Path
@@ -20,8 +14,9 @@ from rock_physics_open.equinor_utilities.std_functions import (
 from xtgeo import Grid
 
 from fmu.pem.pem_utilities import (
-    MatrixProperties,
+    EffectiveMineralProperties,
     PemConfig,
+    RockMatrixProperties,
     SimInitProperties,
     filter_and_one_dim,
     get_shale_fraction,
@@ -36,29 +31,38 @@ from fmu.pem.pem_utilities.pem_config_validation import (
 
 
 def effective_mineral_properties(
-    root_dir: Path, config: PemConfig, sim_init: SimInitProperties, sim_grid: Grid
-) -> tuple[np.ma.MaskedArray | None, MatrixProperties]:
+    root_dir: Path,
+    matrix: RockMatrixProperties,
+    sim_init: SimInitProperties,
+    sim_grid: Grid,
+) -> tuple[np.ma.MaskedArray | None, EffectiveMineralProperties]:
     """Estimate effective mineral properties for each grid cell
 
     Args:
         root_dir: start directory for running of PEM
-        config: configuration parameters
+        matrix: rock matrix parameters
         sim_init: simulation initial properties
 
     Returns:
         shale volume, effective mineral properties
     """
-    fractions = import_fractions(root_dir, config, sim_grid)
+    fractions = import_fractions(
+        root_dir=root_dir,
+        fraction_path=matrix.volume_fractions.rel_path_fractions,
+        fraction_files=matrix.volume_fractions.fractions_prop_file_names,
+        fraction_names=matrix.fraction_names,
+        grd=sim_grid,
+    )
 
     vsh = get_shale_fraction(
         fractions,
-        config.rock_matrix.fraction_names,
-        config.rock_matrix.shale_fractions,
+        matrix.fraction_names,
+        matrix.shale_fractions,
     )
 
-    mineral_names = config.rock_matrix.fraction_minerals
+    mineral_names = matrix.fraction_minerals
     eff_min_props = estimate_effective_mineral_properties(
-        mineral_names, fractions, config, sim_init.poro
+        mineral_names, fractions, matrix, sim_init.poro
     )
     return vsh, eff_min_props
 
@@ -66,9 +70,9 @@ def effective_mineral_properties(
 def estimate_effective_mineral_properties(
     fraction_names: str | list[str],
     fractions: np.ma.MaskedArray | list[np.ma.MaskedArray],
-    pem_config: PemConfig,
+    matrix_params: RockMatrixProperties,
     porosity: np.ma.MaskedArray,
-) -> MatrixProperties:
+) -> EffectiveMineralProperties:
     """Estimation of effective mineral properties must be able to handle cases where
     there is a more complex combination of minerals than the standard sand/shale case.
     For carbonates the input can be based on minerals (e.g. calcite, dolomite, quartz,
@@ -88,16 +92,16 @@ def estimate_effective_mineral_properties(
     verify_mineral_inputs(
         fraction_names,
         fractions,
-        pem_config.rock_matrix.minerals,
-        pem_config.rock_matrix.complement,
+        matrix_params.minerals,
+        matrix_params.complement,
     )
 
     fraction_names, fractions = normalize_mineral_fractions(
         fraction_names,
         fractions,
-        pem_config.rock_matrix.complement,
+        matrix_params.complement,
         porosity,
-        pem_config.rock_matrix.volume_fractions.fractions_are_mineral_fraction,
+        matrix_params.volume_fractions.fractions_are_mineral_fraction,
     )
 
     mask, *fractions = filter_and_one_dim(*fractions)
@@ -105,13 +109,13 @@ def estimate_effective_mineral_properties(
     mu_list = []
     rho_list = []
     for name in fraction_names:
-        mineral = pem_config.rock_matrix.minerals[name]
+        mineral = matrix_params.minerals[name]
         k_list.append(to_masked_array(mineral.bulk_modulus, fractions[0]))
         mu_list.append(to_masked_array(mineral.shear_modulus, fractions[0]))
         rho_list.append(to_masked_array(mineral.density, fractions[0]))
 
     # ToDo: check mixing functions - high values for K
-    if pem_config.rock_matrix.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
+    if matrix_params.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
         eff_k, eff_mu = multi_hashin_shtrikman(
             *[arr for prop in zip(k_list, mu_list, fractions) for arr in prop]
         )
@@ -126,7 +130,7 @@ def estimate_effective_mineral_properties(
     eff_min_k, eff_min_mu, eff_min_rho = reverse_filter_and_restore(
         mask, eff_k, eff_mu, eff_rho
     )
-    return MatrixProperties(
+    return EffectiveMineralProperties(
         bulk_modulus=eff_min_k, shear_modulus=eff_min_mu, density=eff_min_rho
     )
 

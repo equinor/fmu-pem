@@ -9,7 +9,9 @@ from rock_physics_open.equinor_utilities.std_functions import brie, multi_wood
 from fmu.pem import INTERNAL_EQUINOR
 
 if INTERNAL_EQUINOR:
-    from rock_physics_open.fluid_models import saturations_below_bubble_point
+    from rock_physics_open.fluid_models import (
+        saturations_below_bubble_point,  # pylint: disable=import-error
+    )
 
 from rock_physics_open.fluid_models.oil_model.oil_bubble_point import bp_standing
 
@@ -25,7 +27,7 @@ from fmu.pem.pem_utilities.enum_defs import CO2Models, FluidMixModel, Temperatur
 
 
 def effective_fluid_properties(
-    props: list[SimRstProperties] | SimRstProperties,
+    restart_props: list[SimRstProperties] | SimRstProperties,
     fluid_params: Fluids,
 ) -> list[EffectiveFluidProperties]:
     """effective_fluid_properties
@@ -36,7 +38,7 @@ def effective_fluid_properties(
 
     Parameters
     ----------
-    props :
+    restart_props :
         list of dicts or a single dict with saturation, GOR and pressure per
         time step
     fluid_params : Fluids class
@@ -47,9 +49,9 @@ def effective_fluid_properties(
     list
         fluid properties (bulk modulus and density) per time step
     """
-    props = _verify_inputs(props)
+    restart_props = _verify_inputs(restart_props)
     prop_list = []
-    for prop in props:
+    for prop in restart_props:
         # Initial check of saturation for gas and brine and calculation of oil
         # saturation
         sat_wat, sat_gas, sat_oil = _saturation_check(prop.swat, prop.sgas)
@@ -267,7 +269,9 @@ def _saturation_check(
     return s_water, s_gas, s_oil  # type: ignore
 
 
-def _verify_inputs(inp_props: list[Fluids] | Fluids) -> list[Fluids]:
+def _verify_inputs(
+    inp_props: list[SimRstProperties] | SimRstProperties,
+) -> list[SimRstProperties]:
     if isinstance(inp_props, list):
         if not all(isinstance(prop, SimRstProperties) for prop in inp_props):
             raise ValueError(
@@ -276,11 +280,6 @@ def _verify_inputs(inp_props: list[Fluids] | Fluids) -> list[Fluids]:
                 f"is {[type(prop) for prop in inp_props]}"
             )
         return inp_props
-    if isinstance(inp_props, Fluids):
-        return [
-            inp_props,
-        ]
-    # "else ..."
     raise ValueError(
         f"{__file__}: input to effective fluid properties should be list of "
         f"SimRstProperties or a single SimRstProperties instance, is {type(inp_props)}"

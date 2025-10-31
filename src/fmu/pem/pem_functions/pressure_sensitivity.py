@@ -12,7 +12,7 @@ from fmu.pem.pem_utilities.enum_defs import (
     PhysicsPressureModelTypes,
     RegressionPressureParameterTypes,
 )
-from fmu.pem.pem_utilities.pem_class_definitions import MatrixProperties
+from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
 from fmu.pem.pem_utilities.rpm_models import (
     MineralProperties,
     PhysicsModelPressureSensitivity,
@@ -296,8 +296,8 @@ def apply_dry_rock_pressure_sensitivity_model(
     initial_eff_pressure: np.ndarray,
     depleted_eff_pressure: np.ndarray,
     in_situ_dict: dict[str, np.ndarray],
-    mineral_properties: MineralProperties | MatrixProperties | None = None,
-    cement_properties: MineralProperties | MatrixProperties | None = None,
+    mineral_properties: MineralProperties | EffectiveMineralProperties | None = None,
+    cement_properties: MineralProperties | EffectiveMineralProperties | None = None,
 ) -> dict[str, np.ndarray]:
     """
     Apply pressure sensitivity model to estimate depleted elastic properties.
@@ -384,8 +384,8 @@ def _apply_physics_model(
     rho: np.ndarray,
     pres_in_situ: np.ndarray,
     pres_depleted: np.ndarray,
-    mineral_properties: MineralProperties | MatrixProperties | None,
-    cement_properties: MineralProperties | MatrixProperties | None,
+    mineral_properties: MineralProperties | EffectiveMineralProperties | None,
+    cement_properties: MineralProperties | EffectiveMineralProperties | None,
 ) -> dict[str, np.ndarray]:
     """Apply physics-based pressure sensitivity model."""
     from rock_physics_open.equinor_utilities.std_functions import velocity

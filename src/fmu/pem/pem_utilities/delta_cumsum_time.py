@@ -43,7 +43,7 @@ def _verify_delta_t(arrays: list[np.ma.MaskedArray]) -> None:
 
 
 def calculate_time_cumsum(
-    props: list | dict, conf_params: PemConfig
+    props: list | dict,
 ) -> list[dict[str, np.ma.MaskedArray]]:
     """
     Function to calculate cumulative sum of time difference properties
@@ -80,7 +80,6 @@ def _verify_cumsum_inputs(input_set):
 def estimate_sum_delta_time(
     constant_props: SimInitProperties,
     sat_rock_props: list[SaturatedRockProperties],
-    config: PemConfig,
 ) -> list[TwoWayTime]:
     """Calculate TWT (two-way-time) for seismic signal for each restart date
 
@@ -97,5 +96,5 @@ def estimate_sum_delta_time(
         estimate_delta_time(constant_props.delta_z, sat_rock.vp, sat_rock.vs)
         for sat_rock in sat_rock_props
     ]
-    cum_time_list = calculate_time_cumsum(delta_time, config)
+    cum_time_list = calculate_time_cumsum(delta_time)
     return [TwoWayTime(**time_set) for time_set in cum_time_list]

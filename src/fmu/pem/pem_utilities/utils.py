@@ -1,11 +1,12 @@
 import os
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import xtgeo
 
-from .pem_class_definitions import MatrixProperties, PressureProperties
+from .pem_class_definitions import EffectiveMineralProperties, PressureProperties
 
 
 @contextmanager
@@ -150,23 +151,6 @@ def _verify_export_inputs(props, grid, dates, file_format=None):
     )
 
 
-def ntg_to_shale_fraction(
-    ntg: np.ma.MaskedArray, por: np.ma.MaskedArray
-) -> np.ma.MaskedArray:
-    """Calculate sand and shale fraction from N/G property
-
-    Args:
-        ntg: net-to-gross property [fraction]
-        por: total porosity [fraction]
-
-    Returns:
-        shale fraction
-    """
-    clip_ntg: np.ma.MaskedArray = np.ma.clip(np.ma.MaskedArray(ntg), 0.0, 1.0)  # type: ignore[assignment]
-    vsh: np.ma.MaskedArray = np.ma.MaskedArray(1.0 - clip_ntg)
-    return (vsh / (1.0 - por)).clip(0.0, 1.0)
-
-
 def get_shale_fraction(
     vol_fractions: list[np.ma.MaskedArray],
     fraction_names: list[str],
@@ -208,7 +192,7 @@ def estimate_cement(
     shear_modulus: float | int,
     density: float | int,
     grid: np.ma.MaskedArray,
-) -> MatrixProperties:
+) -> EffectiveMineralProperties:
     """Creates masked arrays filled with constant cement properties, matching the shape
     and mask of the input grid.
 
@@ -224,7 +208,7 @@ def estimate_cement(
     cement_k = to_masked_array(bulk_modulus, grid)
     cement_mu = to_masked_array(shear_modulus, grid)
     cement_rho = to_masked_array(density, grid)
-    return MatrixProperties(
+    return EffectiveMineralProperties(
         bulk_modulus=cement_k, shear_modulus=cement_mu, density=cement_rho
     )
 

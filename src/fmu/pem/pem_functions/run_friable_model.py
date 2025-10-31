@@ -9,7 +9,7 @@ from rock_physics_open.sandstone_models import friable_model_dry
 
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PressureProperties,
     RockMatrixProperties,
     SaturatedRockProperties,
@@ -25,7 +25,7 @@ from .pressure_sensitivity import apply_dry_rock_pressure_sensitivity_model
 
 
 def run_friable(
-    mineral: MatrixProperties,
+    mineral: EffectiveMineralProperties,
     fluid: list[EffectiveFluidProperties] | EffectiveFluidProperties,
     porosity: np.ma.MaskedArray,
     pressure: list[PressureProperties] | PressureProperties,
@@ -112,7 +112,7 @@ def run_friable(
                 ParameterTypes.RHO.value: tmp_min_rho,
                 ParameterTypes.POROSITY.value: tmp_por,
             }
-            tmp_matrix = MatrixProperties(
+            tmp_matrix = EffectiveMineralProperties(
                 bulk_modulus=tmp_min_k,
                 shear_modulus=tmp_min_mu,
                 density=tmp_min_rho,

@@ -9,6 +9,12 @@ paths:
 #  rel_path_simgrid: ../../sim2seis/input/pem
 #  rel_path_geogrid: ../../share/results/grids
 
+eclipse_files:
+  # Import Eclipse simulation grid - INIT and RESTART
+  egrid_file: ECLIPSE.EGRID
+  init_property_file: ECLIPSE.INIT
+  restart_property_file: ECLIPSE.UNRST
+
 # Dry rock parameters. It varies from model to model which of the parameters that are used.
 rock_matrix:
   model:

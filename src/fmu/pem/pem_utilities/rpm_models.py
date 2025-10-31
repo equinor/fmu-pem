@@ -31,7 +31,7 @@ from fmu.pem.pem_utilities.enum_defs import (
     RegressionPressureParameterTypes,
     RPMType,
 )
-from fmu.pem.pem_utilities.pem_class_definitions import MatrixProperties
+from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
 
 
 class OptionalField(BaseModel):
@@ -492,10 +492,10 @@ class PhysicsModelPressureSensitivity(BaseModel):
         k_dry: np.ndarray,
         mu_dry: np.ndarray,
         poro: np.ndarray,
-        min_prop: MatrixProperties,
+        min_prop: EffectiveMineralProperties,
         in_situ_press: np.ndarray,
         depl_press: np.ndarray,
-        cem_prop: MatrixProperties | None = None,
+        cem_prop: EffectiveMineralProperties | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         # The only differences in inputs and parameters between friable model and
         # patchy cement model are the parameter cement fraction and the cement

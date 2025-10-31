@@ -40,6 +40,37 @@ from .rpm_models import (
 )
 
 
+class EclipseFiles(BaseModel):
+    rel_path_simgrid: DirectoryPath = Field(
+        default=Path("../../sim2seis/input/pem"),
+        description="Relative path of the simulation grid",
+    )
+    egrid_file: Path = Field(
+        default=Path("ECLIPSE.EGRID"),
+        description="Name of Eclipse EGRID file",
+    )
+    init_property_file: Path = Field(
+        default=Path("ECLIPSE.INIT"),
+        description="Name of Eclipse INIT file",
+    )
+    restart_property_file: Path = Field(
+        default=Path("ECLIPSE.UNRST"),
+        description="Name of Eclipse UNRST file",
+    )
+
+    @model_validator(mode="after")
+    def check_fractions(self) -> Self:
+        for sim_file in [
+            self.egrid_file,
+            self.init_property_file,
+            self.restart_property_file,
+        ]:
+            full_name = self.rel_path_simgrid / sim_file
+            if not full_name.exists():
+                raise FileNotFoundError(f"fraction prop file is missing: {full_name}")
+        return self
+
+
 class FractionFiles(BaseModel):
     rel_path_fractions: DirectoryPath = Field(
         default=Path("../../sim2seis/input/pem"),
@@ -452,11 +483,6 @@ class PemPaths(BaseModel):
         "file for the FMU workflow",
         frozen=True,
     )
-    rel_ntg_grid_path: SkipJsonSchema[DirectoryPath] = Field(
-        default=Path("../../sim2seis/input/pem"),
-        description="This is the relative path to the ntg grid file. If the "
-        "ntg_calculation_flag is False, it is disregarded, cfr. fractions",
-    )
     rel_path_simgrid: SkipJsonSchema[DirectoryPath] = Field(
         default=Path("../../sim2seis/input/pem"),
         description="Directory for eclipse simulation grid",
@@ -493,6 +519,7 @@ class PemConfig(BaseModel):
         description="Default path settings exist, it is possible to override them, "
         "mostly relevant for input paths",
     )
+    eclipse_files: EclipseFiles
     rock_matrix: RockMatrixProperties = Field(
         description="Settings related to effective mineral properties and rock "
         "physics model",

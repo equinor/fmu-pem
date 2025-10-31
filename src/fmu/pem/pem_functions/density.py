@@ -1,31 +1,26 @@
+from numpy.ma import MaskedArray
 from rock_physics_open.equinor_utilities.std_functions import rho_b
-
-from fmu.pem.pem_utilities import (
-    EffectiveFluidProperties,
-    MatrixProperties,
-    PemConfig,
-    SimInitProperties,
-    estimate_cement,
-)
-from fmu.pem.pem_utilities.rpm_models import PatchyCementRPM
 
 
 def estimate_bulk_density(
-    config: PemConfig,
-    init_prop: SimInitProperties,
-    fluid_props: list[EffectiveFluidProperties],
-    mineral_props: MatrixProperties,
-) -> list:
-    """
+    porosity: MaskedArray,
+    fluid_density: list[MaskedArray],
+    mineral_density: MaskedArray,
+    *,
+    patchy_cement: bool = False,
+    cement_fraction: float | None = None,
+    cement_density: float | None = None,
+) -> list[MaskedArray]:
+    r"""
     Estimate the bulk density per restart date.
 
     Args:
-        config: Parameter settings.
-        init_prop: Constant properties, here using porosity.
-        fluid_props: list of EffectiveFluidProperties objects representing the effective
-            fluid properties per restart date.
-        mineral_props: EffectiveMineralProperties object representing the effective
-            properties.
+        porosity: Initial simulation  porosity.
+        fluid_density: Effective fluid density per date.
+        mineral_density: Effective mineral (matrix) density.
+        patchy_cement: Enable patchy_cement mixing.
+        cement_fraction: Cement volume fraction within pore space.
+        cement_density: Cement density.
 
     Returns:
         list of bulk densities per restart date.
@@ -33,21 +28,22 @@ def estimate_bulk_density(
     Raises:
         ValueError: If fluid_props is an empty list.
     """
-    if isinstance(config.rock_matrix.model, PatchyCementRPM):
-        # Get cement mineral properties
-        cement_mineral = config.rock_matrix.cement
-        mineral = config.rock_matrix.minerals[cement_mineral]
+    if not fluid_density:
+        raise ValueError("Fluid properties cannot be an empty list.")
+
+    if patchy_cement:
+        if any(v is None for v in (cement_fraction, cement_density)):
+            raise ValueError(
+                "cement_fraction and cement_props must be provided when "
+                "patchy_cement is True."
+            )
         # Cement properties
-        cement_properties = estimate_cement(
-            mineral.bulk_modulus, mineral.shear_modulus, mineral.density, init_prop.poro
-        )
-        rel_cement_fraction = (
-            config.rock_matrix.model.parameters.cement_fraction / init_prop.poro
-        )
+        rel_cement_fraction = cement_fraction / porosity
         rho_m = (
-            rel_cement_fraction * cement_properties.density
-            + (1 - rel_cement_fraction) * mineral_props.density
+            rel_cement_fraction * cement_density
+            + (1 - rel_cement_fraction) * mineral_density
         )
     else:
-        rho_m = mineral_props.density
-    return [rho_b(init_prop.poro, fluid.density, rho_m) for fluid in fluid_props]
+        rho_m = mineral_density
+
+    return [rho_b(porosity, rho_fl, rho_m) for rho_fl in fluid_density]  # type: ignore

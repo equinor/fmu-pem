@@ -2,35 +2,50 @@ import numpy as np
 
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PemConfig,
     PressureProperties,
     SimInitProperties,
     SimRstProperties,
     to_masked_array,
 )
-from fmu.pem.pem_utilities.enum_defs import OverburdenPressureTypes
+from fmu.pem.pem_utilities.enum_defs import (
+    OverburdenPressureTypes,
+    RPMType,
+)
+from fmu.pem.pem_utilities.pem_config_validation import (
+    OverburdenPressureConstant,
+    OverburdenPressureTrend,
+)
 
 from .density import estimate_bulk_density
 
 
 def estimate_pressure(
-    config: PemConfig,
+    rpm_model: RPMType,
+    cement_fraction: float | None,
+    cement_density: float | None,
+    overburden_pressure: OverburdenPressureTrend | OverburdenPressureConstant,
     sim_init: SimInitProperties,
     sim_rst: list[SimRstProperties],
-    matrix_props: MatrixProperties,
+    matrix_props: EffectiveMineralProperties,
     fluid_props: list[EffectiveFluidProperties],
+    sim_dates: list[str],
 ) -> list[PressureProperties]:
     """Estimate effective and overburden pressure.
     Effective pressure is defined as overburden pressure minus formation (or pore)
     pressure multiplied with the Biot factor
 
     Args:
-        config: configuration parameters
+        rpm_model: model for saturated rock properties
+        cement_fraction: volume fraction of cement, if patchy cement model is set
+        cement_density: cement mineral density, if patchy cement model is set
+        overburden_pressure: trend or constant value for overburden pressure
         sim_init: initial properties from simulation model
         sim_rst: restart properties from the simulation model
         matrix_props: rock properties
         fluid_props: effective fluid properties
+        sim_dates: list of dates for simulation
 
     Returns:
         effective pressure [bar], overburden_pressure [bar]
@@ -40,27 +55,34 @@ def estimate_pressure(
     """
     # Effective pressure, get formation pressures and convert to Pa from bar
     # Saturated rock bulk density bulk
-    bulk_density = estimate_bulk_density(config, sim_init, fluid_props, matrix_props)
+    fl_density = [fluid.density for fluid in fluid_props]
+    b_patchy_cement = rpm_model == RPMType.PATCHY_CEMENT
+    bulk_density = estimate_bulk_density(
+        porosity=sim_init.poro,
+        fluid_density=fl_density,
+        mineral_density=matrix_props.density,
+        patchy_cement=b_patchy_cement,
+        cement_fraction=cement_fraction,
+        cement_density=cement_density,
+    )
 
-    # ovb = config.pressure.overburden
-    ovb = config.pressure
-    if ovb.type == OverburdenPressureTypes.CONSTANT:
+    if overburden_pressure.type == OverburdenPressureTypes.CONSTANT:
         eff_pres = [
             estimate_effective_pressure(
                 formation_pressure=sim_date.pressure * 1.0e5,
-                bulk_density=dens,
-                reference_overburden_pressure=ovb.value,
+                bulk_density=dens,  # type: ignore
+                reference_overburden_pressure=overburden_pressure.value,
             )
             for (sim_date, dens) in zip(sim_rst, bulk_density)
         ]
-    else:  # ovb.type == 'trend':
+    else:  # overburden_pressure.type == 'trend':
         eff_pres = [
             estimate_effective_pressure(
                 formation_pressure=sim_date.pressure * 1.0e5,
-                bulk_density=dens,
+                bulk_density=dens,  # type: ignore
                 reference_overburden_pressure=overburden_pressure_from_trend(
-                    inter=ovb.intercept,
-                    grad=ovb.gradient,
+                    inter=overburden_pressure.intercept,
+                    grad=overburden_pressure.gradient,
                     depth=sim_init.depth,
                 ),
             )
@@ -71,7 +93,7 @@ def estimate_pressure(
         if np.any(pres.effective_pressure < 0.0):
             raise ValueError(
                 f"effective pressure calculation: formation pressure exceeds "
-                f"overburden pressure for date {config.global_params.seis_dates[i]}, \n"
+                f"overburden pressure for date {sim_dates[i]}, \n"
                 f"minimum effective pressure is {np.min(pres.effective_pressure):.2f} "
                 f"bar, the number of cells with negative effective pressure is "
                 f"{np.sum(pres.effective_pressure < 0.0)}"

@@ -7,25 +7,30 @@ import xtgeo
 from .enum_defs import Sim2SeisRequiredParams
 from .pem_class_definitions import (
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PressureProperties,
     SaturatedRockProperties,
 )
-from .pem_config_validation import FromGlobal, PemConfig
 from .utils import _verify_export_inputs, restore_dir
 
 
 def save_results(
     start_dir: Path,
     run_from_rms_flag: bool,
-    config_settings: PemConfig,
     rms_project: object,
     sim_grid: xtgeo.grid3d.Grid,
+    grid_name: str,
+    seis_dates: list[str],
+    save_to_rms: bool,
+    save_to_disk: bool,
+    save_intermediate: bool,
+    mandatory_path: Path,
+    pem_output_path: Path,
     eff_pres_props: list[PressureProperties],
     sat_rock_props: list[SaturatedRockProperties],
     difference_props: list[dict],
     difference_date_strs: list[str],
-    matrix_props: MatrixProperties,
+    matrix_props: EffectiveMineralProperties,
     fluid_props: list[EffectiveFluidProperties],
 ) -> None:
     """Saves all intermediate and final results according to the settings in the PEM
@@ -34,9 +39,15 @@ def save_results(
     Args:
         start_dir: initial directory setting
         run_from_rms_flag: call to PEM from RMS
-        config_settings: PEM and global settings
         rms_project: RMS project
         sim_grid: grid definition
+        grid_name: stem of output grid name
+        seis_dates: list of dates for simulation runs
+        save_to_rms: save results to RMS project
+        save_to_disk: save non-mandatory results to disk
+        save_intermediate: save intermediate calculations to disk
+        mandatory_path: path for mandatory output
+        pem_output_path: path for non-mandatory PEM output
         eff_pres_props: effective, overburden and formation pressure per time step
         sat_rock_props: elastic properties of saturated rock
         difference_props: differences in elastic properties between selected restart
@@ -49,19 +60,10 @@ def save_results(
         None, warning or KeyError
     """
     # Saving results:
+
     # 1. Mandatory part: Save Vp, Vs, Density to disk for seismic forward modelling.
-    # Use FMU standard term "DENS" for density
-
-    # mypy needs an assert in the same function as the usage - it did not pick up a
-    # verification in a separate function without it, mypy reports errors, assuming
-    # global_params is None
-
-    assert isinstance(config_settings.global_params, FromGlobal)
-
-    pem_output_path = start_dir.joinpath(
-        config_settings.paths.rel_path_mandatory_output
-    )
-    output_path = start_dir.joinpath(config_settings.paths.rel_path_output)
+    full_mandatory_path = start_dir / mandatory_path
+    full_output_path = start_dir / pem_output_path
     output_set = [
         {
             k: v
@@ -73,9 +75,9 @@ def save_results(
     export_results_disk(
         output_set,
         sim_grid,
-        config_settings.global_params.grid_model,
-        pem_output_path,
-        time_steps=config_settings.global_params.seis_dates,
+        grid_name,
+        full_mandatory_path,
+        time_steps=seis_dates,
         export_format="grdecl",
     )
 
@@ -86,8 +88,7 @@ def save_results(
     sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]  # type: ignore
 
     try:
-        if config_settings.results.save_results_to_rms and run_from_rms_flag:
-            grid_model = config_settings.global_params.grid_model
+        if save_to_rms and run_from_rms_flag:
             # Time dependent absolute properties
             for props in [eff_pres_dict_list, sat_prop_dict_list]:
                 prop_dict = list(props)
@@ -95,15 +96,15 @@ def save_results(
                     rms_project,
                     prop_dict,
                     sim_grid,
-                    grid_model,
-                    time_steps=config_settings.global_params.seis_dates,
+                    grid_name,
+                    time_steps=seis_dates,
                 )
             # Difference properties
             export_results_roxar(
                 rms_project,
                 difference_props,
                 sim_grid,
-                grid_model,
+                grid_name,
                 time_steps=difference_date_strs,
             )
     except KeyError:  # warn user that results are not saved
@@ -112,21 +113,21 @@ def save_results(
             f"config file"
         )
     try:
-        if config_settings.results.save_results_to_disk:
+        if save_to_disk:
             for props in [eff_pres_dict_list, sat_prop_dict_list]:
                 prop_dict = list(props)
                 export_results_disk(
                     prop_dict,
                     sim_grid,
                     sim_grid.name,
-                    output_path,
-                    time_steps=config_settings.global_params.seis_dates,
+                    full_output_path,
+                    time_steps=seis_dates,
                 )
             export_results_disk(
                 difference_props,
                 sim_grid,
-                config_settings.global_params.grid_model,
-                output_path,
+                grid_name,
+                full_output_path,
                 time_steps=difference_date_strs,
             )
     except KeyError:  # warn user that results are not saved
@@ -137,20 +138,20 @@ def save_results(
 
     # 3. Save intermediate results only if specified in the config file
     try:
-        if config_settings.results.save_intermediate_results:
+        if save_intermediate:
             export_results_disk(
                 [asdict(fl_props) for fl_props in fluid_props],  # type: ignore
                 sim_grid,
-                config_settings.global_params.grid_model,
-                output_path,
-                time_steps=config_settings.global_params.seis_dates,
+                grid_name,
+                full_output_path,
+                time_steps=seis_dates,
                 name_suffix="_FLUID",
             )
             export_results_disk(
                 asdict(matrix_props),  # type: ignore
                 sim_grid,
-                config_settings.global_params.grid_model,
-                output_path,
+                grid_name,
+                full_output_path,
                 name_suffix="_MINERAL",
             )
     except KeyError:

@@ -7,14 +7,12 @@ from .export_routines import save_results
 from .import_config import get_global_params_and_dates, read_pem_config
 from .import_routines import (
     import_fractions,
-    read_geogrid,
-    read_ntg_grid,
     read_sim_grid_props,
 )
 from .pem_class_definitions import (
     DryRockProperties,
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PressureProperties,
     SaturatedRockProperties,
     SimInitProperties,
@@ -22,6 +20,7 @@ from .pem_class_definitions import (
 )
 from .pem_config_validation import (
     Fluids,
+    MineralProperties,
     PemConfig,
     RockMatrixProperties,
     possible_date_string,
@@ -31,7 +30,6 @@ from .utils import (
     estimate_cement,
     filter_and_one_dim,
     get_shale_fraction,
-    ntg_to_shale_fraction,
     restore_dir,
     reverse_filter_and_restore,
     to_masked_array,
@@ -41,6 +39,7 @@ from .utils import (
 __all__ = [
     "PemConfig",
     "RockMatrixProperties",
+    "MineralProperties",
     "Fluids",
     "calculate_diff_properties",
     "estimate_cement",
@@ -50,10 +49,7 @@ __all__ = [
     "get_global_params_and_dates",
     "get_shale_fraction",
     "import_fractions",
-    "ntg_to_shale_fraction",
     "possible_date_string",
-    "read_geogrid",
-    "read_ntg_grid",
     "read_pem_config",
     "read_sim_grid_props",
     "restore_dir",
@@ -64,7 +60,7 @@ __all__ = [
     "update_inactive_grid_cells",
     "DryRockProperties",
     "EffectiveFluidProperties",
-    "MatrixProperties",
+    "EffectiveMineralProperties",
     "PressureProperties",
     "SaturatedRockProperties",
     "SimInitProperties",

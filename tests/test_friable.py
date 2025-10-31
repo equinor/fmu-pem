@@ -6,7 +6,7 @@ import pytest
 from fmu.pem.pem_functions.run_friable_model import run_friable
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PressureProperties,
     SaturatedRockProperties,
 )
@@ -14,7 +14,7 @@ from fmu.pem.pem_utilities import (
 
 @pytest.fixture
 def valid_mineral():
-    return MatrixProperties(
+    return EffectiveMineralProperties(
         bulk_modulus=np.ma.array([37e9, 37e9, 37e9], mask=[False, False, False]),
         shear_modulus=np.ma.array([44e9, 44e9, 44e9], mask=[False, False, False]),
         density=np.ma.array([2650.0, 2650.0, 2650.0], mask=[False, False, False]),
@@ -50,7 +50,7 @@ def valid_pressure():
 
 @pytest.fixture
 def valid_matrix_mock():
-    matrix_mock = MagicMock(spec=MatrixProperties)
+    matrix_mock = MagicMock(spec=EffectiveMineralProperties)
     matrix_mock.pressure_sensitivity = False
 
     # Mocking the nested structure

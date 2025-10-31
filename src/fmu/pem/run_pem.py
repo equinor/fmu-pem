@@ -19,78 +19,109 @@ def pem_fcn(
     """
     # Read and validate all PEM parameters
     config = pem_utils.read_pem_config(
-        start_dir.joinpath(rel_path_pem, pem_config_file_name)
+        yaml_file=start_dir.joinpath(rel_path_pem, pem_config_file_name)
     )
 
     # Read necessary part of global configurations and parameters
     config.update_with_global(
         pem_utils.get_global_params_and_dates(
-            start_dir, config.paths.rel_path_fmu_config
+            root_dir=start_dir, conf_path=config.paths.rel_path_fmu_config
         )
     )
 
     # Import Eclipse simulation grid - INIT and RESTART
-    egrid_file = start_dir / config.paths.rel_path_simgrid / "ECLIPSE.EGRID"
-    init_property_file = start_dir / config.paths.rel_path_simgrid / "ECLIPSE.INIT"
-    restart_property_file = start_dir / config.paths.rel_path_simgrid / "ECLIPSE.UNRST"
-
     sim_grid, constant_props, time_step_props = pem_utils.read_sim_grid_props(
-        egrid_file,
-        init_property_file,
-        restart_property_file,
-        config.global_params.seis_dates,
+        rel_dir_sim_files=config.eclipse_files.rel_path_simgrid,
+        egrid_file=config.eclipse_files.egrid_file,
+        init_property_file=config.eclipse_files.init_property_file,
+        restart_property_file=config.eclipse_files.restart_property_file,
+        seis_dates=config.global_params.seis_dates,
     )
 
     # Calculate rock properties - fluids and minerals
     # Fluid properties calculated for all time-steps
     fluid_properties = pem_fcns.effective_fluid_properties(
-        time_step_props, config.fluids
+        restart_props=time_step_props,
+        fluid_params=config.fluids,
     )
 
     # Effective mineral (matrix) properties - one set valid for all time-steps
     vsh, matrix_properties = pem_fcns.effective_mineral_properties(
-        start_dir, config, constant_props, sim_grid
+        root_dir=start_dir,
+        matrix=config.rock_matrix,
+        sim_init=constant_props,
+        sim_grid=sim_grid,
     )
     # VSH is exported with other constant results, add it to the constant properties
-    constant_props.ntg_pem = vsh
+    constant_props.vsh_pem = vsh
 
     # Estimate effective pressure
+    if hasattr(config.rock_matrix.model.parameters, "cement_fraction"):
+        cem_frac = config.rock_matrix.model.parameters.cement_fraction
+    else:
+        cem_frac = None
     eff_pres = pem_fcns.estimate_pressure(
-        config, constant_props, time_step_props, matrix_properties, fluid_properties
+        rpm_model=config.rock_matrix.model.model_name,
+        cement_fraction=cem_frac,
+        cement_density=config.rock_matrix.minerals[config.rock_matrix.cement].density,
+        overburden_pressure=config.pressure,
+        sim_init=constant_props,
+        sim_rst=time_step_props,
+        matrix_props=matrix_properties,
+        fluid_props=fluid_properties,
+        sim_dates=config.global_params.seis_dates,
     )
 
     # Estimate saturated rock properties
     sat_rock_props = pem_fcns.estimate_saturated_rock(
-        config, constant_props, eff_pres, matrix_properties, fluid_properties
+        rock_matrix=config.rock_matrix,
+        sim_init=constant_props,
+        eff_pres=eff_pres,
+        matrix_props=matrix_properties,
+        fluid_props=fluid_properties,
+        model_directory=config.paths.rel_path_pem,
     )
 
     # Delta and cumulative time estimates (only TWT properties are kept)
     sum_delta_time = pem_utils.delta_cumsum_time.estimate_sum_delta_time(
-        constant_props, sat_rock_props, config
+        constant_props=constant_props,
+        sat_rock_props=sat_rock_props,
     )
 
     # Calculate difference properties. Possible properties are all that vary with time
     diff_props, diff_date_strs = pem_utils.calculate_diff_properties(
-        [time_step_props, eff_pres, sat_rock_props, sum_delta_time], config
+        props=[time_step_props, eff_pres, sat_rock_props, sum_delta_time],
+        diff_dates=config.global_params.diff_dates,
+        seis_dates=config.global_params.seis_dates,
+        diff_calculation=config.diff_calculation,
     )
 
     # As a precaution, update the grid mask for inactive cells, based on the saturated
     # rock properties
-    sim_grid = pem_utils.update_inactive_grid_cells(sim_grid, sat_rock_props)
+    sim_grid = pem_utils.update_inactive_grid_cells(
+        grid=sim_grid,
+        props=sat_rock_props,
+    )
 
     # Save results to disk or RMS project according to settings in the PEM config
     pem_utils.save_results(
-        start_dir,
-        run_from_rms,
-        config,
-        proj,
-        sim_grid,
-        eff_pres,
-        sat_rock_props,
-        diff_props,
-        diff_date_strs,
-        matrix_properties,
-        fluid_properties,
+        start_dir=start_dir,
+        run_from_rms_flag=run_from_rms,
+        rms_project=proj,
+        sim_grid=sim_grid,
+        grid_name=config.global_params.grid_model,
+        seis_dates=config.global_params.seis_dates,
+        save_to_rms=config.results.save_results_to_rms,
+        save_to_disk=config.results.save_results_to_disk,
+        save_intermediate=config.results.save_intermediate_results,
+        mandatory_path=config.paths.rel_path_mandatory_output,
+        pem_output_path=config.paths.rel_path_output,
+        eff_pres_props=eff_pres,
+        sat_rock_props=sat_rock_props,
+        difference_props=diff_props,
+        difference_date_strs=diff_date_strs,
+        matrix_props=matrix_properties,
+        fluid_props=fluid_properties,
     )
 
     # Restore original path

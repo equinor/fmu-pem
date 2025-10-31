@@ -9,9 +9,9 @@ from rock_physics_open.t_matrix_models import (
 
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
-    MatrixProperties,
-    PemConfig,
+    EffectiveMineralProperties,
     PressureProperties,
+    RockMatrixProperties,
     SaturatedRockProperties,
     filter_and_one_dim,
     reverse_filter_and_restore,
@@ -21,12 +21,13 @@ from .run_patchy_cement_model import _verify_inputs
 
 
 def run_t_matrix_model(
-    mineral_properties: MatrixProperties,
+    mineral_properties: EffectiveMineralProperties,
     fluid_properties: list[EffectiveFluidProperties] | EffectiveFluidProperties,
     porosity: np.ma.MaskedArray,
     vsh: None | np.ma.MaskedArray,
     pressure: list[PressureProperties] | PressureProperties,
-    config: PemConfig,
+    rock_matrix: RockMatrixProperties,
+    model_directory: Path,
     petec_parameter_file: Path = Path("t_mat_params_petec.pkl"),
     exp_parameter_file: Path = Path("t_mat_params_exp.pkl"),
     pres_model_vp: Path = Path("carbonate_pressure_model_vp_exp.pkl"),
@@ -59,7 +60,8 @@ def run_t_matrix_model(
         porosity: porosity [fraction]
         vsh: shale volume [fraction]
         pressure: overburden, effective and formation (pore) pressure per restart date
-        config: configuration parameters
+        rock_matrix: rock matrix properties
+        model_directory: folder for model files
         petec_parameter_file: additional parameters for the T-Matrix model, determined
             through optimisation to well logs
         exp_parameter_file: additional parameters for the T-Matrix model, determined
@@ -75,11 +77,11 @@ def run_t_matrix_model(
 
     # All model files are gathered with the config file for the PEM model,
     # i.e. in ../sim2seis/model
-    petec_parameter_file = config.paths.rel_path_pem / petec_parameter_file
-    exp_parameter_file = config.paths.rel_path_pem / exp_parameter_file
+    petec_parameter_file = model_directory / petec_parameter_file
+    exp_parameter_file = model_directory / exp_parameter_file
 
     saturated_props = []
-    t_mat_params = config.rock_matrix.model.parameters
+    t_mat_params = rock_matrix.model.parameters
 
     if vsh is None and t_mat_params.t_mat_model_version == "EXP":
         raise ValueError("Shale volume must be provided for EXP model")
@@ -168,7 +170,7 @@ def run_t_matrix_model(
                 t_mat_params.freq,
                 str(exp_parameter_file),
             )
-        if time_step > 0 and config.rock_matrix.pressure_sensitivity:
+        if time_step > 0 and rock_matrix.pressure_sensitivity:
             vp, vs, rho, _, _ = carbonate_pressure_model(
                 tmp_fl_rho,
                 vp,
@@ -183,7 +185,7 @@ def run_t_matrix_model(
                 tmp_pres_depl,
                 pres_model_vp,
                 pres_model_vs,
-                config.paths.rel_path_pem.absolute(),
+                model_directory.absolute(),
                 False,
             )
         vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho)

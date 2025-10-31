@@ -8,20 +8,6 @@ from .pem_config_validation import PemConfig
 from .utils import restore_dir
 
 
-def read_geogrid(root_dir: Path, config: PemConfig) -> dict:
-    """Not in use? Read porosity from geo-grid
-
-    Args:
-        root_dir: start dir for PEM script run
-        config: PEM specific parameters
-
-    Returns:
-        dict object with porosity
-    """
-    with restore_dir(root_dir.joinpath(config.paths.rel_path_geogrid)):
-        return {"poro": xtgeo.gridproperty_from_file("geogrid--phit.roff").values}
-
-
 def read_init_properties(
     property_file: Path, sim_grid: xtgeo.Grid
 ) -> SimInitProperties:
@@ -32,7 +18,7 @@ def read_init_properties(
     Returns:
         SimInitProperties: The loaded initial grid properties
     """
-    INIT_PROPS = ["PORO", "DEPTH", "NTG"]
+    INIT_PROPS = ["PORO", "DEPTH"]
     sim_init_props = xtgeo.gridproperties_from_file(
         property_file, fformat="init", names=INIT_PROPS, grid=sim_grid
     )
@@ -69,6 +55,7 @@ def create_rst_list(
 
 
 def read_sim_grid_props(
+    rel_dir_sim_files: Path,
     egrid_file: Path,
     init_property_file: Path,
     restart_property_file: Path,
@@ -77,6 +64,7 @@ def read_sim_grid_props(
     """Read grid and properties from simulation run, both initial and restart properties
 
     Args:
+        rel_dir_sim_files: start dir for PEM script run
         egrid_file: Path to the EGRID file
         init_property_file: Path to the INIT file
         restart_property_file: Path to the UNRST file
@@ -87,9 +75,9 @@ def read_sim_grid_props(
         init_props: object with initial properties of simulation grid
         rst_list: list with time-dependent simulation properties
     """
-    sim_grid = xtgeo.grid_from_file(egrid_file)
+    sim_grid = xtgeo.grid_from_file(rel_dir_sim_files / egrid_file)
 
-    init_props = read_init_properties(init_property_file, sim_grid)
+    init_props = read_init_properties(rel_dir_sim_files / init_property_file, sim_grid)
 
     # TEMP will only be available for eclipse-300
     RST_PROPS = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
@@ -98,7 +86,7 @@ def read_sim_grid_props(
     # the UNRST file. NB: This has the effect that other missing parameters will not
     # raise an error here, but that is handled by the following try-except statement.
     rst_props = xtgeo.gridproperties_from_file(
-        restart_property_file,
+        rel_dir_sim_files / restart_property_file,
         fformat="unrst",
         names=RST_PROPS,
         dates=seis_dates,
@@ -114,44 +102,38 @@ def read_sim_grid_props(
     return sim_grid, init_props, rst_list
 
 
-def read_ntg_grid(ntg_grid_file: Path) -> np.ma.MaskedArray:
-    """Read PEM specific NTG property
-    Args:
-        ntg_grid_file: path to the NTG grid file
-    Returns:
-        net to gross property from simgrid adapted to PEM definition
-    """
-    return xtgeo.gridproperty_from_file(ntg_grid_file).values
-
-
-def import_fractions(root_dir: Path, config: PemConfig, grd: xtgeo.Grid) -> list:
+def import_fractions(
+    root_dir: Path,
+    fraction_path: Path,
+    fraction_files: list[Path],
+    fraction_names: list[str],
+    grd: xtgeo.Grid,
+) -> list:
     """Import volume fractions
 
     Args:
         root_dir (str): model directory, relative paths refer to it
-        config (PemConfig): configuration file with PEM parameters
+        fraction_path: path to the fractions files
+        fraction_files: list of fraction files
+        fraction_names: list of parameter names in fraction files
         grd (xtgeo.Grid): model grid
 
     Returns:
         list: fraction properties
     """
-    with restore_dir(
-        root_dir.joinpath(config.rock_matrix.volume_fractions.rel_path_fractions)
-    ):
+    with restore_dir(root_dir.joinpath(fraction_path)):
         try:
-            fracs = config.rock_matrix.fraction_names
             grid_props = [
                 xtgeo.gridproperty_from_file(
                     file,
                     name=name,
                     grid=grd,
                 )
-                for name in fracs
-                for file in config.rock_matrix.volume_fractions.fractions_prop_file_names  # noqa: E501
+                for name in fraction_names
+                for file in fraction_files
             ]
         except ValueError as exc:
             raise ImportError(
-                f"{__file__}: failed to import volume fractions files "
-                f"{config.rock_matrix.volume_fractions.fractions_prop_file_names}"
+                f"{__file__}: failed to import volume fractions files {fraction_files}"
             ) from exc
     return [grid_prop.values for grid_prop in grid_props]

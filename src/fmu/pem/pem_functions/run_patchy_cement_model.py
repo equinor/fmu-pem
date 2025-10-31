@@ -7,7 +7,7 @@ from rock_physics_open.sandstone_models import patchy_cement_model_dry
 
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PressureProperties,
     RockMatrixProperties,
     SaturatedRockProperties,
@@ -21,9 +21,9 @@ from .pressure_sensitivity import apply_dry_rock_pressure_sensitivity_model
 
 
 def run_patchy_cement(
-    mineral: MatrixProperties,
+    mineral: EffectiveMineralProperties,
     fluid: list[EffectiveFluidProperties] | EffectiveFluidProperties,
-    cement: MatrixProperties,
+    cement: EffectiveMineralProperties,
     porosity: np.ma.MaskedArray,
     pressure: list[PressureProperties] | PressureProperties,
     rock_matrix_props: RockMatrixProperties,
@@ -121,7 +121,7 @@ def run_patchy_cement(
                 ParameterTypes.RHO.value: tmp_min_rho,
                 ParameterTypes.POROSITY.value: tmp_por,
             }
-            tmp_matrix = MatrixProperties(
+            tmp_matrix = EffectiveMineralProperties(
                 bulk_modulus=tmp_min_k,
                 shear_modulus=tmp_min_mu,
                 density=tmp_min_rho,

@@ -30,7 +30,7 @@ from fmu.pem.pem_utilities.enum_defs import (
     RegressionPressureModelTypes,
     RegressionPressureParameterTypes,
 )
-from fmu.pem.pem_utilities.pem_class_definitions import MatrixProperties
+from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
 from fmu.pem.pem_utilities.rpm_models import (
     ExpParams,
     FriableParams,
@@ -232,7 +232,7 @@ def test_physics_friable_pressure_adjustment_monkeypatch(monkeypatch):
     poro = np.array([0.2, 0.22, 0.25])
     rho = np.full(n, 2600.0)
 
-    mineral = MatrixProperties(
+    mineral = EffectiveMineralProperties(
         bulk_modulus=np.full(n, 36.8e9),
         shear_modulus=np.full(n, 44e9),
         density=np.full(n, 2650.0),
@@ -301,7 +301,7 @@ def test_physics_patchy_cement_pressure_adjustment_monkeypatch(monkeypatch):
     poro = np.linspace(0.18, 0.24, n)
     rho = np.full(n, 2550.0)
 
-    mineral = MatrixProperties(
+    mineral = EffectiveMineralProperties(
         bulk_modulus=np.full(n, 36.8e9),
         shear_modulus=np.full(n, 44e9),
         density=np.full(n, 2650.0),
@@ -451,7 +451,7 @@ def test_patchy_cement_missing_cement_properties_raises(monkeypatch):
         poro=np.array([0.2]),
         rho=np.array([2600.0]),
     )
-    mineral = MatrixProperties(
+    mineral = EffectiveMineralProperties(
         bulk_modulus=np.array([36.8e9]),
         shear_modulus=np.array([44e9]),
         density=np.array([2650.0]),
@@ -630,7 +630,7 @@ def test_sequential_regression_then_physics_chain(monkeypatch):
         initial_eff_pressure=p_in,
         depleted_eff_pressure=p_depl,
         in_situ_dict=in_situ_phys,
-        mineral_properties=MatrixProperties(
+        mineral_properties=EffectiveMineralProperties(
             bulk_modulus=np.array([36.8e9, 36.8e9]),
             shear_modulus=np.array([44e9, 44e9]),
             density=np.array([2650.0, 2650.0]),

@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -7,16 +6,16 @@ import pytest
 from fmu.pem.pem_functions.regression_models import run_regression_models
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
-    MatrixProperties,
+    EffectiveMineralProperties,
     PressureProperties,
     SaturatedRockProperties,
 )
-from fmu.pem.pem_utilities.enum_defs import RegressionPressureParameterTypes
+from fmu.pem.pem_utilities.enum_defs import MineralMixModel, PhysicsPressureModelTypes
 
 
 @pytest.fixture
 def setup_mineral_properties():
-    return MatrixProperties(
+    return EffectiveMineralProperties(
         bulk_modulus=np.ma.array([37e9, 35e9], mask=[False, False]),
         shear_modulus=np.ma.array([44e9, 42e9], mask=[False, False]),
         density=np.ma.array([2650, 2670], mask=[False, False]),
@@ -49,33 +48,51 @@ def setup_pressure():
 
 
 @pytest.fixture
-def setup_config(data_dir):
-    config_mock = MagicMock()
-    config_mock.rock_matrix.model.parameters.sandstone.vp_weights = [3930.0, -2267.0]
-    config_mock.rock_matrix.model.parameters.sandstone.vs_weights = [2284.0, -779.0]
-    config_mock.rock_matrix.model.parameters.sandstone.rho_model.rho_weights = [
-        2602.0,
-        -2411.0,
-    ]
-    config_mock.rock_matrix.model.parameters.sandstone.mode = "vp_vs"
-    config_mock.rock_matrix.model.parameters.sandstone.rho_model = False
-    config_mock.rock_matrix.model.parameters.shale = (
-        config_mock.rock_matrix.model.parameters.sandstone
-    )
-    config_mock.rock_matrix.pressure_sensitivity = False
-    config_mock.paths.rel_path_pem = data_dir / "sim2seis/model"
-    return config_mock
+def rock_matrix():
+    rm = MagicMock()
+    rm.pressure_sensitivity = False
+    rm.mineral_mix_model = MineralMixModel.VOIGT_REUSS_HILL
+    rm.pressure_sensitivity_model = None
+    rm.model = MagicMock()
+    sandstone = MagicMock()
+    sandstone.vp_weights = [3930.0, -2267.0]
+    sandstone.vs_weights = [2284.0, -779.0]
+    sandstone.rho_model = False
+    sandstone.mode = "vp_vs"
+    rm.model.parameters = MagicMock(sandstone=sandstone, shale=sandstone)
+    return rm
+
+
+@pytest.fixture
+def rock_matrix_pressure(rock_matrix):
+    rm = MagicMock()
+    rm.pressure_sensitivity = True
+    rm.mineral_mix_model = MineralMixModel.VOIGT_REUSS_HILL
+    rm.model = rock_matrix.model
+
+    # Pick a valid enum member (first one)
+    model_type_any = next(iter(PhysicsPressureModelTypes))
+    rm.pressure_sensitivity_model = MagicMock(model_type=model_type_any)
+
+    # Provide cement mineral only if needed
+    if model_type_any == PhysicsPressureModelTypes.PATCHY_CEMENT:
+        rm.cement = "cement"
+        rm.minerals = {"cement": MagicMock()}
+    else:
+        rm.cement = None
+        rm.minerals = {}
+
+    return rm
 
 
 def test_run_regression_models_with_masked_arrays(
     setup_mineral_properties,
     setup_fluid_properties,
     setup_pressure,
-    setup_config,
+    rock_matrix,
     monkeypatch,
     testdata,
 ):
-    # Use restore_dir to change the working directory to data directory
     monkeypatch.chdir(testdata)
     porosity = np.ma.array([0.1, 0.2], mask=[False, False])
     results = run_regression_models(
@@ -83,25 +100,20 @@ def test_run_regression_models_with_masked_arrays(
         setup_fluid_properties,
         porosity,
         setup_pressure,
-        setup_config,
+        rock_matrix,
     )
-    assert isinstance(results, list), "Expected a list of results"
-    assert all(isinstance(item, SaturatedRockProperties) for item in results), (
-        "Expected all items in the list to be SaturatedRockProperties objects"
-    )
+    assert isinstance(results, list)
+    assert all(isinstance(item, SaturatedRockProperties) for item in results)
 
 
 def test_run_regression_models_multiple_time_steps(
     setup_mineral_properties,
     setup_fluid_properties,
     setup_pressure,
-    setup_config,
+    rock_matrix,
     monkeypatch,
     testdata,
 ):
-    """
-    Test regression models across multiple time steps without pressure sensitivity.
-    """
     monkeypatch.chdir(testdata)
     porosity = np.ma.array([0.1, 0.2], mask=[False, False])
     results = run_regression_models(
@@ -109,59 +121,56 @@ def test_run_regression_models_multiple_time_steps(
         setup_fluid_properties,
         porosity,
         setup_pressure,
-        setup_config,
+        rock_matrix,
         vsh=np.ma.array([0.5, 0.5], mask=[False, False]),
     )
-    assert len(results) == len(setup_fluid_properties), (
-        "Expected results for each time step"
-    )
-    # Without pressure sensitivity, properties should only change due to fluid changes
-    assert isinstance(results[0], SaturatedRockProperties)
-    assert isinstance(results[1], SaturatedRockProperties)
+    assert len(results) == len(setup_fluid_properties)
+    assert all(isinstance(item, SaturatedRockProperties) for item in results)
 
 
 def test_run_regression_models_with_pressure_sensitivity(
     setup_mineral_properties,
     setup_fluid_properties,
     setup_pressure,
+    rock_matrix_pressure,
     monkeypatch,
     testdata,
 ):
-    """Test that pressure sensitivity model is applied for time steps > 0.
-
-    This test verifies that when pressure sensitivity is enabled:
-    1. The model runs successfully
-    2. Multiple time steps produce results
-    3. Results are of the correct type
-
-    Note: This test requires pressure sensitivity model files. If they are not
-    available, the test will be skipped.
-    """
     monkeypatch.chdir(testdata)
     porosity = np.ma.array([0.1, 0.2], mask=[False, False])
 
-    # Skip test if pressure model files don't exist
-    model_dir = testdata / "sim2seis/model"
-    if (
-        not (model_dir / "pressure_model_k.pkl").exists()
-        or not (model_dir / "pressure_model_mu.pkl").exists()
+    # Spy on pressure sensitivity application (return input for simplicity)
+    calls = {}
+
+    def _mock_apply(
+        model,
+        initial_eff_pressure,
+        depleted_eff_pressure,
+        in_situ_dict,
+        mineral_properties,
+        cement_properties,
     ):
-        pytest.skip("Pressure sensitivity model files not available for testing")
+        calls["called"] = True
+        calls["initial_eff_pressure"] = initial_eff_pressure
+        calls["depleted_eff_pressure"] = depleted_eff_pressure
+        return in_situ_dict
+
+    monkeypatch.setattr(
+        "fmu.pem.pem_functions.regression_models.apply_dry_rock_pressure_sensitivity_model",
+        _mock_apply,
+    )
 
     results = run_regression_models(
         setup_mineral_properties,
         setup_fluid_properties,
         porosity,
         setup_pressure,
+        rock_matrix_pressure,
         vsh=np.ma.array([0.5, 0.5], mask=[False, False]),
     )
-
-    assert len(results) == len(setup_fluid_properties), (
-        "Expected results for each time step"
-    )
-    assert all(isinstance(item, SaturatedRockProperties) for item in results), (
-        "Expected all items to be SaturatedRockProperties objects"
-    )
+    assert calls.get("called", False)
+    assert len(results) == len(setup_fluid_properties)
+    assert all(isinstance(item, SaturatedRockProperties) for item in results)
 
 
 @pytest.mark.parametrize("input_type", ["mineral", "fluid", "porosity"])
@@ -170,20 +179,19 @@ def test_run_regression_models_invalid_input_types(
     setup_mineral_properties,
     setup_fluid_properties,
     setup_pressure,
-    setup_config,
+    rock_matrix,
     monkeypatch,
     testdata,
 ):
     monkeypatch.chdir(testdata)
-    # Initialize porosity with a default valid value
     porosity = np.ma.array([0.1, 0.2], mask=[False, False])
 
     if input_type == "mineral":
-        setup_mineral_properties.bulk_modulus = [37e9, 35e9]  # Invalid type
+        setup_mineral_properties.bulk_modulus = [37e9, 35e9]
     elif input_type == "fluid":
-        setup_fluid_properties[0].bulk_modulus = [2.2e9, 2.0e9]  # Invalid type
+        setup_fluid_properties[0].bulk_modulus = [2.2e9, 2.0e9]
     elif input_type == "porosity":
-        porosity = [0.1, 0.2]  # Invalid type
+        porosity = [0.1, 0.2]
 
     with pytest.raises(ValueError):
         run_regression_models(
@@ -191,5 +199,5 @@ def test_run_regression_models_invalid_input_types(
             setup_fluid_properties,
             porosity,
             setup_pressure,
-            setup_config,
+            rock_matrix,
         )

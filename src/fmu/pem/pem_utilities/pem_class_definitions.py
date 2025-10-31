@@ -9,8 +9,7 @@ from numpy.ma import MaskedArray
 class SimInitProperties:
     poro: MaskedArray
     depth: MaskedArray
-    ntg: MaskedArray
-    ntg_pem: MaskedArray | None = None
+    vsh_pem: MaskedArray | None = None
 
     @property
     def delta_z(self) -> MaskedArray:
@@ -52,7 +51,7 @@ class SimRstProperties:
 
 # Elastic properties for matrix, i.e. mixed minerals and volume fractions
 @dataclass
-class MatrixProperties:
+class EffectiveMineralProperties:
     bulk_modulus: MaskedArray | np.ndarray
     shear_modulus: MaskedArray | np.ndarray
     density: MaskedArray | np.ndarray
@@ -67,7 +66,7 @@ class MatrixProperties:
 # Separate class for dry rock, can use MatrixProperties as base
 # class
 @dataclass
-class DryRockProperties(MatrixProperties):
+class DryRockProperties(EffectiveMineralProperties):
     pass
 
 

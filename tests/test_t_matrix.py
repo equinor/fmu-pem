@@ -4,9 +4,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-from fmu.pem.pem_functions.run_t_matrix_model import (
-    run_t_matrix_model,
-)
+from fmu.pem.pem_functions.run_t_matrix_model import run_t_matrix_model
 from fmu.pem.pem_utilities import restore_dir
 from fmu.pem.pem_utilities.pem_class_definitions import (
     DryRockProperties,
@@ -66,13 +64,19 @@ def valid_pressure():
 
 
 @pytest.fixture
-def valid_config_mock(data_dir):
-    config_mock = MagicMock()
-    config_mock.rock_matrix.model.parameters = MagicMock(
+def rock_matrix():
+    rm = MagicMock()
+    rm.pressure_sensitivity = True
+    rm.model = MagicMock()
+    rm.model.parameters = MagicMock(
         t_mat_model_version="PETEC", angle=30, perm=200, visco=0.001, tau=2, freq=25
     )
-    config_mock.paths = MagicMock(rel_path_pem=data_dir / "sim2seis/model")
-    return config_mock
+    return rm
+
+
+@pytest.fixture
+def model_directory(data_dir):
+    return data_dir / "sim2seis" / "model"
 
 
 @pytest.fixture
@@ -111,16 +115,17 @@ def test_run_t_matrix_and_pressure_models_valid_input(
     valid_porosity,
     valid_vsh,
     valid_pressure,
-    valid_config_mock,
+    rock_matrix,
+    model_directory,
 ):
-    """Test run_t_matrix_and_pressure_models with valid inputs."""
     results = run_t_matrix_model(
         valid_mineral_properties,
         valid_fluid_properties,
         valid_porosity,
         valid_vsh,
         valid_pressure,
-        valid_config_mock,
+        rock_matrix,
+        model_directory,
         pres_model_vp=Path("carbonate_pressure_model_vp_exp.pkl"),
         pres_model_vs=Path("carbonate_pressure_model_vs_exp.pkl"),
     )
@@ -133,10 +138,9 @@ def test_run_t_matrix_and_pressure_models_invalid_input_type(
     valid_porosity,
     valid_vsh,
     valid_pressure,
-    valid_config_mock,
+    rock_matrix,
+    model_directory,
 ):
-    """Test run_t_matrix_and_pressure_models with invalid input
-    types to ensure it raises a ValueError."""
     with pytest.raises(ValueError):
         run_t_matrix_model(
             valid_mineral_properties,
@@ -144,7 +148,8 @@ def test_run_t_matrix_and_pressure_models_invalid_input_type(
             valid_porosity,
             valid_vsh,
             valid_pressure,
-            valid_config_mock,
+            rock_matrix,
+            model_directory,
             pres_model_vp=Path("carbonate_pressure_model_vp_exp.pkl"),
             pres_model_vs=Path("carbonate_pressure_model_vs_exp.pkl"),
         )
@@ -155,22 +160,22 @@ def test_run_t_matrix_and_pressure_models_invalid_masked_array(
     valid_porosity,
     valid_vsh,
     valid_pressure,
-    valid_config_mock,
+    rock_matrix,
+    model_directory,
 ):
-    """Test run_t_matrix_and_pressure_models with non-masked array
-    inputs to ensure it raises a ValueError."""
     invalid_fluid_properties = EffectiveFluidProperties(
         bulk_modulus=np.array([2.2e9]),  # type: ignore
         density=np.array([1000]),  # type: ignore
     )
-    with pytest.raises(ValueError), restore_dir(valid_config_mock.paths.rel_path_pem):
+    with pytest.raises(ValueError), restore_dir(model_directory):
         run_t_matrix_model(
             valid_mineral_properties,
             invalid_fluid_properties,
             valid_porosity,
             valid_vsh,
             valid_pressure,
-            valid_config_mock,
+            rock_matrix,
+            model_directory,
             pres_model_vp=Path("carbonate_pressure_model_vp_exp.pkl"),
             pres_model_vs=Path("carbonate_pressure_model_vs_exp.pkl"),
         )
@@ -182,17 +187,17 @@ def test_run_t_matrix_and_pressure_models_with_list_inputs(
     valid_porosity,
     valid_vsh,
     list_pressure,
-    valid_config_mock,
+    rock_matrix,
+    model_directory,
 ):
-    """Test run_t_matrix_and_pressure_models with lists of
-    EffectiveFluidProperties and PressureProperties."""
     results = run_t_matrix_model(
         valid_mineral_properties,
         list_fluid_properties,
         valid_porosity,
         valid_vsh,
         list_pressure,
-        valid_config_mock,
+        rock_matrix,
+        model_directory,
         pres_model_vp=Path("carbonate_pressure_model_vp_exp.pkl"),
         pres_model_vs=Path("carbonate_pressure_model_vs_exp.pkl"),
     )
