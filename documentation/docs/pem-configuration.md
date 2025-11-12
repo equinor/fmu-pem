@@ -139,6 +139,12 @@ li.text-danger::marker {
   content: "⚠";
 }
 
+fieldset {
+  border-left: 2px solid #eee;
+  margin: 5px;
+  padding-left: 5px;
+}
+
 /* In order to avoid confusion we hide duplicate name fields in auto-generated user interface */
 label[for="root_rock_matrix_model_model_name"], #root_rock_matrix_model_model_name, #root_rock_matrix_model_model_name__description, #root_rock_matrix_model_model_name__error,
 label[for="root_rock_matrix_model_parameters_sandstone_mode"], #root_rock_matrix_model_parameters_sandstone_mode, #root_rock_matrix_model_parameters_sandstone_mode__description, #root_rock_matrix_model_parameters_sandstone_mode__error,
