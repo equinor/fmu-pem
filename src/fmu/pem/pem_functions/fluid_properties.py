@@ -1,20 +1,15 @@
-# pylint: disable=missing-module-docstring
+from __future__ import annotations
+
 import warnings
+from typing import TypeAlias
 
 import numpy as np
 from rock_physics_open import fluid_models as flag
 from rock_physics_open import span_wagner
 from rock_physics_open.equinor_utilities.std_functions import brie, multi_wood
-
-from fmu.pem import INTERNAL_EQUINOR
-
-if INTERNAL_EQUINOR:
-    from rock_physics_open.fluid_models import (
-        saturations_below_bubble_point,  # pylint: disable=import-error
-    )
-
 from rock_physics_open.fluid_models.oil_model.oil_bubble_point import bp_standing
 
+from fmu.pem import INTERNAL_EQUINOR
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
     Fluids,
@@ -25,262 +20,338 @@ from fmu.pem.pem_utilities import (
 )
 from fmu.pem.pem_utilities.enum_defs import CO2Models, FluidMixModel, TemperatureMethod
 
+if INTERNAL_EQUINOR:
+    from rock_physics_open.fluid_models import saturations_below_bubble_point
+
+
+def _verify_inputs(
+    inp: list[SimRstProperties] | SimRstProperties,
+) -> list[SimRstProperties]:
+    """Return list of SimRstProperties (accepts single instance)."""
+    if isinstance(inp, SimRstProperties):
+        return [inp]
+    if isinstance(inp, list) and all(isinstance(p, SimRstProperties) for p in inp):
+        return inp
+    raise ValueError("Input must be SimRstProperties or list[SimRstProperties].")
+
+
+def _saturation_triplet(
+    sw: np.ma.MaskedArray, sg: np.ma.MaskedArray
+) -> tuple[np.ma.MaskedArray, ...]:
+    """Clip water/gas and derive oil saturation; renormalize if sum exceeds 1."""
+    sw = np.ma.MaskedArray(np.ma.clip(sw, 0.0, 1.0))
+    sg = np.ma.MaskedArray(np.ma.clip(sg, 0.0, 1.0))
+    s_sum = np.ma.max(sw + sg)
+    if s_sum > 1.0:  # renormalize if overlapping
+        sw /= s_sum
+        sg /= s_sum
+    so = 1.0 - sw - sg
+    return sw, sg, so  # type: ignore
+
+
+# Add near top (after imports)
+PrepareArraysReturn: TypeAlias = tuple[
+    np.ma.MaskedArray,  # sw
+    np.ma.MaskedArray,  # sg
+    np.ma.MaskedArray,  # so
+    np.ndarray,  # gor
+    np.ndarray,  # pres
+    np.ndarray,  # salinity
+    np.ndarray,  # temp
+    np.ndarray,  # gas_gravity (may be modified later)
+    np.ndarray | None,  # rv (None if not present)
+    np.ndarray | None,  # mask (None if no filtering)
+    np.ndarray,  # oil_density_ref
+    np.ndarray,  # oil_gas_gravity
+]
+
+
+def _prepare_arrays(
+    prop: SimRstProperties,
+    fluids: Fluids,
+) -> PrepareArraysReturn:
+    """Collect and shape per-cell arrays; apply 1-D filtering.
+    Returns (sw, sg, so, gor, pres, salinity, temp, gas_gravity, rv, mask,
+    oil_density_ref, oil_gas_gravity).
+    """
+    sw, sg, so = _saturation_triplet(prop.swat, prop.sgas)
+    gor = prop.rs
+    pres = 1.0e5 * prop.pressure  # bar -> Pa
+
+    if fluids.salinity_from_sim:
+        salinity = 1000.0 * prop.salt
+    else:
+        salinity = to_masked_array(fluids.brine.salinity, sw)
+
+    if fluids.temperature.type == TemperatureMethod.FROMSIM:
+        if not hasattr(prop, "temp") or prop.temp is None:
+            raise ValueError("Missing simulation temperature.")
+        temp = prop.temp
+    else:
+        temp = to_masked_array(fluids.temperature.temperature_value, sw)
+
+    if isinstance(fluids.gas.gas_gravity, float):
+        gas_gravity = to_masked_array(fluids.gas.gas_gravity, sw)
+    else:
+        gas_gravity = fluids.gas.gas_gravity
+
+    if hasattr(prop, "rv") and prop.rv is not None:
+        mask, sw, sg, so, gor, pres, rv, salinity, temp, gas_gravity = (
+            filter_and_one_dim(
+                sw, sg, so, gor, pres, prop.rv, salinity, temp, gas_gravity
+            )
+        )
+    else:
+        mask, sw, sg, so, gor, pres, salinity, temp = filter_and_one_dim(
+            sw, sg, so, gor, pres, salinity, temp
+        )
+        rv = None
+
+    oil_density_ref = fluids.oil.reference_density * np.ones_like(sw)
+    oil_gas_gravity = fluids.oil.gas_gravity * np.ones_like(sw)
+
+    return (
+        sw,
+        sg,
+        so,
+        gor,
+        pres,
+        salinity,
+        temp,
+        gas_gravity,
+        rv,
+        mask,
+        oil_density_ref,
+        oil_gas_gravity,
+    )
+
+
+def _adjust_bubble_point(
+    pres: np.ndarray,
+    gor: np.ndarray,
+    sw: np.ma.MaskedArray,
+    sg: np.ma.MaskedArray,
+    so: np.ma.MaskedArray,
+    temp: np.ndarray,
+    oil_density_ref: np.ndarray,
+    oil_gas_gravity: np.ndarray,
+    free_gas_gravity: np.ndarray,
+    fluids: Fluids,
+) -> tuple[
+    np.ma.MaskedArray, np.ma.MaskedArray, np.ma.MaskedArray, np.ndarray, np.ndarray
+]:
+    """If below bubble point: evolve saturations, GOR and free gas gravity."""
+    try:
+        bp = bp_standing(
+            density=oil_density_ref,
+            gas_oil_ratio=gor,
+            gas_gravity=oil_gas_gravity,
+            temperature=temp,
+        )
+        idx_below = pres <= bp
+    except NotImplementedError:
+        warnings.warn("Bubble point function unavailable; assuming above bubble point.")
+        idx_below = np.zeros_like(pres, dtype=bool)
+
+    if np.any(idx_below):
+        try:
+            sg, so, gor, free_gas_gravity = saturations_below_bubble_point(
+                gas_saturation_init=sg,
+                oil_saturation_init=so,
+                brine_saturation_init=sw,
+                gor_init=gor,
+                oil_gas_gravity=oil_gas_gravity,
+                free_gas_gravity=free_gas_gravity,
+                oil_density=oil_density_ref,
+                z_factor=fluids.gas_z_factor,
+                pres_depl=pres,
+                temp_res=temp,
+            )
+        except (NameError, ModuleNotFoundError, NotImplementedError):
+            warnings.warn(
+                "Below bubble point adjustment unavailable; estimates uncertain."
+            )
+    return sw, sg, so, gor, free_gas_gravity
+
+
+def _brine_props(
+    temp: np.ndarray,
+    pres: np.ndarray,
+    salinity: np.ndarray,
+    fluids: Fluids,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    p_na = np.array(fluids.brine.perc_na)
+    p_ca = np.array(fluids.brine.perc_ca)
+    p_k = np.array(fluids.brine.perc_k)
+    vp, rho, bulk = flag.brine_properties(
+        temperature=temp,
+        pressure=pres,
+        salinity=salinity,
+        p_nacl=p_na,
+        p_cacl=p_ca,
+        p_kcl=p_k,
+    )
+    return rho, bulk, vp
+
+
+def _oil_props(
+    temp: np.ndarray,
+    pres: np.ndarray,
+    gor: np.ndarray,
+    fluids: Fluids,
+    oil_density_ref: np.ndarray,
+    oil_gas_gravity: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    vp, rho, bulk = flag.oil_properties(
+        temperature=temp,
+        pressure=pres,
+        gas_gravity=oil_gas_gravity,
+        rho0=oil_density_ref,
+        gas_oil_ratio=gor,
+    )
+    return rho, bulk, vp
+
+
+def _gas_or_co2_props(
+    temp: np.ndarray,
+    pres: np.ndarray,
+    gas_gravity: np.ndarray,
+    fluids: Fluids,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    if fluids.gas_saturation_is_co2:
+        if fluids.co2_model == CO2Models.FLAG and INTERNAL_EQUINOR:
+            vp, rho, bulk = flag.co2_properties(  # noqa
+                temp=temp,
+                pres=pres,
+            )
+        else:
+            vp, rho, bulk = span_wagner.co2_properties(
+                temp=temp,
+                pres=pres,
+            )
+    else:
+        vp, rho, bulk = flag.gas_properties(
+            temperature=temp,
+            pressure=pres,
+            gas_gravity=gas_gravity,
+            model=fluids.gas.model,
+        )[0:3]
+    return rho, bulk, vp
+
+
+def _apply_condensate_if_any(
+    rv: np.ndarray | None,
+    temp: np.ndarray,
+    pres: np.ndarray,
+    fluids: Fluids,
+    gas_rho: np.ndarray,
+    gas_bulk: np.ndarray,
+    gas_vp: np.ndarray,
+) -> None:
+    """Overwrite gas properties where condensate is present (rv > 0)."""
+    if not (fluids.calculate_condensate and rv is not None and INTERNAL_EQUINOR):
+        return
+    idx_dry = np.isclose(rv, 0.0, atol=1e-10)
+    if np.all(idx_dry):
+        return
+    cond = fluids.condensate
+    cond_gor = 1.0 / rv[~idx_dry]
+    cond_gr = cond.gas_gravity * np.ones_like(cond_gor)
+    cond_rho0 = cond.reference_density * np.ones_like(cond_gor)
+    vp_c, rho_c, bulk_c = flag.condensate_properties(  # noqa
+        temperature=temp[~idx_dry],
+        pressure=pres[~idx_dry],
+        rho0=cond_rho0,
+        gas_oil_ratio=cond_gor,
+        gas_gravity=cond_gr,
+    )
+    gas_rho[~idx_dry] = rho_c
+    gas_bulk[~idx_dry] = bulk_c
+    gas_vp[~idx_dry] = vp_c
+
+
+def _mix(
+    sw: np.ma.MaskedArray,
+    sg: np.ma.MaskedArray,
+    so: np.ma.MaskedArray,
+    rho_w: np.ndarray,
+    bulk_w: np.ndarray,
+    rho_g: np.ndarray,
+    bulk_g: np.ndarray,
+    rho_o: np.ndarray,
+    bulk_o: np.ndarray,
+    fluids: Fluids,
+) -> tuple[np.ndarray, np.ndarray]:
+    if fluids.fluid_mix_method == FluidMixModel.WOOD:
+        bulk_eff = multi_wood([sw, sg, so], [bulk_w, bulk_g, bulk_o])  # type: ignore
+    else:
+        bulk_eff = brie(
+            sg,
+            bulk_g,
+            sw,
+            bulk_w,
+            so,
+            bulk_o,
+            fluids.fluid_mix_method.brie_exponent,
+        )
+    rho_eff = sw * rho_w + sg * rho_g + so * rho_o
+    return rho_eff, bulk_eff
+
 
 def effective_fluid_properties(
     restart_props: list[SimRstProperties] | SimRstProperties,
     fluid_params: Fluids,
 ) -> list[EffectiveFluidProperties]:
-    """effective_fluid_properties
-    Calculate effective fluid properties (bulk modulus, density) from a fluid mix.
+    """Compute effective density and bulk modulus per time step."""
+    props = []
+    for prop in _verify_inputs(restart_props):
+        (
+            sw,
+            sg,
+            so,
+            gor,
+            pres,
+            salinity,
+            temp,
+            gas_gravity,
+            rv,
+            mask,
+            oil_density_ref,
+            oil_gas_gravity,
+        ) = _prepare_arrays(prop, fluid_params)
 
-    6/1-25: Now also incorporating fluid properties in the case where the formation
-    pressure is below the oil bubble point.
-
-    Parameters
-    ----------
-    restart_props :
-        list of dicts or a single dict with saturation, GOR and pressure per
-        time step
-    fluid_params : Fluids class
-        parameter set containing fluid parameters for FLAG models
-
-    Returns
-    -------
-    list
-        fluid properties (bulk modulus and density) per time step
-    """
-    restart_props = _verify_inputs(restart_props)
-    prop_list = []
-    for prop in restart_props:
-        # Initial check of saturation for gas and brine and calculation of oil
-        # saturation
-        sat_wat, sat_gas, sat_oil = _saturation_check(prop.swat, prop.sgas)
-
-        # RS is one of the required properties from the restart file. If it is not
-        # present, an error will be raised during file import.
-        gor = prop.rs
-
-        fluid_keys = ("vp", "density", "bulk_modulus")
-
-        # Convert pressure from bar to Pa
-        pres = 1.0e5 * prop.pressure
-
-        # Salinity and temperature are either taken as constants from config file or
-        # from eclipse simulator model
-        if fluid_params.salinity_from_sim:
-            # Convert from ppk to ppm
-            salinity = 1000.0 * prop.salt
-        else:
-            salinity = to_masked_array(fluid_params.brine.salinity, sat_wat)
-        # Temperature will normally be set as a constant. It can come from eclipse in
-        # the case a compositional fluid model is run.
-        if fluid_params.temperature.type == TemperatureMethod.FROMSIM:
-            if hasattr(prop, "temp") and prop.temp is not None:
-                temp = prop.temp
-            else:
-                raise ValueError(
-                    "eclipse simulation restart file does not have "
-                    "temperature attribute. Constant temperature must "
-                    "be set in parameter file"
-                )
-        else:
-            temp = to_masked_array(fluid_params.temperature.temperature_value, sat_wat)
-
-        # Gas gravity has to be expanded to a masked array if it comes as a float
-        if isinstance(fluid_params.gas.gas_gravity, float):
-            gas_gravity = to_masked_array(fluid_params.gas.gas_gravity, sat_wat)
-        else:
-            gas_gravity = fluid_params.gas.gas_gravity
-
-        if hasattr(prop, "rv"):
-            (
-                mask,
-                sat_wat,
-                sat_gas,
-                sat_oil,
-                gor,
-                pres,
-                rv,
-                salinity,
-                temp,
-                gas_gravity,
-            ) = filter_and_one_dim(
-                sat_wat,
-                sat_gas,
-                sat_oil,
-                gor,
-                pres,
-                prop.rv,
-                salinity,
-                temp,
-                gas_gravity,
-            )
-        else:
-            (
-                mask,
-                sat_wat,
-                sat_gas,
-                sat_oil,
-                gor,
-                pres,
-                salinity,
-                temp,
-            ) = filter_and_one_dim(sat_wat, sat_gas, sat_oil, gor, pres, salinity, temp)
-            rv = None
-
-        # Brine
-        brine_par = fluid_params.brine
-        p_na = np.array(brine_par.perc_na)
-        p_ca = np.array(brine_par.perc_ca)
-        p_k = np.array(brine_par.perc_k)
-        brine_props = flag.brine_properties(
-            temp, pres, salinity, p_nacl=p_na, p_cacl=p_ca, p_kcl=p_k
+        # Bubble point adjustment (may alter saturations, GOR, gas gravity)
+        sw, sg, so, gor, gas_gravity = _adjust_bubble_point(
+            pres,
+            gor,
+            sw,
+            sg,
+            so,
+            temp,
+            oil_density_ref,
+            oil_gas_gravity,
+            gas_gravity,
+            fluid_params,
         )
-        brine = dict(zip(fluid_keys, brine_props))
 
-        # Oil
-        oil_par = fluid_params.oil
-        oil_gr = oil_par.gas_gravity * np.ones_like(sat_wat)
-        oil_density = oil_par.reference_density * np.ones_like(sat_wat)
-
-        # If we are below bubble point, gas will come out of solution, and this has
-        # to be taken into account
-        try:
-            idx_below_bubble_point = pres <= bp_standing(oil_density, gor, oil_gr, temp)
-            if np.any(~idx_below_bubble_point):
-                warnings.warn(
-                    f"Detected pressure below bubble point for oil in "
-                    f"{np.sum(~idx_below_bubble_point)} cells"
-                )
-        except NotImplementedError:
-            # If the function is not available, a case above bubble point is assumed
-            warnings.warn(
-                "Function for bubble point not implemented. Conditions above "
-                "bubble point is assumed."
-            )
-            idx_below_bubble_point = np.zeros_like(sat_wat)
-        try:
-            if np.any(idx_below_bubble_point):
-                sat_gas, sat_oil, gor, gas_gravity = saturations_below_bubble_point(
-                    gas_saturation_init=sat_gas,
-                    oil_saturation_init=sat_oil,
-                    brine_saturation_init=sat_wat,
-                    gor_init=gor,
-                    oil_gas_gravity=oil_gr,
-                    free_gas_gravity=gas_gravity,
-                    oil_density=oil_density,
-                    z_factor=fluid_params.gas_z_factor,
-                    pres_depl=pres,
-                    temp_res=temp,
-                )
-        except (ModuleNotFoundError, NotImplementedError):
-            warnings.warn(
-                "Function to calculate effective fluid properties below "
-                "bubble point is not implemented. Estimates of fluid "
-                "properties may be uncertain."
-            )
-
-        oil_props = flag.oil_properties(
-            temperature=temp,
-            pressure=pres,
-            gas_gravity=oil_gr,
-            rho0=oil_density,
-            gas_oil_ratio=gor,
+        # Calculate the fluid properties for each fluid phase
+        rho_w, bulk_w, _vp_w = _brine_props(temp, pres, salinity, fluid_params)
+        rho_o, bulk_o, _vp_o = _oil_props(
+            temp, pres, gor, fluid_params, oil_density_ref, oil_gas_gravity
         )
-        oil = dict(zip(fluid_keys, oil_props))
+        rho_g, bulk_g, vp_g = _gas_or_co2_props(temp, pres, gas_gravity, fluid_params)
 
-        # Gas, condensate or CO2 - select case based on CO2 flag or presence of RV
-        # property in the Eclipse restart file
+        # Moderate gas by condensate properties if applicable
+        _apply_condensate_if_any(rv, temp, pres, fluid_params, rho_g, bulk_g, vp_g)
 
-        if fluid_params.gas_saturation_is_co2:
-            if fluid_params.co2_model == CO2Models.FLAG and INTERNAL_EQUINOR:
-                gas_props = flag.co2_properties(temp=temp, pres=pres)
-            else:
-                gas_props = span_wagner.co2_properties(temp=temp, pres=pres)
-        else:
-            gas_par = fluid_params.gas
-            gas_gr = gas_gravity
-            gas_model = gas_par.model
-            gas_props = flag.gas_properties(temp, pres, gas_gr, model=gas_model)[0:3]
-        # The RV parameter is used to calculate condensate properties, but the inverse
-        # property (GOR) which is used as an input to the FLAG module, is Inf if RV is
-        # 0.0. An RV of 0.0 means that the gas is dry, which is already calculated
-        # NB: condensate properties calculation requires proprietary model
-        if fluid_params.calculate_condensate and (rv is not None) and INTERNAL_EQUINOR:
-            cond_par = fluid_params.condensate
-            idx_rv_zero = np.isclose(rv, 0.0, atol=1e-10)
-            if np.any(~idx_rv_zero) and INTERNAL_EQUINOR:
-                cond_gor = 1.0 / rv[~idx_rv_zero]
-                cond_gr = cond_par.gas_gravity * np.ones_like(cond_gor)
-                cond_density = cond_par.reference_density * np.ones_like(cond_gor)
-                cond_props = flag.condensate_properties(
-                    temperature=temp[~idx_rv_zero],
-                    pressure=pres[~idx_rv_zero],
-                    rho0=cond_density,
-                    gas_oil_ratio=cond_gor,
-                    gas_gravity=cond_gr,
-                )
-                for i in range(len(gas_props)):
-                    gas_props[i][~idx_rv_zero] = cond_props[i]
-
-        gas = dict(zip(fluid_keys, gas_props))
-
-        if fluid_params.fluid_mix_method == FluidMixModel.WOOD:
-            mixed_fluid_bulk_modulus = multi_wood(
-                [sat_wat, sat_gas, sat_oil],
-                [brine["bulk_modulus"], gas["bulk_modulus"], oil["bulk_modulus"]],
-            )
-        else:
-            mixed_fluid_bulk_modulus = brie(
-                sat_gas,
-                gas["bulk_modulus"],
-                sat_wat,
-                brine["bulk_modulus"],
-                sat_oil,
-                oil["bulk_modulus"],
-                fluid_params.fluid_mix_method.brie_exponent,
-            )
-        mixed_fluid_density = (
-            sat_wat * brine["density"]
-            + sat_gas * gas["density"]
-            + sat_oil * oil["density"]
+        # Mix phases according to selected mixing function
+        rho_eff, bulk_eff = _mix(
+            sw, sg, so, rho_w, bulk_w, rho_g, bulk_g, rho_o, bulk_o, fluid_params
         )
-        mixed_fluid_density, mixed_fluid_bulk_modulus = reverse_filter_and_restore(
-            mask, mixed_fluid_density, mixed_fluid_bulk_modulus
-        )
-        fluid_props = EffectiveFluidProperties(
-            density=mixed_fluid_density,
-            bulk_modulus=mixed_fluid_bulk_modulus,
-        )
-        prop_list.append(fluid_props)
-    return prop_list
 
+        # Restore original size
+        rho_eff, bulk_eff = reverse_filter_and_restore(mask, rho_eff, bulk_eff)
 
-def _saturation_check(
-    s_water: np.ma.MaskedArray, s_gas: np.ma.MaskedArray
-) -> tuple[np.ma.MaskedArray, ...]:
-    s_water = np.ma.MaskedArray(np.ma.clip(s_water, 0.0, 1.0))
-    s_gas = np.ma.MaskedArray(np.ma.clip(s_gas, 0.0, 1.0))
-    max_water_gas_factor = np.ma.max(s_water + s_gas)
-    if max_water_gas_factor > 1.0:
-        s_water /= max_water_gas_factor
-        s_gas /= max_water_gas_factor
-    s_oil = 1.0 - s_water - s_gas
-    return s_water, s_gas, s_oil  # type: ignore
-
-
-def _verify_inputs(
-    inp_props: list[SimRstProperties] | SimRstProperties,
-) -> list[SimRstProperties]:
-    if isinstance(inp_props, list):
-        if not all(isinstance(prop, SimRstProperties) for prop in inp_props):
-            raise ValueError(
-                f"{__file__}: input to effective fluid properties should be list of "
-                f"SimRstProperties or a single SimRstProperties instance, "
-                f"is {[type(prop) for prop in inp_props]}"
-            )
-        return inp_props
-    raise ValueError(
-        f"{__file__}: input to effective fluid properties should be list of "
-        f"SimRstProperties or a single SimRstProperties instance, is {type(inp_props)}"
-    )
+        # Add to list of properties (per simulation date)
+        props.append(EffectiveFluidProperties(density=rho_eff, bulk_modulus=bulk_eff))
+    return props
