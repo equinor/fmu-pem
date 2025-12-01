@@ -120,7 +120,7 @@ def run_regression_models(
             each containing bulk modulus (k) [Pa] and density (rho_sat) [kg/m3]
         porosity: Porosity as a masked array [fraction]
         pressure: list of pressure properties containing effective pressure values
-            [bar] following Eclipse reservoir simulator convention
+            in unit Pa
         rock_matrix: rock matrix properties
         vsh: Volume of shale as a masked array [fraction], optional
 
@@ -142,13 +142,13 @@ def run_regression_models(
     else:
         multiple_lithologies = True
 
-    # Convert pressure from bar to Pa
-    pres_ovb = pressure[0].overburden_pressure * 1.0e5
-    pres_form = pressure[0].formation_pressure * 1.0e5
+    # Initial pressure conditions
+    pres_ovb = pressure[0].overburden_pressure
+    pres_form = pressure[0].formation_pressure
     for time_step, fl_prop in enumerate(fluid_properties):
         # Prepare data using filter_and_one_dim
         if time_step > 0 and rock_matrix.pressure_sensitivity:
-            pres_depl = pressure[time_step].formation_pressure * 1.0e5
+            pres_depl = pressure[time_step].formation_pressure
             (
                 mask,
                 tmp_min_k,

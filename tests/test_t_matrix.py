@@ -51,14 +51,14 @@ def valid_vsh():
 def valid_pressure():
     return [
         PressureProperties(
-            overburden_pressure=np.ma.array([200, 250], mask=[False, False]),
-            effective_pressure=np.ma.array([100, 150], mask=[False, False]),
-            formation_pressure=np.ma.array([50, 75], mask=[False, False]),
+            overburden_pressure=np.ma.array([20e6, 25e6], mask=[False, False]),
+            effective_pressure=np.ma.array([10e6, 15e6], mask=[False, False]),
+            formation_pressure=np.ma.array([5e6, 7.5e6], mask=[False, False]),
         ),
         PressureProperties(
-            overburden_pressure=np.ma.array([300, 350], mask=[False, False]),
-            effective_pressure=np.ma.array([200, 250], mask=[False, False]),
-            formation_pressure=np.ma.array([150, 175], mask=[False, False]),
+            overburden_pressure=np.ma.array([30e6, 35e6], mask=[False, False]),
+            effective_pressure=np.ma.array([20e6, 25e6], mask=[False, False]),
+            formation_pressure=np.ma.array([15e6, 17.5e6], mask=[False, False]),
         ),
     ]
 
@@ -97,14 +97,14 @@ def list_fluid_properties():
 def list_pressure():
     return [
         PressureProperties(
-            overburden_pressure=np.ma.array([200, 250], mask=[False, False]),
-            effective_pressure=np.ma.array([100, 150], mask=[False, False]),
-            formation_pressure=np.ma.array([50, 75], mask=[False, False]),
+            overburden_pressure=np.ma.array([20e6, 25e6], mask=[False, False]),
+            effective_pressure=np.ma.array([10e6, 15e6], mask=[False, False]),
+            formation_pressure=np.ma.array([5e6, 7.5e6], mask=[False, False]),
         ),
         PressureProperties(
-            overburden_pressure=np.ma.array([300, 350], mask=[False, False]),
-            effective_pressure=np.ma.array([200, 250], mask=[False, False]),
-            formation_pressure=np.ma.array([150, 175], mask=[False, False]),
+            overburden_pressure=np.ma.array([30e6, 35e6], mask=[False, False]),
+            effective_pressure=np.ma.array([20e6, 25e6], mask=[False, False]),
+            formation_pressure=np.ma.array([15e6, 17.5e6], mask=[False, False]),
         ),
     ]
 

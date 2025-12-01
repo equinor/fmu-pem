@@ -15,7 +15,6 @@ from fmu.pem.pem_utilities import (
     reverse_filter_and_restore,
 )
 from fmu.pem.pem_utilities.enum_defs import ParameterTypes
-from fmu.pem.pem_utilities.utils import convert_pressures_list_to_pa
 
 from .pressure_sensitivity import apply_dry_rock_pressure_sensitivity_model
 
@@ -36,7 +35,7 @@ def run_patchy_cement(
             properties in a list
         cement: cement properties containing k [Pa], mu [Pa] and rho [kg/m3]
         porosity: porosity fraction
-        pressure: steps in effective pressure in [bar] due to Eclipse standard
+        pressure: steps in effective pressure, unit Pa
         rock_matrix_props: parameters for the PEM
 
     Returns:
@@ -46,9 +45,9 @@ def run_patchy_cement(
     # Mineral and porosity are assumed to be single objects, fluid and
     # effective_pressure can be lists
     fluid, pressure = _verify_inputs(fluid, pressure)
-    # Convert all pressures to Pa - bar is the standard in simulation models
-    pressure_pa = convert_pressures_list_to_pa(pressure)
-    initial_effective_pressure = pressure_pa[0].effective_pressure
+
+    # Calculate depletion from the initial effective pressure
+    initial_effective_pressure = pressure[0].effective_pressure
     # Container for saturated properties
     saturated_props = []
 
@@ -59,7 +58,7 @@ def run_patchy_cement(
     mu_init = None
 
     pat_cem_params = rock_matrix_props.model.parameters
-    for time_step, (fl_prop, pres) in enumerate(zip(fluid, pressure_pa)):
+    for time_step, (fl_prop, pres) in enumerate(zip(fluid, pressure)):
         (
             mask,
             tmp_min_k,

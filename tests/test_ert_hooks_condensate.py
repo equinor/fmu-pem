@@ -47,9 +47,9 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
     assert (grid.actnum_array == actnum).all()
 
     truth_values = {
-        "eclipse--effective_pressure--20180101.roff": 3600082.9233779907,
-        "eclipse--formation_pressure--20180101.roff": 22041584.666870117,
-        "eclipse--overburden_pressure--20180101.roff": 25641667.59072876,
+        "eclipse--effective_pressure--20180101.roff": 360008292337.79907,
+        "eclipse--formation_pressure--20180101.roff": 2204158466687.0117,
+        "eclipse--overburden_pressure--20180101.roff": 2564166759072.876,
         "eclipse--density--20180101.roff": 169816156.46154785,
         "eclipse--vp--20180101.roff": 275351799.046875,
         "eclipse--vs--20180101.roff": 163354489.54553223,

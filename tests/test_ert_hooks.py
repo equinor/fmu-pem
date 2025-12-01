@@ -46,9 +46,9 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
 
     if INTERNAL_EQUINOR:
         truth_values = {
-            "eclipse--effective_pressure--20180101.roff": 3600082.9233779907,
-            "eclipse--formation_pressure--20180101.roff": 22041584.666870117,
-            "eclipse--overburden_pressure--20180101.roff": 25641667.59072876,
+            "eclipse--effective_pressure--20180101.roff": 360008292337.79907,
+            "eclipse--formation_pressure--20180101.roff": 2204158466687.0117,
+            "eclipse--overburden_pressure--20180101.roff": 2564166759072.876,
             "eclipse--density--20180101.roff": 169814178.1279297,
             "eclipse--vp--20180101.roff": 275354659.3679199,
             "eclipse--vs--20180101.roff": 163355426.4251709,
@@ -62,9 +62,9 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
         }
     else:
         truth_values = {
-            "eclipse--effective_pressure--20180101.roff": 3600082.9233779907,
-            "eclipse--formation_pressure--20180101.roff": 22041584.666870117,
-            "eclipse--overburden_pressure--20180101.roff": 25641667.59072876,
+            "eclipse--effective_pressure--20180101.roff": 360008292337.79907,
+            "eclipse--formation_pressure--20180101.roff": 2204158466687.0117,
+            "eclipse--overburden_pressure--20180101.roff": 2564166759072.876,
             "eclipse--density--20180101.roff": 169808254.21887207,
             "eclipse--vp--20180101.roff": 275240395.46398926,
             "eclipse--vs--20180101.roff": 163357944.64318848,

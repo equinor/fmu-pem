@@ -91,13 +91,13 @@ def run_t_matrix_model(
         vsh = np.ma.array(
             np.zeros_like(porosity), mask=np.zeros_like(porosity).astype(bool)
         )
-    # Change unit from bar to Pa
-    pres_ovb = pressure[0].overburden_pressure * 1.0e5
-    pres_form = pressure[0].formation_pressure * 1.0e5
+    # Pressures for initial conditions
+    pres_ovb = pressure[0].overburden_pressure
+    pres_form = pressure[0].formation_pressure
 
     for time_step, fl_prop in enumerate(fluid_properties):
         if time_step > 0:
-            pres_depl = pressure[time_step].formation_pressure * 1.0e5
+            pres_depl = pressure[time_step].formation_pressure
             (
                 mask,
                 tmp_min_k,

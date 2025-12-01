@@ -5,7 +5,7 @@ import xtgeo
 
 from .pem_class_definitions import SimInitProperties, SimRstProperties
 from .pem_config_validation import PemConfig
-from .utils import restore_dir
+from .utils import bar_to_pa, restore_dir
 
 
 def read_init_properties(
@@ -99,6 +99,13 @@ def read_sim_grid_props(
         grid=sim_grid,
         strict=(False, False),
     )
+
+    # Formation pressure has unit `bar` in eclipse, but in the PEM models, unit
+    # `Pa` is expected. Perform unit conversion before class objects are populated
+    for date in seis_dates:
+        rst_props["PRESSURE" + "_" + date].values = bar_to_pa(
+            rst_props["PRESSURE" + "_" + date].values
+        )
 
     try:
         rst_list = create_rst_list(rst_props, seis_dates, rst_props_names)

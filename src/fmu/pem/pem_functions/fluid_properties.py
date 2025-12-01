@@ -356,7 +356,7 @@ def effective_fluid_properties_zoned(
             sw = rst_date_prop.swat[mask_cells]
             sg = rst_date_prop.sgas[mask_cells]
             sw, sg, so = _saturation_triplet(sw, sg)
-            pres = 1.0e5 * rst_date_prop.pressure[mask_cells]
+            pres = rst_date_prop.pressure[mask_cells]
             gor = rst_date_prop.rs[mask_cells]
 
             # Salinity

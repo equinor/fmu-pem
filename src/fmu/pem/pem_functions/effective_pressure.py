@@ -10,7 +10,6 @@ from fmu.pem.pem_utilities import (
     PressureProperties,
     SimInitProperties,
     SimRstProperties,
-    bar_to_pa,
     to_masked_array,
 )
 from fmu.pem.pem_utilities.enum_defs import (
@@ -151,8 +150,8 @@ def estimate_pressure(
         mask_cells = np.isin(fipnum_data, fipnum_values) & ~fipnum_mask
 
         if zone.type == OverburdenPressureTypes.CONSTANT:
-            # Constant overburden pressure for this zone (convert from bar to Pa)
-            overburden_pressure_grid[mask_cells] = bar_to_pa(zone.value)
+            # Constant overburden pressure for this zone
+            overburden_pressure_grid[mask_cells] = zone.value
         else:  # zone.type == OverburdenPressureTypes.TREND
             # Calculate overburden pressure from trend for this zone (already in Pa)
             zone_ovb_pres = overburden_pressure_from_trend(
@@ -166,7 +165,7 @@ def estimate_pressure(
     # Formation pressure changes with time, but overburden pressure is constant
     eff_pres = [
         estimate_effective_pressure(
-            formation_pressure=bar_to_pa(sim_date.pressure),
+            formation_pressure=sim_date.pressure,
             bulk_density=dens,
             reference_overburden_pressure=overburden_pressure_grid,
         )
@@ -217,9 +216,9 @@ def estimate_effective_pressure(
     )
     effective_pressure = reference_overburden_pressure - biot_coeff * formation_pressure
     return PressureProperties(
-        formation_pressure=formation_pressure * 1.0e-5,
-        effective_pressure=effective_pressure * 1.0e-5,
-        overburden_pressure=reference_overburden_pressure * 1.0e-5,
+        formation_pressure=formation_pressure,
+        effective_pressure=effective_pressure,
+        overburden_pressure=reference_overburden_pressure,
     )
 
 

@@ -282,7 +282,19 @@ def _verify_update_inputs(base, add_list):
 def bar_to_pa(
     pres_bar: float | np.ndarray | np.ma.MaskedArray,
 ) -> float | np.ndarray | np.ma.MaskedArray:
+    """
+    Pressure unit conversion from bar to Pa
+    """
     return pres_bar * 1.0e5
+
+
+def pa_to_bar(
+    pres_pa: float | np.ndarray | np.ma.MaskedArray,
+) -> float | np.ndarray | np.ma.MaskedArray:
+    """
+    Pressure unit conversion from Pa to bar
+    """
+    return pres_pa * 1.0e-5
 
 
 def convert_single_pressure_to_pa(

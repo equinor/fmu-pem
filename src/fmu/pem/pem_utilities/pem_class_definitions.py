@@ -117,6 +117,10 @@ class EffectiveFluidProperties(PropertiesSubgridMasked):
 # differential) pressure
 @dataclass
 class PressureProperties(PropertiesSubgridMasked):
+    """
+    All attributes shall have unit Pa
+    """
+
     formation_pressure: MaskedArray
     effective_pressure: MaskedArray
     overburden_pressure: MaskedArray

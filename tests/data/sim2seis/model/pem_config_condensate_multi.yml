@@ -167,7 +167,7 @@ pressure:
     intercept: 20.0e6
     gradient: 9174.3
     # type: constant
-    # value: 50000000.0
+    # value: 50_000_000.0
 
 # Settings for saving results
 results:
