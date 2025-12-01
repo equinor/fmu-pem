@@ -209,11 +209,11 @@ def run_regression_models(
             rho_dry = rho_sand * (1.0 - tmp_vsh) + rho_shale * tmp_vsh
             if rock_matrix.mineral_mix_model == MineralMixModel.HASHIN_SHTRIKMAN:
                 k_dry, mu = hashin_shtrikman_average(
-                    k_sand, k_shale, mu_sand, mu_shale, (1.0 - tmp_vsh)
+                    k1=k_sand, mu1=mu_sand, k2=k_shale, mu2=mu_shale, f=(1.0 - tmp_vsh)
                 )
             else:
                 k_dry, mu = voigt_reuss_hill(
-                    k_sand, k_shale, mu_sand, mu_shale, (1.0 - tmp_vsh)
+                    k1=k_sand, mu1=mu_sand, k2=k_shale, mu2=mu_shale, f1=(1.0 - tmp_vsh)
                 )
 
         # Perform pressure correction on dry rock properties
