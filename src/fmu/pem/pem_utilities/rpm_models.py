@@ -57,7 +57,7 @@ class FriableParams(BaseModel):
 
     model_config = ConfigDict(title="Friable Model Parameters")
 
-    critical_porosity: float = Field(ge=0.3, le=0.5, default=0.5, description="Critical porosity")
+    critical_porosity: float = Field(ge=0.3, le=0.5, default=0.4, description="Critical porosity")
     coordination_number_function: str = Field(
         default="PorBased", description="Coordination number function"
     )
@@ -90,7 +90,7 @@ class PatchyCementParams(FriableParams):
     """Patchy cement model parameters."""
 
     model_config = ConfigDict(title="Patchy Cement Parameters")
-    cement_fraction: float = Field(gt=0, le=0.1, default=0.5, description="Cement volume fraction")
+    cement_fraction: float = Field(gt=0, le=0.1, description="Cement volume fraction")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert patchy cement parameters to dictionary."""
