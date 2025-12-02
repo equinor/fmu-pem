@@ -58,7 +58,9 @@ class FriableParams(BaseModel):
 
     model_config = ConfigDict(title="Friable Model Parameters")
 
-    critical_porosity: float = Field(ge=0.3, le=0.5, default=0.4, description="Critical porosity")
+    critical_porosity: float = Field(
+        ge=0.3, le=0.5, default=0.4, description="Critical porosity"
+    )
     coordination_number_function: str = Field(
         default="PorBased", description="Coordination number function"
     )
