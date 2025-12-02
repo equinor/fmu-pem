@@ -235,11 +235,13 @@ class RegressionModels(BaseModel):
 
 class PatchyCementRPM(BaseModel):
     model_config = ConfigDict(title="Patchy Cement Model")
+    model_name: Literal[RPMType.PATCHY_CEMENT]
     parameters: PatchyCementParams
 
 
 class FriableRPM(BaseModel):
     model_config = ConfigDict(title="Friable Sand Model")
+    model_name: Literal[RPMType.FRIABLE]
     parameters: FriableParams
 
 
