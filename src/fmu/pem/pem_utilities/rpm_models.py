@@ -314,7 +314,6 @@ class RegressionPressureSensitivity(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True, title="Regression Pressure Sensitivity"
     )
-
     # Selections that cover model types Exponential/Polynomial and parameter types
     # VP-VS or K-MU
     model_type: RegressionPressureModelTypes = Field(
