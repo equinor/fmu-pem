@@ -145,6 +145,20 @@ fieldset {
   padding-left: 5px;
 }
 
+/* In order to avoid confusion we hide duplicate name fields in auto-generated user interface */
+label[for="root_rock_matrix_model_model_name"], #root_rock_matrix_model_model_name, #root_rock_matrix_model_model_name__description, #root_rock_matrix_model_model_name__error,
+label[for="root_rock_matrix_model_parameters_sandstone_mode"], #root_rock_matrix_model_parameters_sandstone_mode, #root_rock_matrix_model_parameters_sandstone_mode__description, #root_rock_matrix_model_parameters_sandstone_mode__error,
+label[for="root_rock_matrix_model_parameters_shale_mode"], #root_rock_matrix_model_parameters_shale_mode, #root_rock_matrix_model_parameters_shale_mode__description, #root_rock_matrix_model_parameters_shale_mode__error,
+/* Only title: */
+#root_fluids_fluid_mix_method__title,
+#root_rock_matrix_model__title,
+#root_fluids_temperature__title,
+#root_fluids_temperature__title,
+#root_pressure__title,
+#root_rock_matrix_volume_fractions__title
+{
+  display: none;
+}
 
 
 

@@ -74,7 +74,7 @@ class FriableParams(BaseModel):
         description="Maximum pressure value for the friable sandstone model used as"
         " pressure sensitive model",
     )
-  
+
     def to_dict(self) -> dict[str, Any]:
         """Convert friable parameters to dictionary."""
         return {
@@ -235,17 +235,11 @@ class RegressionModels(BaseModel):
 
 class PatchyCementRPM(BaseModel):
     model_config = ConfigDict(title="Patchy Cement Model")
-    model_name: Literal["cement"] = Field(
-        default="cement",
-    )
     parameters: PatchyCementParams
 
 
 class FriableRPM(BaseModel):
     model_config = ConfigDict(title="Friable Sand Model")
-    model_name: Literal["friable"] = Field(
-        default="friable"
-    )
     parameters: FriableParams
 
 
