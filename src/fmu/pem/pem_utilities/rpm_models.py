@@ -13,6 +13,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.json_schema import SkipJsonSchema
 from rock_physics_open.equinor_utilities.machine_learning_utilities import (
     ExponentialPressureModel,
     PolynomialPressureModel,
@@ -311,7 +312,7 @@ class RegressionPressureSensitivity(BaseModel):
     """
 
     model_config = ConfigDict(
-        title="Regression Pressure Sensitivity"
+        arbitrary_types_allowed=True, title="Regression Pressure Sensitivity"
     )
 
     # Selections that cover model types Exponential/Polynomial and parameter types
@@ -458,7 +459,7 @@ class PhysicsModelPressureSensitivity(BaseModel):
     """
 
     model_config = ConfigDict(
-        title="Physics Model Pressure Sensitivity"
+        arbitrary_types_allowed=True, title="Physics Model Pressure Sensitivity"
     )
     model_type: PhysicsPressureModelTypes = Field(description="Type of pressure model")
     parameters: PatchyCementParams | FriableParams = Field(
