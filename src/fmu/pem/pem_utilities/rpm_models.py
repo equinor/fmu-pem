@@ -56,10 +56,6 @@ class FriableParams(BaseModel):
     """Friable sandstone model parameters."""
 
     model_config = ConfigDict(title="Friable Model Parameters")
-    model_name: Literal["sometext"] = Field(
-        default="sometext",
-        description="Her er sometext",
-    )
 
     critical_porosity: float = Field(ge=0.3, le=0.5, default=0.5, description="Critical porosity")
     coordination_number_function: str = Field(
@@ -90,33 +86,11 @@ class FriableParams(BaseModel):
         }
 
 
-class PatchyCementParams(BaseModel):
+class PatchyCementParams(FriableParams):
     """Patchy cement model parameters."""
 
     model_config = ConfigDict(title="Patchy Cement Parameters")
-    model_name: Literal["cement2"] = Field(
-        default="cement2",
-        description="Her er cement2 parameters",
-    )
     cement_fraction: float = Field(gt=0, le=0.1, default=0.5, description="Cement volume fraction")
-
-    critical_porosity: float = Field(ge=0.3, le=0.5, default=0.5, description="Critical porosity")
-    coordination_number_function: str = Field(
-        default="PorBased", description="Coordination number function"
-    )
-    coord_num: float = Field(
-        default=9.0,
-        description="Coordination number value."
-        " This is normally only used in patchy cement model",
-    )
-    shear_reduction: float = Field(
-        default=1.0, ge=0, le=1, description="Shear reduction factor"
-    )
-    model_max_pressure: float = Field(
-        default=40,  # MPa
-        description="Maximum pressure value for the friable sandstone model used as"
-        " pressure sensitive model",
-    )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert patchy cement parameters to dictionary."""
@@ -124,39 +98,6 @@ class PatchyCementParams(BaseModel):
         base_dict["cement_fraction"] = self.cement_fraction
         return base_dict
 
-class PatchyCementParams2(BaseModel):
-    """Patchy cement model parameters."""
-
-    model_config = ConfigDict(title="Patchy Cement Parameters")
-    model_name: Literal["cement2"] = Field(
-        default="cement2",
-        description="Her er cement2 parameters",
-    )
-    cement_fraction: float = Field(gt=0, le=0.1, default=0.5, description="Cement volume fraction")
-
-    critical_porosity: float = Field(ge=0.3, le=0.5, default=0.5, description="Critical porosity")
-    coordination_number_function: str = Field(
-        default="PorBased", description="Coordination number function"
-    )
-    coord_num: float = Field(
-        default=9.0,
-        description="Coordination number value."
-        " This is normally only used in patchy cement model",
-    )
-    shear_reduction: float = Field(
-        default=1.0, ge=0, le=1, description="Shear reduction factor"
-    )
-    model_max_pressure: float = Field(
-        default=40,  # MPa
-        description="Maximum pressure value for the friable sandstone model used as"
-        " pressure sensitive model",
-    )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert patchy cement parameters to dictionary."""
-        base_dict = super().to_dict()
-        base_dict["cement_fraction"] = self.cement_fraction
-        return base_dict
 
 class TMatrixParams(BaseModel):
     t_mat_model_version: Literal["PETEC", "EXP"] = Field(
@@ -296,7 +237,6 @@ class PatchyCementRPM(BaseModel):
     model_config = ConfigDict(title="Patchy Cement Model")
     model_name: Literal["cement"] = Field(
         default="cement",
-        description="Her skal det komme opp cement",
     )
     parameters: PatchyCementParams
 
@@ -304,9 +244,7 @@ class PatchyCementRPM(BaseModel):
 class FriableRPM(BaseModel):
     model_config = ConfigDict(title="Friable Sand Model")
     model_name: Literal["friable"] = Field(
-        default="friable",
-        description="Regression mode mode must be set to 'vp_vs' for "
-        "estimation of Vp and Vs based on porosity",
+        default="friable"
     )
     parameters: FriableParams
 
@@ -380,8 +318,7 @@ class RegressionPressureSensitivity(BaseModel):
     )
 
     model_name: Literal["regression"] = Field(
-        default="regression",
-        description="Why does this not appear?",
+        default="regression"
     )
 
     # Selections that cover model types Exponential/Polynomial and parameter types
@@ -530,13 +467,11 @@ class PhysicsModelPressureSensitivity(BaseModel):
     model_config = ConfigDict(
         title="Physics Model Pressure Sensitivity"
     )
-    model_name: Literal["test"] = Field(
-        default="test",
-        description="Regression mode mode must be set to 'vp_vs' for "
-        "estimation of Vp and Vs based on porosity",
+    model_name: Literal["PhysicsModelPressureSensitivity"] = Field(
+        default="PhysicsModelPressureSensitivity",
     )
     model_type: PhysicsPressureModelTypes = Field(description="Type of pressure model")
-    parameters: PatchyCementParams2 | FriableParams = Field(
+    parameters: PatchyCementParams | FriableParams = Field(
         default_factory=PatchyCementParams,
         description="Dry rock model parameters"
     )
