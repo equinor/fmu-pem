@@ -317,10 +317,6 @@ class RegressionPressureSensitivity(BaseModel):
         title="Regression Pressure Sensitivity"
     )
 
-    model_name: Literal["regression"] = Field(
-        default="regression"
-    )
-
     # Selections that cover model types Exponential/Polynomial and parameter types
     # VP-VS or K-MU
     model_type: RegressionPressureModelTypes = Field(
@@ -467,12 +463,8 @@ class PhysicsModelPressureSensitivity(BaseModel):
     model_config = ConfigDict(
         title="Physics Model Pressure Sensitivity"
     )
-    model_name: Literal["PhysicsModelPressureSensitivity"] = Field(
-        default="PhysicsModelPressureSensitivity",
-    )
     model_type: PhysicsPressureModelTypes = Field(description="Type of pressure model")
     parameters: PatchyCementParams | FriableParams = Field(
-        default_factory=PatchyCementParams,
         description="Dry rock model parameters"
     )
 
