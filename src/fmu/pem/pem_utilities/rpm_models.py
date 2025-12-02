@@ -90,6 +90,7 @@ class PatchyCementParams(FriableParams):
     """Patchy cement model parameters."""
 
     model_config = ConfigDict(title="Patchy Cement Parameters")
+
     cement_fraction: float = Field(gt=0, le=0.1, description="Cement volume fraction")
 
     def to_dict(self) -> dict[str, Any]:
