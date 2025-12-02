@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from ert import (
     ForwardModelStepDocumentation,
     ForwardModelStepJSON,
     ForwardModelStepPlugin,
     ForwardModelStepValidationError,
 )
+
+from fmu.pem.pem_utilities import read_pem_config
 
 
 class PetroElasticModel(ForwardModelStepPlugin):
@@ -14,12 +19,14 @@ class PetroElasticModel(ForwardModelStepPlugin):
             name="PEM",
             command=[
                 "pem",
-                "--startdir",
+                "--start-dir",
                 "<START_DIR>",
-                "--configdir",
+                "--config-dir",
                 "<CONFIG_DIR>",
-                "--configfile",
+                "--config-file",
                 "<CONFIG_FILE>",
+                "--model-dir",
+                "<MODEL_DIR>",
             ],
         )
 
@@ -29,30 +36,13 @@ class PetroElasticModel(ForwardModelStepPlugin):
         return fm_step_json
 
     def validate_pre_experiment(self, fm_step_json: ForwardModelStepJSON) -> None:
-        import os
-        from pathlib import Path
-
-        from fmu.pem.pem_utilities import read_pem_config
-
-        model_dir_env = os.environ.get("PEM_MODEL_DIR")
-        if model_dir_env is None:
-            raise ValueError(
-                'environment variable "PEM_MODEL_DIR" must be set to '
-                "validate PEM model pre-experiment"
-            )
-        model_dir = Path(model_dir_env)
-
-        runpath_config_dir = Path(fm_step_json["argList"][3])
-        config_dir = (
-            model_dir
-            / "../.."
-            / runpath_config_dir.parent.name
-            / runpath_config_dir.name
-        ).resolve()
-        config_file = fm_step_json["argList"][5]
+        # Parse YAML parameter file by pydantic pre-experiment to catch errors at an
+        # early stage
+        config_file = Path(fm_step_json["argList"][5])
+        model_dir = Path(fm_step_json["argList"][7])
         try:
             os.chdir(model_dir)
-            _ = read_pem_config(config_dir / config_file)
+            _ = read_pem_config(config_file)
         except Exception as e:
             raise ForwardModelStepValidationError(f"pem validation failed:\n {str(e)}")
 
@@ -66,7 +56,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
             examples="""
 .. code-block:: console
 
-  FORWARD_MODEL PEM(<START_DIR>=../../rms/model, <CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml)
+  FORWARD_MODEL PEM(<START_DIR>=../../rms/model, <CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml, <MODEL_DIR>=/my_fmu_structure/sim2seis/model)
 
 """,  # noqa: E501,
         )

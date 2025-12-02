@@ -1,5 +1,4 @@
 # ruff: noqa: E501
-import os
 import subprocess
 from math import isclose
 
@@ -25,12 +24,11 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
     if not INTERNAL_EQUINOR:
         pytest.skip("condensate model requires proprietary code, skipping test")
     monkeypatch.chdir(data_dir / "rms/model")
-    start_path = data_dir / "rms/model"
     pem_output_path = data_dir / "sim2seis/output/pem"
     share_output_path = data_dir / "share/results/grids"
     subprocess.run(
         ["ert", "test_run", "../../ert/model/run_pem_condensate.ert"],
-        env={**os.environ, "PEM_MODEL_DIR": str(start_path)},
+        check=True,
     )
 
     grid = xtgeo.grid_from_file(share_output_path / "eclipsegrid_pem.roff")

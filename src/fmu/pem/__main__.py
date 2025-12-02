@@ -11,27 +11,35 @@ def main():
     parser = argparse.ArgumentParser(__file__)
     parser.add_argument(
         "-s",
-        "--startdir",
+        "--start-dir",
         type=Path,
         required=True,
         help="Start directory for running script (required)",
     )
     parser.add_argument(
         "-c",
-        "--configdir",
+        "--config-dir",
         type=Path,
         required=True,
         help="Path to config file (required)",
     )
     parser.add_argument(
         "-f",
-        "--configfile",
+        "--config-file",
         type=Path,
         required=True,
         help="Configuration yaml file name (required)",
     )
+    parser.add_argument(
+        "-m",
+        "--model-dir",
+        type=Path,
+        required=False,
+        help="For ERT run: Absolute directory name for model file, pre-experiment. Not "
+        "needed for command line run",
+    )
     args = parser.parse_args()
-    cwd = args.startdir
+    cwd = args.start_dir.absolute()
     if str(cwd).endswith("rms/model"):
         run_folder = cwd
     else:
@@ -43,9 +51,9 @@ def main():
             run_folder = cwd
     with restore_dir(run_folder):
         pem_fcn(
-            start_dir=args.startdir,
-            rel_path_pem=args.configdir,
-            pem_config_file_name=args.configfile,
+            start_dir=run_folder,
+            rel_path_pem=args.config_dir,
+            pem_config_file_name=args.config_file,
         )
 
 

@@ -8,6 +8,7 @@
 DEFINE <USER> $USER
 DEFINE <SCRATCH> /scratch/fmu
 DEFINE <CONFIG_PATH> /private/hfle/drogon_hfle/dev/rms/model
+DEFINE <MODEL_PATH> /private/hfle/drogon_hfle/dev/sim2seis/model
 
 NUM_REALIZATIONS 1
 RUNPATH     <SCRATCH>/<USER>/fmu_sim2seis_pem/realization-<IENS>/iter-<ITER>
@@ -15,11 +16,9 @@ RUNPATH     <SCRATCH>/<USER>/fmu_sim2seis_pem/realization-<IENS>/iter-<ITER>
 -- Copy required input files for the PEM, directories are automatically created by COPY_FILE
 FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../fmuconfig/output/global_variables.yml,      <TO>=<RUNPATH>/fmuconfig/output/global_variables.yml)
 FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../fmuconfig/output/global_variables_pred.yml, <TO>=<RUNPATH>/fmuconfig/output/global_variables_pred.yml)
-FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/ECLIPSE.EGRID,           <TO>=<RUNPATH>/sim2seis/input/pem/ECLIPSE.EGRID)
-FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/ECLIPSE.INIT,            <TO>=<RUNPATH>/sim2seis/input/pem/ECLIPSE.INIT)
-FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/ECLIPSE.UNRST,           <TO>=<RUNPATH>/sim2seis/input/pem/ECLIPSE.UNRST)
-FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/export_grid.roff,      <TO>=<RUNPATH>/sim2seis/input/pem/export_grid.roff)
-FORWARD_MODEL COPY_FILE(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem/export_prop.roff,      <TO>=<RUNPATH>/sim2seis/input/pem/export_prop.roff)
+
+-- Copy the input file directory, it can vary which volume fraction files that are included in the PEM run
+FORWARD_MODEL COPY_DIRECTORY(<FROM>=<CONFIG_PATH>/../../sim2seis/input/pem, <TO>=<RUNPATH>/sim2seis/input)
 
 -- Copy all model files in ../../sim2seis/model for flexibility. The PEM .yml file (new_pem_config.yml) is
 -- always required, .pkl model files are required if tmatrix model is used in the PEM
@@ -38,4 +37,4 @@ DEFINE <RELPATH_PEM> <RUNPATH>/sim2seis/model
 DEFINE <PEM_CONFIG_FILE_NAME> new_pem_config.yml
 
 -- Run the PEM
-FORWARD_MODEL PEM(<START_DIR>=<PEM_STARTDIR>, <CONFIG_DIR>=<RELPATH_PEM>, <CONFIG_FILE>=<PEM_CONFIG_FILE_NAME>)
+FORWARD_MODEL PEM(<START_DIR>=<PEM_STARTDIR>, <CONFIG_DIR>=<RELPATH_PEM>, <CONFIG_FILE>=<PEM_CONFIG_FILE_NAME>, <MODEL_DIR>=<MODEL_PATH>)
