@@ -470,7 +470,7 @@ class PVTZone(BaseModel):
         description="Flag to control if gas should be modelled with condensate model, "
         "in which case `RV` parameter must be present in the Eclipse model",
     )
-    gas_z_factor: float = Field(
+    gas_z_factor: SkipJsonSchema[float] = Field(
         default=1.0,
         description="Factor for deviation from an ideal gas in terms of volume change "
         "as a function of temperature and pressure",

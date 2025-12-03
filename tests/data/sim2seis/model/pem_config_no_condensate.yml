@@ -154,8 +154,6 @@ fluids:
       reference_density: 865.0
     calculate_condensate: False
     gas_saturation_is_co2: False
-    # Factor for deviation from an ideal gas
-    gas_z_factor: 1.0
     temperature:
       type: constant
       # type: from_sim - alternative
