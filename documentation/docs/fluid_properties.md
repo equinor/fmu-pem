@@ -78,23 +78,33 @@ shows the gas gravity for alkanes from methane through octane. Modelling results
 
 ### Oil and condensate models
 
-Oil and condensate models require the same set of parameters. The density of the liquid phase at standard
-conditions, the gravity of the gas phase and the volumetric gas/oil ratio are all required, in addition to temperature
-and pressure. There are limitations for most of the input parameters within a valid model range; for example, gas/oil ratio must be
-less than 600, otherwise the condensate model must be used.
+Oil and condensate models require the same set of parameters: the density of the liquid phase at standard conditions,
+the gravity of the gas phase, and the volumetric gas/oil ratio, in addition to temperature and pressure. Most input
+parameters have limitations within a valid model range; for example, the gas/oil ratio must be less than 600,
+otherwise the condensate model should be used.
 
 It should also be noted that the oil model does not cover very heavy oil, such as Canadian or Venezuelan bitumen. As
 these varieties of hydrocarbons are not a prime target for Equinor, we have not included such models in `fmu-pem`. Oil
 with an API gravity as low as 10° can be modelled with the standard oil model, unless the temperature is very low. Oil
-properties as functions of temperature and pressure are shown in [Figure 4](figure-4-oil-properties). The other
-parameters are shown with one reference case, and comparison cases where each parameter is increased, one at a time.
+properties as functions of temperature and pressure are shown in [Figure 4](figure-4-oil-properties). The other parameters are
+illustrated with a reference case and comparison cases where each parameter is increased individually.
 
 In general, oil properties are reduced with increasing temperature and increased with increasing pressure. Increasing
 GOR reduces all oil properties, gas gravity has little influence, and increasing oil density increases all oil
 properties.
 
-The oil model assumes that at reservoir conditions, all gas is dissolved in the oil. Below the bubble point, the oil
-model will not estimate correct results. An Equinor internal function handles cases that are below the bubble point.
+The oil model assumes that, at reservoir conditions, all gas is dissolved in the oil. Below the bubble point, the oil
+model will not provide accurate results. An Equinor internal function handles cases below the bubble point. To account
+for a significant number of cells below the bubble point, an additional parameter is required: the **gas Z-factor
+(compressibility factor)**, which represents the hydrocarbon gas's deviation from an ideal gas. This parameter can be
+found in PVT reports. It is normally not exposed in the YAML parameter file, but can be added per PVTNUM zone:
+
+```yaml
+gas_z_factor: 0.97
+```
+If the default value (1.0) is set, a maximum fraction of 0.01 of the total number of grid cells is allowed to be below
+the bubble point. If a significant number of cells are expected to be below the bubble point, the actual gas Z-factor
+must be set for each PVTNUM zone.
 
 <img src="./images/oil_properties_complete.png">
 <span id="figure-4-oil-properties"><strong>Figure 4:</strong> Oil property modelling results.</span>
