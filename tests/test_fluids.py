@@ -55,25 +55,27 @@ class StubMixMethodWood:
 class StubPVTZone:
     """Stub PVT zone - mimics PVTZone from pem_config_validation"""
 
-    pvtnum = "*"
-    brine = StubBrine()
-    gas = StubGasParams()
-    oil = StubOilParams()
-    condensate = StubCondensateParams()
-    temperature = StubTemperatureCfg()
-    gas_saturation_is_co2 = False
-    gas_z_factor = 1.0
-    calculate_condensate = False  # Disabled by default, enabled in condensate test
-    co2_model = CO2Models.FLAG
+    def __init__(self, gas_z_factor=1.0):
+        self.pvtnum = "*"
+        self.brine = StubBrine()
+        self.gas = StubGasParams()
+        self.oil = StubOilParams()
+        self.condensate = StubCondensateParams()
+        self.temperature = StubTemperatureCfg()
+        self.gas_saturation_is_co2 = False
+        self.gas_z_factor = gas_z_factor
+        self.calculate_condensate = False
+        self.co2_model = CO2Models.FLAG
 
 
 class StubFluids:
     """Composite stub for fluids - mimic Pydantic object with pvt_zones"""
 
-    pvt_zones = [StubPVTZone()]
-    salinity_from_sim = True
-    co2_model = CO2Models.FLAG
-    fluid_mix_method = StubMixMethodWood()
+    def __init__(self, gas_z_factor=1.0):
+        self.pvt_zones = [StubPVTZone(gas_z_factor=gas_z_factor)]
+        self.salinity_from_sim = True
+        self.co2_model = CO2Models.FLAG
+        self.fluid_mix_method = StubMixMethodWood()
 
 
 # SimRstProperties stub with inheritance
@@ -112,12 +114,39 @@ def pvtnum_grid():
 
 
 @pytest.fixture
-def sim_props_no_condensate():
+def sim_props_high_pressure():
+    """High pressure scenario - above bubble point"""
     return StubSimRstProperties(
         swat=[1.0, 0.0, 0.3],
         sgas=[0.0, 1.0, 0.2],
         rs=[50, 50, 50],
-        pressure=[200, 200, 200],
+        pressure=[50e6, 50e6, 50e6],  # 500 bar - well above bubble point
+        salt=[35, 35, 35],
+        temp=[90, 90, 90],
+    )
+
+
+@pytest.fixture
+def sim_props_low_pressure():
+    """Low pressure scenario - below bubble point"""
+    return StubSimRstProperties(
+        swat=[1.0, 0.0, 0.3],
+        sgas=[0.0, 1.0, 0.2],
+        rs=[50, 50, 50],
+        pressure=[5e6, 5e6, 5e6],  # 50 bar - below bubble point
+        salt=[35, 35, 35],
+        temp=[90, 90, 90],
+    )
+
+
+@pytest.fixture
+def sim_props_no_condensate():
+    """Medium pressure scenario"""
+    return StubSimRstProperties(
+        swat=[1.0, 0.0, 0.3],
+        sgas=[0.0, 1.0, 0.2],
+        rs=[50, 50, 50],
+        pressure=[20e6, 20e6, 20e6],  # 200 bar
         salt=[35, 35, 35],
         temp=[90, 90, 90],
     )
@@ -129,7 +158,7 @@ def sim_props_with_condensate():
         swat=[0.0, 0.0, 0.3],
         sgas=[1.0, 1.0, 0.2],
         rs=[80, 80, 80],
-        pressure=[250, 250, 250],
+        pressure=[25e6, 25e6, 25e6],
         salt=[35, 35, 35],
         temp=[100, 100, 100],
         rv=[0.0, 0.5, 0.0],
@@ -154,9 +183,20 @@ def mock_flag_models(monkeypatch):
         n = len(temp)
         return np.full(n, 1800.0), np.full(n, 400.0), np.full(n, 0.8e9)
 
+    def bp_standing_mock(density, gas_oil_ratio, gas_gravity, temperature):
+        """
+        Mock bubble point calculation.
+        Returns 100 bar (1e7 Pa) - this is above sim_props_low_pressure (50 bar)
+        but below sim_props_high_pressure (500 bar) and sim_props_no_condensate
+        (200 bar).
+        """
+        n = len(density) if hasattr(density, "__len__") else 1
+        return np.full(n, 1.0e7)  # 100 bar in Pa
+
     monkeypatch.setattr(fluid_properties.flag, "brine_properties", brine_properties)
     monkeypatch.setattr(fluid_properties.flag, "oil_properties", oil_properties)
     monkeypatch.setattr(fluid_properties.flag, "gas_properties", gas_properties)
+    monkeypatch.setattr(fluid_properties, "bp_standing", bp_standing_mock)
 
     # CO2 properties available through different modules depending on INTERNAL_EQUINOR
     if INTERNAL_EQUINOR:
@@ -177,15 +217,6 @@ def mock_flag_models(monkeypatch):
         monkeypatch.setattr(
             fluid_properties.flag, "condensate_properties", condensate_properties
         )
-
-    def bp_standing_mock(density, gas_oil_ratio, gas_gravity, temperature):
-        # Return bubble point pressure higher than test pressures to avoid
-        # below-bubble-point logic
-        # Test pressures are 200-250 bar (2e7-2.5e7 Pa), so return 300 bar equivalent
-        n = len(density) if hasattr(density, "__len__") else 1
-        return np.full(n, 3.0e7)  # 300 bar in Pa
-
-    monkeypatch.setattr(fluid_properties, "bp_standing", bp_standing_mock)
 
     if INTERNAL_EQUINOR:
 
@@ -212,12 +243,12 @@ def mock_flag_models(monkeypatch):
         )
 
 
-def test_accepts_single_and_list(sim_props_no_condensate, fluids, pvtnum_grid):
+def test_accepts_single_and_list(sim_props_high_pressure, fluids, pvtnum_grid):
     res_single = effective_fluid_properties_zoned(
-        sim_props_no_condensate, fluids, pvtnum_grid
+        sim_props_high_pressure, fluids, pvtnum_grid
     )
     res_list = effective_fluid_properties_zoned(
-        [sim_props_no_condensate], fluids, pvtnum_grid
+        [sim_props_high_pressure], fluids, pvtnum_grid
     )
     assert isinstance(res_single[0], EffectiveFluidProperties)
     assert np.allclose(res_single[0].density, res_list[0].density)
@@ -235,7 +266,7 @@ def test_condensate_overwrite(sim_props_with_condensate, fluids, pvtnum_grid):
     assert res.density[1] == pytest.approx(600.0)
 
 
-def test_co2_path(sim_props_no_condensate, fluids, pvtnum_grid, monkeypatch):
+def test_co2_path(sim_props_high_pressure, fluids, pvtnum_grid, monkeypatch):
     calls = {"co2": 0}
     fluids.pvt_zones[0].gas_saturation_is_co2 = True
 
@@ -252,13 +283,13 @@ def test_co2_path(sim_props_no_condensate, fluids, pvtnum_grid, monkeypatch):
             fluid_properties.span_wagner, "co2_properties", co2_properties
         )
 
-    effective_fluid_properties_zoned(sim_props_no_condensate, fluids, pvtnum_grid)
+    effective_fluid_properties_zoned(sim_props_high_pressure, fluids, pvtnum_grid)
     assert calls["co2"] == 1
 
 
-def test_density_and_bulk_shapes(sim_props_no_condensate, fluids, pvtnum_grid):
+def test_density_and_bulk_shapes(sim_props_high_pressure, fluids, pvtnum_grid):
     res = effective_fluid_properties_zoned(
-        sim_props_no_condensate, fluids, pvtnum_grid
+        sim_props_high_pressure, fluids, pvtnum_grid
     )[0]
     assert res.density.shape == res.bulk_modulus.shape
     assert res.density.ndim == 1
@@ -269,13 +300,48 @@ def test_density_and_bulk_shapes(sim_props_no_condensate, fluids, pvtnum_grid):
 
 
 def test_list_multiple(
-    sim_props_no_condensate, sim_props_with_condensate, fluids, pvtnum_grid
+    sim_props_high_pressure, sim_props_with_condensate, fluids, pvtnum_grid
 ):
     results = effective_fluid_properties_zoned(
-        [sim_props_no_condensate, sim_props_with_condensate], fluids, pvtnum_grid
+        [sim_props_high_pressure, sim_props_with_condensate], fluids, pvtnum_grid
     )
     assert len(results) == 2
     assert all(isinstance(r, EffectiveFluidProperties) for r in results)
     # Verify all results are masked arrays
     assert all(isinstance(r.density, np.ma.MaskedArray) for r in results)
     assert all(isinstance(r.bulk_modulus, np.ma.MaskedArray) for r in results)
+
+
+def test_below_bubble_point_raises_error(sim_props_low_pressure, pvtnum_grid):
+    """Test that pressures below bubble point trigger an error when gas_z_factor=1.0"""
+    fluids_default = StubFluids(gas_z_factor=1.0)
+    with pytest.raises(
+        ValueError, match="Fraction of cells with pressure below oil bubble point"
+    ):
+        effective_fluid_properties_zoned(
+            sim_props_low_pressure, fluids_default, pvtnum_grid
+        )
+
+
+def test_above_bubble_point_succeeds(sim_props_high_pressure, pvtnum_grid):
+    """Test normal operation with pressures above bubble point"""
+    fluids_default = StubFluids(gas_z_factor=1.0)
+    res = effective_fluid_properties_zoned(
+        sim_props_high_pressure, fluids_default, pvtnum_grid
+    )[0]
+    assert isinstance(res, EffectiveFluidProperties)
+    assert res.density.shape == (3,)
+    assert np.all(res.bulk_modulus > 0.0)
+
+
+def test_below_bubble_point_with_z_factor(sim_props_low_pressure, pvtnum_grid):
+    """Test that setting gas_z_factor != 1.0 allows operation below bubble point"""
+    fluids_with_z = StubFluids(gas_z_factor=0.95)
+    # Should not raise an error, and should issue a warning instead
+    with pytest.warns(UserWarning, match="Detected pressure below bubble point"):
+        res = effective_fluid_properties_zoned(
+            sim_props_low_pressure, fluids_with_z, pvtnum_grid
+        )[0]
+    assert isinstance(res, EffectiveFluidProperties)
+    assert res.density.shape == (3,)
+    assert np.all(res.bulk_modulus > 0.0)
