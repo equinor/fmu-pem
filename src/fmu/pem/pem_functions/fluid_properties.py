@@ -73,7 +73,8 @@ def _adjust_bubble_point(
             gas_gravity=oil_gas_gravity,
             temperature=temp,
         )
-        idx_below = pres <= bp
+        # Only consider cells where the oil saturation is positive
+        idx_below = np.logical_and(pres <= bp, so > 0.0)
         if np.any(idx_below):
             # More than 1% of cells below bubble point will be regarded as an error
             # situation if the gas Z-factor is set to default value of 1.0. If the
