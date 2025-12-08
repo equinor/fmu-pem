@@ -146,20 +146,17 @@ class RhoRegressionParams(BaseModel):
     rho_weights: list[float] = Field(
         description="\n\n".join(
             [
+                "Matrix density is normally estimated from "
+                "mineral composition and the density of each mineral. "
+                "Selecting `RhoRegressionParams` will estimate matrix "
+                "density based on porosity alone. In that case, weights "
+                "for the polynomial expression must be provided.",
                 "Polynomial coefficients for matrix density as a function of porosity:",
                 "`rho(phi) = w1 + w2*phi + w3*phi^2 + ... + wn*phi^n`",
                 "List order: `[w1, w2, w3, ..., wn]`",
                 "where `phi` is porosity (fraction) and `rho` is in kg/m³.",
             ]
         )
-    )
-    rho_model: bool = Field(
-        default=False,
-        description="Matrix density is normally estimated from "
-        "mineral composition and the density of each mineral. "
-        "Setting this to True will estimate matrix "
-        "density based on porosity alone. In that case, weights "
-        "for the polynomial expression must be provided.",
     )
 
 
