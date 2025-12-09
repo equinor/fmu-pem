@@ -426,6 +426,19 @@ class TemperatureFromSim(BaseModel):
     type: SkipJsonSchema[TemperatureMethod] = "from_sim"
 
 
+class SalinityFromSim(BaseModel):
+    def __eq__(self, other):
+        return other is None
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __bool__(self):
+        return False
+
+    model_config = ConfigDict(title="This field is optional")
+
+
 class PVTZone(BaseModel):
     pvtnum: str = Field(
         description="Each grid cell in a reservoir model is assigned a PVTNUM "
@@ -493,8 +506,8 @@ class Fluids(BaseModel):
         "radical response to adding small amounts of gas in brine or oil",
     )
     # Handling of salinity will be a common factor, not zone-based
-    salinity_from_sim: bool = Field(
-        default=False,
+    salinity_from_sim: SalinityFromSim = Field(
+        default_factory=SalinityFromSim,
         description="In most cases it is sufficient with a constant salinity "
         "setting for the reservoir, unless there is large contrast"
         "between formation water and injected water. If salinity is "
