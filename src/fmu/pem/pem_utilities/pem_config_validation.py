@@ -404,11 +404,11 @@ class Gas(BaseModel):
 
 
 class MixModelWood(BaseModel):
-    method: SkipJsonSchema[FluidMixModel] = "wood"
+    method: FluidMixModel = "wood"
 
 
 class MixModelBrie(BaseModel):
-    method: SkipJsonSchema[FluidMixModel] = "brie"
+    method: FluidMixModel = "brie"
     brie_exponent: float = Field(
         default=3.0,
         description="Brie exponent selects the mixing curve shape, from linear mix "
@@ -427,16 +427,12 @@ class TemperatureFromSim(BaseModel):
 
 
 class SalinityFromSim(BaseModel):
-    def __eq__(self, other):
-        return other is None
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+    from_sim: bool
 
     def __bool__(self):
-        return False
+        return self.from_sim
 
-    model_config = ConfigDict(title="This field is optional")
+    model_config = ConfigDict(title="Salinity from SIM")
 
 
 class PVTZone(BaseModel):
