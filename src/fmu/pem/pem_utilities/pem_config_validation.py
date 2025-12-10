@@ -427,10 +427,10 @@ class TemperatureFromSim(BaseModel):
 
 
 class SalinityFromSim(BaseModel):
-    from_sim: bool
+    enabled: bool = False
 
     def __bool__(self):
-        return self.from_sim
+        return self.enabled
 
     model_config = ConfigDict(title="Salinity from SIM")
 
