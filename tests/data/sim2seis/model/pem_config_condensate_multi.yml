@@ -152,7 +152,7 @@ fluids:
       brie_exponent: 3.0
       # method: wood
   salinity_from_sim:
-    from_sim: False
+    enabled: False
   # CO2 model is either the one from FLAG or the Span-Wagner model {'flag', 'span_wagner'}
   # The FLAG model is significantly faster, but the Span-Wagner model is considered to be more accurate
   co2_model: flag
