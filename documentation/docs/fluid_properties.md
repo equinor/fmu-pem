@@ -93,18 +93,24 @@ In general, oil properties are reduced with increasing temperature and increased
 GOR reduces all oil properties, gas gravity has little influence, and increasing oil density increases all oil
 properties.
 
-The oil model assumes that, at reservoir conditions, all gas is dissolved in the oil. Below the bubble point, the oil
-model will not provide accurate results. An Equinor internal function handles cases below the bubble point. To account
-for a significant number of cells below the bubble point, an additional parameter is required: the **gas Z-factor
-(compressibility factor)**, which represents the hydrocarbon gas's deviation from an ideal gas. This parameter can be
-found in PVT reports. It is normally not exposed in the YAML parameter file, but can be added per PVTNUM zone:
+The oil model assumes that, at reservoir conditions, all gas is dissolved in the oil. At formation pressures below the
+bubble point, the oil model will not provide accurate results. An Equinor internal function handles cases below the
+bubble point. To account for a significant number of cells below the bubble point, an additional parameter is required:
+the **gas Z-factor (compressibility factor)**, which represents the deviation from an ideal gas for the hydrocarbon gas.
+This parameter can be found in PVT reports. It is normally not exposed in the YAML parameter file, but can be added per
+PVTNUM zone:
 
 ```yaml
 gas_z_factor: 0.97
 ```
-If the default value (1.0) is set, a maximum fraction of 0.01 of the total number of grid cells is allowed to be below
-the bubble point. If a significant number of cells are expected to be below the bubble point, the actual gas Z-factor
-must be set for each PVTNUM zone.
+
+If the default value (1.0) is not modified, a maximum fraction of 1% of the total number of grid cells is allowed to be
+below the bubble point. If a significant number of cells are expected to be below the bubble point, the actual gas
+Z-factor must be set for each PVTNUM zone. The hard-coded 1% limit is found in `fluid_properties.py`:
+
+```python
+BUBBLE_POINT_FRACTION_TOLERANCE = 0.01
+```
 
 <img src="./images/oil_properties_complete.png">
 <span id="figure-4-oil-properties"><strong>Figure 4:</strong> Oil property modelling results.</span>

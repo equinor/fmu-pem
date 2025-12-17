@@ -162,7 +162,4 @@ class SaturatedRockProperties(PropertiesSubgridMasked):
         """
         self.ai = self.vp * self.density
         self.si = self.vs * self.density
-        # Division may not preserve masks properly; explicitly combine masks
-        vpvs_data = self.vp.data / self.vs.data
-        vpvs_mask = np.logical_or(self.vp.mask, self.vs.mask)
-        self.vpvs = np.ma.MaskedArray(vpvs_data, mask=vpvs_mask)
+        self.vpvs = self.vp / self.vs
