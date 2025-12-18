@@ -88,6 +88,8 @@ def _adjust_bubble_point(
                 raise ValueError(
                     f"Fraction of cells with pressure below oil bubble point is "
                     f"{frac_below:.3f}. "
+                    "If you experience this, please raise an issue in "
+                    "https://github.com/equinor/fmu-pem/issues. "
                     "If this is an expected situation, add a "
                     "gas Z-factor (deviation from an ideal gas) to the YAML parameter "
                     "file for each PVTNUM zone, e.g.: 'gas_z_factor: 0.97' "
