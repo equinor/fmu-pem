@@ -1,0 +1,19 @@
+{
+  "default": true,
+  "line-length": false,
+  "no-hard-tabs": true,
+  "no-trailing-spaces": true,
+  "no-multiple-blanks": {
+    "maximum": 2
+  },
+  "no-duplicate-heading": false,
+  "no-inline-html": false,
+  "no-alt-text": false,
+  "first-line-heading": false,
+  "no-emphasis-as-heading": true,
+  "no-space-in-emphasis": true,
+  "no-space-in-code": true,
+  "no-space-in-links": true,
+  "fenced-code-language": false,
+  "first-header-h1": false
+}

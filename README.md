@@ -1,13 +1,14 @@
 > [!WARNING]
 > `fmu-pem` is not yet qualified technology, and as of today only applicable for
-    selected pilot test fields.
+selected pilot test fields.
 
 **[📚 User documentation](https://equinor.github.io/fmu-pem/)**
 
 ## What is fmu-pem?
 
-Petro-elastic model (PEM) for use in e.g. [fmu-sim2seis](https://github.com/equinor/fmu-sim2seis)
-based on the [rock-physics-open](https://github.com/equinor/rock-physics-open) library.
+Petro-elastic model (PEM) for use in e.g. [fmu-sim2seis](https://github.com/equinor/fmu-
+sim2seis) based on the [rock-physics-open](https://github.com/equinor/rock-physics-open)
+library.
 
 ## How to use fmu-pem?
 
@@ -26,9 +27,9 @@ model.
 ### Calibration of rock physics models
 
 Calibration of the rock physics models is normally carried out in
-[RokDoc](https://www.ikonscience.com/rokdoc-geoprediction-software-platform/)
-prior to running the PEM. Fluid and mineral properties can be found in the RokDoc
-project, or from LFP logs, if they are available.
+[RokDoc](https://www.ikonscience.com/rokdoc-geoprediction-software-platform/) prior to
+running the PEM. Fluid and mineral properties can be found in the RokDoc project, or
+from LFP logs, if they are available.
 
 > [!NOTE]
 > The fluid models contained in this module may not cover all possible cases. Gas

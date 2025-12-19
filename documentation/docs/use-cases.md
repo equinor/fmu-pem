@@ -1,11 +1,13 @@
 
 # Why and How Petro-elastic Modelling - PEM
 
-The FMU `pem` workflow calculates elastic parameters based on input from reservoir simulator results, model selections
-and constant parameters. `pem` is an important step in the FMU `sim2seis` workflow, see [sim2seis documentation](https://equinor.github.io/fmu-sim2seis/).
+The FMU `pem` workflow calculates elastic parameters based on input from reservoir
+simulator results, model selections and constant parameters. `pem` is an important step
+in the FMU `sim2seis` workflow, see [sim2seis
+documentation](https://equinor.github.io/fmu-sim2seis/).
 
-Whilst `pem` can be run as an independent tool, its primary use is as part of the `sim2seis` workflow. This is
-described in a chapter below.
+Whilst `pem` can be run as an independent tool, its primary use is as part of the
+`sim2seis` workflow. This is described in a chapter below.
 
 `pem` performs of the following tasks:
 
@@ -22,10 +24,12 @@ Each step is described in some detail in the links.
 
 ## As a general user of FMU, how much do I need to know?
 
-Calibration of a petro-elastic model is considered to be a specialist task, but it should be carried out in close
-cooperation with asset teams who has the detailed field knowledge. Without interaction with most disciplines
-from the asset, it is highly likely that wrong assumptions are made. The main responsibility lies with geophysics.
-[Table 1](#table-1-discipline-topics) below shows topics that must be coordinated with other disciplines.
+Calibration of a petro-elastic model is considered to be a specialist task, but it
+should be carried out in close cooperation with asset teams who has the detailed field
+knowledge. Without interaction with most disciplines from the asset, it is highly likely
+that wrong assumptions are made. The main responsibility lies with geophysics. [Table
+1](#table-1-discipline-topics) below shows topics that must be coordinated with other
+disciplines.
 
 | Topic                      | Discipline(s) Involved                                      | Description                                                             |
 |----------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------|

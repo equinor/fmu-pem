@@ -1,0 +1,13 @@
+{
+  "name": "fmu-pem-docs",
+  "version": "1.0.0",
+  "description": "Documentation dependencies for fmu-pem",
+  "private": true,
+  "devDependencies": {
+    "markdownlint-cli": "^0.38.0"
+  },
+  "scripts": {
+    "lint:md": "markdownlint *.md documentation/docs/*.md",
+    "lint:md-fix": "markdownlint --fix *.md documentation/docs/*.md"
+  }
+}
