@@ -61,7 +61,7 @@ def _adjust_bubble_point(
     oil_gas_gravity: np.ndarray,
     free_gas_gravity: np.ndarray,
     zone: PVTZone,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     If we are below bubble point, gas will come out of solution, and this has
     to be taken into account
@@ -122,7 +122,7 @@ def _adjust_bubble_point(
                 "Estimation of oil properties below bubble point requires proprietary "
                 "model. Estimation of oil properties below bubble point are uncertain."
             )
-    return sw, sg, so, gor, free_gas_gravity
+    return sw, sg, so, gor, free_gas_gravity, idx_below
 
 
 def _brine_props(
@@ -278,7 +278,7 @@ def effective_fluid_properties_zoned(
     restart_props: list[SimRstProperties] | SimRstProperties,
     fluids: Fluids,
     pvtnum: np.ma.MaskedArray,
-) -> list[EffectiveFluidProperties]:
+) -> tuple[list[EffectiveFluidProperties], list[dict[str, np.ma.MaskedArray]]]:
     """
     Compute per time-step effective fluid density and bulk modulus honoring PVT zone
     groupings.
@@ -317,6 +317,8 @@ def effective_fluid_properties_zoned(
             density (np.ndarray): Effective fluid density (kg/m³) per active cell.
             bulk_modulus (np.ndarray): Effective fluid bulk modulus (Pa) per active
             cell.
+        list[dict[str, np.ma.MaskedArray]]: grids showing cells that are below
+            bubble point for each time-step
 
     Raises:
         ValueError: If PVT zone definitions overlap, have uncovered grid values, misuse
@@ -353,6 +355,7 @@ def effective_fluid_properties_zoned(
 
     # Allocate outputs
     results: list[EffectiveFluidProperties] = []
+    bp_grids: list[dict[str, np.ma.MaskedArray]] = []
 
     for rst_date_prop in props_list:
         # Initialize masked result arrays
@@ -360,6 +363,9 @@ def effective_fluid_properties_zoned(
             np.full(rst_date_prop.swat.shape, np.nan, dtype=float), mask=pvtnum_mask
         )
         bulk_eff_full = np.ma.masked_array(
+            np.full(rst_date_prop.swat.shape, np.nan, dtype=float), mask=pvtnum_mask
+        )
+        below_bubble_point_grid_full = np.ma.masked_array(
             np.full(rst_date_prop.swat.shape, np.nan, dtype=float), mask=pvtnum_mask
         )
 
@@ -419,7 +425,7 @@ def effective_fluid_properties_zoned(
             gas_gravity = np.full(sw.shape, zone.gas.gas_gravity, dtype=float)
 
             # Bubble point adjustment
-            sw, sg, so, gor, gas_gravity = _adjust_bubble_point(
+            sw, sg, so, gor, gas_gravity, below_bp = _adjust_bubble_point(
                 pres=pres,
                 gor=gor,
                 sw=sw,
@@ -472,9 +478,11 @@ def effective_fluid_properties_zoned(
             # Assign into masked arrays (preserve mask)
             rho_eff_full.data[mask_cells] = rho_mix
             bulk_eff_full.data[mask_cells] = bulk_mix
+            below_bubble_point_grid_full[mask_cells] = below_bp
 
         results.append(
             EffectiveFluidProperties(density=rho_eff_full, bulk_modulus=bulk_eff_full)
         )
+        bp_grids.append({"below_bubble_point": below_bp})
 
-    return results
+    return results, bp_grids
