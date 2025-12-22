@@ -51,7 +51,7 @@ def pem_fcn(
     constant_props.vsh_pem = vsh
 
     # Fluid properties calculated for all time-steps
-    fluid_properties = pem_fcns.effective_fluid_properties_zoned(
+    fluid_properties, below_bp_grids = pem_fcns.effective_fluid_properties_zoned(
         restart_props=time_step_props,
         fluids=config.fluids,
         pvtnum=constant_props.pvtnum,
@@ -70,7 +70,7 @@ def pem_fcn(
     )
 
     # Estimate saturated rock properties
-    sat_rock_props = pem_fcns.estimate_saturated_rock(
+    sat_rock_props, dry_rock = pem_fcns.estimate_saturated_rock(
         rock_matrix=config.rock_matrix,
         sim_init=constant_props,
         press_props=eff_pres,
@@ -120,6 +120,8 @@ def pem_fcn(
         difference_date_strs=diff_date_strs,
         matrix_props=matrix_properties,
         fluid_props=fluid_properties,
+        bp_properties=below_bp_grids,
+        dry_rock_properties=dry_rock,
     )
 
     # Restore original path

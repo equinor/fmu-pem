@@ -2,10 +2,12 @@ import warnings
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
 import xtgeo
 
 from .enum_defs import Sim2SeisRequiredParams
 from .pem_class_definitions import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -32,6 +34,8 @@ def save_results(
     difference_date_strs: list[str],
     matrix_props: EffectiveMineralProperties,
     fluid_props: list[EffectiveFluidProperties],
+    bubble_point_grids: list[np.ma.MaskedArray],
+    dry_rock: list[DryRockProperties],
 ) -> None:
     """Saves all intermediate and final results according to the settings in the PEM
     and global config files
@@ -67,16 +71,16 @@ def save_results(
     output_set = [
         {
             k: v
-            for (k, v) in asdict(sat_prop).items()  # type: ignore
+            for (k, v) in asdict(sat_prop).items()
             if k in list(Sim2SeisRequiredParams)
         }
         for sat_prop in sat_rock_props
     ]
     export_results_disk(
-        output_set,
-        sim_grid,
-        grid_name,
-        full_mandatory_path,
+        result_props=output_set,
+        grid=sim_grid,
+        grid_name=grid_name,
+        results_dir=full_mandatory_path,
         time_steps=seis_dates,
         export_format="grdecl",
     )
@@ -84,8 +88,8 @@ def save_results(
     # 2. Save results to rms and/or disk according to config file
 
     # create list of dict from list of pressure and saturated rock objects
-    eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]  # type: ignore  # NB: this is a pycharm bug to be removed
-    sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]  # type: ignore
+    eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
+    sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]
 
     try:
         if save_to_rms and run_from_rms_flag:
@@ -93,18 +97,18 @@ def save_results(
             for props in [eff_pres_dict_list, sat_prop_dict_list]:
                 prop_dict = list(props)
                 export_results_roxar(
-                    rms_project,
-                    prop_dict,
-                    sim_grid,
-                    grid_name,
+                    prj=rms_project,
+                    result_props=prop_dict,
+                    grid=sim_grid,
+                    rms_grid_name=grid_name,
                     time_steps=seis_dates,
                 )
             # Difference properties
             export_results_roxar(
-                rms_project,
-                difference_props,
-                sim_grid,
-                grid_name,
+                prj=rms_project,
+                result_props=difference_props,
+                grid=sim_grid,
+                rms_grid_name=grid_name,
                 time_steps=difference_date_strs,
             )
     except KeyError:  # warn user that results are not saved
@@ -117,17 +121,17 @@ def save_results(
             for props in [eff_pres_dict_list, sat_prop_dict_list]:
                 prop_dict = list(props)
                 export_results_disk(
-                    prop_dict,
-                    sim_grid,
-                    sim_grid.name,
-                    full_output_path,
+                    result_props=prop_dict,
+                    grid=sim_grid,
+                    grid_name=sim_grid.name,
+                    results_dir=full_output_path,
                     time_steps=seis_dates,
                 )
             export_results_disk(
-                difference_props,
-                sim_grid,
-                grid_name,
-                full_output_path,
+                result_props=difference_props,
+                grid=sim_grid,
+                grid_name=grid_name,
+                results_dir=full_output_path,
                 time_steps=difference_date_strs,
             )
     except KeyError:  # warn user that results are not saved
@@ -139,21 +143,27 @@ def save_results(
     # 3. Save intermediate results only if specified in the config file
     try:
         if save_intermediate:
-            export_results_disk(
-                [asdict(fl_props) for fl_props in fluid_props],  # type: ignore
-                sim_grid,
-                grid_name,
-                full_output_path,
-                time_steps=seis_dates,
-                name_suffix="_FLUID",
-            )
-            export_results_disk(
-                asdict(matrix_props),  # type: ignore
-                sim_grid,
-                grid_name,
-                full_output_path,
-                name_suffix="_MINERAL",
-            )
+            export_dicts = [
+                [asdict(fl_props) for fl_props in fluid_props],
+                asdict(matrix_props),
+                bubble_point_grids,
+                [asdict(dry_props) for dry_props in dry_rock],
+            ]
+            suffices = [
+                "_FLUID",
+                "_MINERAL",
+                "",
+                "DRY_ROCK",
+            ]
+            for props, suffix in zip(export_dicts, suffices):
+                export_results_disk(
+                    result_props=props,
+                    grid=sim_grid,
+                    grid_name=grid_name,
+                    results_dir=full_output_path,
+                    time_steps=seis_dates,
+                    name_suffix=suffix,
+                )
     except KeyError:
         # just skip silently if save_intermediate_results is not present in the
         # pem_config
