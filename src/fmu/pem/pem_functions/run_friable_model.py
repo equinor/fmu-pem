@@ -8,6 +8,7 @@ from rock_physics_open.equinor_utilities.std_functions import (
 from rock_physics_open.sandstone_models import friable_model_dry
 
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -29,7 +30,7 @@ def run_friable(
     porosity: np.ma.MaskedArray,
     pressure: list[PressureProperties] | PressureProperties,
     rock_matrix: RockMatrixProperties,
-) -> list[SaturatedRockProperties]:
+) -> tuple[list[SaturatedRockProperties], list[DryRockProperties]]:
     """
     Prepare inputs and parameters for running the Friable sandstone model
 
@@ -44,6 +45,8 @@ def run_friable(
     Returns:
         saturated rock properties with vp [m/s], vs [m/s], density [kg/m^3], ai
         (vp * density), si (vs * density), vpvs (vp / vs)
+        dry rock properties with bulk moduls [Pa], shear modulus [Pa] and density
+        [kg/m^3]
     """
     # Mineral and porosity are assumed to be single objects, fluid and
     # effective_pressure can be lists
@@ -53,6 +56,7 @@ def run_friable(
     initial_effective_pressure = pressure[0].effective_pressure
     # Container for saturated properties
     saturated_props = []
+    dry_props = []
 
     # to please the IDE:
     k_dry = None
@@ -136,8 +140,15 @@ def run_friable(
         vp, vs, rho_sat = reverse_filter_and_restore(mask, vp, vs, rho_sat)
         # Add results to list
         saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
+        dry_props.append(
+            DryRockProperties(
+                bulk_modulus=k_dry,
+                shear_modulus=mu,
+                density=(1.0 - tmp_por) * tmp_min_rho,
+            )
+        )
 
-    return saturated_props
+    return saturated_props, dry_props
 
 
 def _verify_inputs(fl_prop, pres_prop):

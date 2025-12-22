@@ -6,6 +6,7 @@ from rock_physics_open.equinor_utilities.std_functions import (
 from rock_physics_open.sandstone_models import patchy_cement_model_dry
 
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -26,7 +27,7 @@ def run_patchy_cement(
     porosity: np.ma.MaskedArray,
     pressure: list[PressureProperties] | PressureProperties,
     rock_matrix_props: RockMatrixProperties,
-) -> list[SaturatedRockProperties]:
+) -> tuple[list[SaturatedRockProperties], list[DryRockProperties]]:
     """Prepare inputs and parameters for running the Patchy Cement model
 
     Args:
@@ -41,6 +42,8 @@ def run_patchy_cement(
     Returns:
         saturated rock properties with vp [m/s], vs [m/s], density [kg/m^3], ai
         (vp * density), si (vs * density), vpvs (vp / vs)
+        dry rock properties with bulk moduls [Pa], shear modulus [Pa] and density
+        [kg/m^3]
     """
     # Mineral and porosity are assumed to be single objects, fluid and
     # effective_pressure can be lists
@@ -50,6 +53,7 @@ def run_patchy_cement(
     initial_effective_pressure = pressure[0].effective_pressure
     # Container for saturated properties
     saturated_props = []
+    dry_props = []
 
     # to please the IDE:
     k_dry = None
@@ -142,8 +146,14 @@ def run_patchy_cement(
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
 
         vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho_sat)
-        props = SaturatedRockProperties(vp=vp, vs=vs, density=rho)
-        saturated_props.append(props)
+        saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho))
+        dry_props.append(
+            DryRockProperties(
+                bulk_modulus=k_dry,
+                shear_modulus=mu,
+                density=(1.0 - tmp_por) * tmp_min_rho,
+            )
+        )
     return saturated_props
 
 

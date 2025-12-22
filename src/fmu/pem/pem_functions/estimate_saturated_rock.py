@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import numpy as np
 
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -86,6 +87,7 @@ def estimate_saturated_rock(
     # Initialize result grids for each time step
     # We'll accumulate results per zone and merge them
     sat_rock_props_list: list[SaturatedRockProperties] = []
+    dry_rock_props_list: list[DryRockProperties] = []
 
     # Initialize grids for each time step
     sat_rock_props_list = [
@@ -96,7 +98,14 @@ def estimate_saturated_rock(
         )
         for _ in fluid_props
     ]
-
+    dry_rock_props_list = [
+        DryRockProperties(
+            bulk_modulus=to_masked_array(np.nan, fipnum_param),
+            shear_modulus=to_masked_array(np.nan, fipnum_param),
+            density=to_masked_array(np.nan, fipnum_param),
+        )
+        for _ in fluid_props
+    ]
     # Process each zone with its specific rock physics model
     # Get actual FIPNUM values present in grid for use with input_num_string_to_list
     actual_fipnum_values = list(np.unique(fipnum_data[~fipnum_mask]).astype(int))
@@ -123,7 +132,7 @@ def estimate_saturated_rock(
         zone_eff_pres = [pres_date.masked_where(zone_mask) for pres_date in press_props]
 
         # Call the appropriate rock physics model for this zone
-        zone_sat_props = _call_zone_rpm_model(
+        zone_sat_props, zone_dry_props = _call_zone_rpm_model(
             zone_region=zone_region,
             rock_matrix=rock_matrix,
             sim_init=sim_init,
@@ -136,7 +145,9 @@ def estimate_saturated_rock(
 
         # Merge zone results into the full grid for each time step (data only;
         # mask preserved)
-        for time_idx, zone_props in enumerate(zone_sat_props):
+        for time_idx, (zone_props, dry_props) in enumerate(
+            (zip(zone_sat_props, zone_dry_props))
+        ):
             sat_rock_props_list[time_idx].vp.data[zone_mask] = zone_props.vp.data[
                 zone_mask
             ]
@@ -146,13 +157,21 @@ def estimate_saturated_rock(
             sat_rock_props_list[time_idx].density.data[zone_mask] = (
                 zone_props.density.data[zone_mask]
             )
-
+            dry_rock_props_list[time_idx].bulk_modulus.data[zone_mask] = (
+                dry_props.bulk_modulus.data[zone_mask]
+            )
+            dry_rock_props_list[time_idx].shear_modulus.data[zone_mask] = (
+                zone_props.vs.data[zone_mask]
+            )
+            dry_rock_props_list[time_idx].density.data[zone_mask] = (
+                zone_props.density.data[zone_mask]
+            )
     # Recalculate derived properties (ai, si, vpvs) after all zones have been
     # merged
     for sat_props in sat_rock_props_list:
         sat_props.recalculate_derived()
 
-    return sat_rock_props_list
+    return sat_rock_props_list, dry_rock_props_list
 
 
 def _call_zone_rpm_model(
@@ -215,7 +234,7 @@ def _call_zone_rpm_model(
             shear_modulus=cement.shear_modulus,
             grid=zone_porosity,
         )
-        zone_sat_props = run_patchy_cement(
+        zone_sat_props, zone_dry_props = run_patchy_cement(
             mineral=zone_matrix_props,
             fluid=zone_fluid_props,
             cement=cement_properties,
@@ -225,7 +244,7 @@ def _call_zone_rpm_model(
         )
     elif isinstance(zone_region.model, FriableRPM):
         # Friable sandstone model
-        zone_sat_props = run_friable(
+        zone_sat_props, zone_dry_props = run_friable(
             mineral=zone_matrix_props,
             fluid=zone_fluid_props,
             porosity=zone_porosity,
@@ -238,7 +257,7 @@ def _call_zone_rpm_model(
             masked_template=zone_porosity,
             prop_array=sim_init.vsh_pem,
         )
-        zone_sat_props = run_regression_models(
+        zone_sat_props, zone_dry_props = run_regression_models(
             matrix=zone_matrix_props,
             fluid_properties=zone_fluid_props,
             porosity=zone_porosity,
@@ -252,7 +271,7 @@ def _call_zone_rpm_model(
             masked_template=zone_porosity,
             prop_array=sim_init.vsh_pem,
         )
-        zone_sat_props = run_t_matrix_model(
+        zone_sat_props, zone_dry_props = run_t_matrix_model(
             mineral_properties=zone_matrix_props,
             fluid_properties=zone_fluid_props,
             porosity=zone_porosity,
@@ -264,4 +283,4 @@ def _call_zone_rpm_model(
     else:
         raise ValueError(f"Unknown rock model type: {zone_region.model}")
 
-    return zone_sat_props
+    return zone_sat_props, zone_dry_props

@@ -15,6 +15,7 @@ from rock_physics_open.equinor_utilities.std_functions import (
 )
 
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -110,7 +111,7 @@ def run_regression_models(
     pressure: list[PressureProperties],
     rock_matrix: RockMatrixProperties,
     vsh: np.ma.MaskedArray | None = None,
-) -> list[SaturatedRockProperties]:
+) -> tuple[list[SaturatedRockProperties], list[DryRockProperties]]:
     """Run regression models for saturated rock properties.
 
     Args:
@@ -127,9 +128,12 @@ def run_regression_models(
     Returns:
         list[SaturatedRockProperties]: Saturated rock properties for each time step.
             Only fluid properties change between time steps in this model.
+        list[DryRockProperties]: dry rock properties with bulk moduls [Pa], shear
+            modulus [Pa] and density [kg/m^3]
     """
 
     saturated_props = []
+    dry_props = []
     tmp_pres_over = None
     tmp_pres_form = None
     tmp_pres_depl = None
@@ -278,5 +282,8 @@ def run_regression_models(
 
         vp, vs, rho_sat = reverse_filter_and_restore(mask, vp, vs, rho_sat)
         saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
+        dry_props.append(
+            DryRockProperties(bulk_modulus=k_dry, shear_modulus=mu, density=rho_dry)
+        )
 
-    return saturated_props
+    return saturated_props, dry_props

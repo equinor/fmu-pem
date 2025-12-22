@@ -8,6 +8,7 @@ from rock_physics_open.t_matrix_models import (
 )
 
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -32,7 +33,7 @@ def run_t_matrix_model(
     exp_parameter_file: Path = Path("t_mat_params_exp.pkl"),
     pres_model_vp: Path = Path("carbonate_pressure_model_vp_exp.pkl"),
     pres_model_vs: Path = Path("carbonate_pressure_model_vs_exp.pkl"),
-) -> list[SaturatedRockProperties]:
+) -> tuple[list[SaturatedRockProperties], list[DryRockProperties]]:
     """Model for carbonate rock with possibility to estimate changes due to
     production, i.e., saturation changes, changes in the fluids due to pore pressure
     change and also changes in the properties of the matrix by increase in effective
@@ -51,6 +52,9 @@ def run_t_matrix_model(
     sensitive model is fixed, as this is a model that is adapted to saturated carbonate
     rocks. This model can be overridden by saving an alternative model with the same
     format as the default ones.
+
+    To comply with other functions for saturated rock properties, we also return
+    dry rock properties, but for the time being, the values are set to NaN.
 
     Args:
         mineral_properties: bulk modulus (k) [Pa], shear modulus (mu) [Pa],
@@ -72,6 +76,7 @@ def run_t_matrix_model(
     Returns:
         saturated rock properties with vp [m/s], vs [m/s], density [kg/m^3],
         ai (vp * density), si (vs * density), vpvs (vp / vs)
+        dry rock properties with values set to NaN
     """
     fluid_properties, pressure = _verify_inputs(fluid_properties, pressure)
 
@@ -81,6 +86,7 @@ def run_t_matrix_model(
     exp_parameter_file = model_directory / exp_parameter_file
 
     saturated_props = []
+    dry_props = []
     t_mat_params = rock_matrix.model.parameters
 
     if vsh is None and t_mat_params.t_mat_model_version == "EXP":
@@ -191,4 +197,11 @@ def run_t_matrix_model(
         vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho)
         props = SaturatedRockProperties(vp=vp, vs=vs, density=rho)
         saturated_props.append(props)
-    return saturated_props
+        dry_props.append(
+            DryRockProperties(
+                bulk_modulus=np.full_like(vp, np.nan),
+                shear_modulus=np.full_like(vp, np.nan),
+                density=np.full_like(vp, np.nan),
+            )
+        )
+    return saturated_props, dry_props
