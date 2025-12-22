@@ -4,7 +4,6 @@ outline: deep
 
 # PEM configuration
 
-
 Create, update or change a **fmu-pem** configuration file. You can load an existing configuration file as starting point.
 
 <div ref="el" />
@@ -141,6 +140,7 @@ li.text-danger::marker {
 
 fieldset {
   border-left: 2px solid #eee;
+  border-bottom: 2px solid #eee;
   margin: 5px;
   padding-left: 5px;
 }
@@ -159,7 +159,5 @@ label[for="root_rock_matrix_model_parameters_shale_mode"], #root_rock_matrix_mod
 {
   display: none;
 }
-
-
 
 </style>
