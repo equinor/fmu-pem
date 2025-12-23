@@ -120,8 +120,8 @@ def pem_fcn(
         difference_date_strs=diff_date_strs,
         matrix_props=matrix_properties,
         fluid_props=fluid_properties,
-        bp_properties=below_bp_grids,
-        dry_rock_properties=dry_rock,
+        bubble_point_grids=below_bp_grids,
+        dry_rock_props=dry_rock,
     )
 
     # Restore original path
