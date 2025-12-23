@@ -42,7 +42,7 @@ def run_patchy_cement(
     Returns:
         saturated rock properties with vp [m/s], vs [m/s], density [kg/m^3], ai
         (vp * density), si (vs * density), vpvs (vp / vs)
-        dry rock properties with bulk moduls [Pa], shear modulus [Pa] and density
+        dry rock properties with bulk modulus [Pa], shear modulus [Pa] and density
         [kg/m^3]
     """
     # Mineral and porosity are assumed to be single objects, fluid and
@@ -142,19 +142,21 @@ def run_patchy_cement(
 
         # Saturate rock
         k_sat = gassmann(k_dry, tmp_por, tmp_fl_prop_k, tmp_min_k)
-        rho_sat = (1.0 - tmp_por) * tmp_min_rho + tmp_por * tmp_fl_prop_rho
+        rho_sat = rho_dry + tmp_por * tmp_fl_prop_rho
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
 
-        vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho_sat)
-        saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho))
+        vp, vs, rho_sat, k_dry, mu, rho_dry = reverse_filter_and_restore(
+            mask, vp, vs, rho_sat, k_dry, mu, rho_dry
+        )
+        saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
         dry_props.append(
             DryRockProperties(
                 bulk_modulus=k_dry,
                 shear_modulus=mu,
-                density=(1.0 - tmp_por) * tmp_min_rho,
+                density=rho_dry,
             )
         )
-    return saturated_props
+    return saturated_props, dry_props
 
 
 def _verify_inputs(fl_prop, pres_prop):

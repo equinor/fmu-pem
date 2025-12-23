@@ -5,6 +5,7 @@ import pytest
 
 from fmu.pem.pem_functions.regression_models import run_regression_models
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -95,7 +96,7 @@ def test_run_regression_models_with_masked_arrays(
 ):
     monkeypatch.chdir(testdata)
     porosity = np.ma.array([0.1, 0.2], mask=[False, False])
-    results = run_regression_models(
+    results, dry_results = run_regression_models(
         setup_mineral_properties,
         setup_fluid_properties,
         porosity,
@@ -104,6 +105,8 @@ def test_run_regression_models_with_masked_arrays(
     )
     assert isinstance(results, list)
     assert all(isinstance(item, SaturatedRockProperties) for item in results)
+    assert isinstance(dry_results, list)
+    assert all(isinstance(item, DryRockProperties) for item in dry_results)
 
 
 def test_run_regression_models_multiple_time_steps(
@@ -116,7 +119,7 @@ def test_run_regression_models_multiple_time_steps(
 ):
     monkeypatch.chdir(testdata)
     porosity = np.ma.array([0.1, 0.2], mask=[False, False])
-    results = run_regression_models(
+    results, dry_results = run_regression_models(
         setup_mineral_properties,
         setup_fluid_properties,
         porosity,
@@ -126,6 +129,8 @@ def test_run_regression_models_multiple_time_steps(
     )
     assert len(results) == len(setup_fluid_properties)
     assert all(isinstance(item, SaturatedRockProperties) for item in results)
+    assert all(np.sum(np.isnan(item.vp)) == 0 for item in results)
+    assert all(np.sum(np.isnan(item.bulk_modulus)) == 0 for item in dry_results)
 
 
 def test_run_regression_models_with_pressure_sensitivity(
@@ -160,13 +165,18 @@ def test_run_regression_models_with_pressure_sensitivity(
         _mock_apply,
     )
 
-    results = run_regression_models(
+    results, dry_results = run_regression_models(
         setup_mineral_properties,
         setup_fluid_properties,
         porosity,
         setup_pressure,
         rock_matrix_pressure,
         vsh=np.ma.array([0.5, 0.5], mask=[False, False]),
+    )
+    results_shear_modulus = [item.vs**2 * item.density for item in results]
+    assert all(
+        np.all(np.isclose(dry.shear_modulus, sat))
+        for dry, sat in zip(dry_results, results_shear_modulus)
     )
     assert calls.get("called", False)
     assert len(results) == len(setup_fluid_properties)
@@ -370,7 +380,7 @@ def test_effective_media_numerical_consistency(
 
         rock_matrix.model.parameters = MagicMock(sandstone=sandstone, shale=shale)
 
-        result = run_regression_models(
+        result, _ = run_regression_models(
             setup_mineral_properties,
             setup_fluid_properties,
             porosity,
@@ -458,7 +468,7 @@ def test_single_lithology_no_mixing_model_calls(
         ) as mock_hs,
         patch("fmu.pem.pem_functions.regression_models.voigt_reuss_hill") as mock_vrh,
     ):
-        results = run_regression_models(
+        results, _ = run_regression_models(
             setup_mineral_properties,
             setup_fluid_properties,
             porosity,
@@ -547,7 +557,7 @@ def test_effective_media_regression_values_bug_79(
             )
         ]
 
-        results = run_regression_models(
+        results, _ = run_regression_models(
             min_props, fluid_props, porosity, pressure_props, rock_matrix, vsh=vsh
         )
 

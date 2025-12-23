@@ -118,7 +118,7 @@ def test_run_t_matrix_and_pressure_models_valid_input(
     rock_matrix,
     model_directory,
 ):
-    results = run_t_matrix_model(
+    results, dry_props = run_t_matrix_model(
         valid_mineral_properties,
         valid_fluid_properties,
         valid_porosity,
@@ -131,6 +131,7 @@ def test_run_t_matrix_and_pressure_models_valid_input(
     )
     assert isinstance(results, list)
     assert all(isinstance(item, SaturatedRockProperties) for item in results)
+    assert np.all(np.isnan(dry_props[0].bulk_modulus))
 
 
 def test_run_t_matrix_and_pressure_models_invalid_input_type(
@@ -190,7 +191,7 @@ def test_run_t_matrix_and_pressure_models_with_list_inputs(
     rock_matrix,
     model_directory,
 ):
-    results = run_t_matrix_model(
+    results, dry_props = run_t_matrix_model(
         valid_mineral_properties,
         list_fluid_properties,
         valid_porosity,
@@ -203,3 +204,5 @@ def test_run_t_matrix_and_pressure_models_with_list_inputs(
     )
     assert isinstance(results, list)
     assert all(isinstance(item, SaturatedRockProperties) for item in results)
+    assert isinstance(dry_props, list)
+    assert all(isinstance(item, DryRockProperties) for item in dry_props)

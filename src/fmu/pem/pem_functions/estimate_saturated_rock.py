@@ -146,7 +146,7 @@ def estimate_saturated_rock(
         # Merge zone results into the full grid for each time step (data only;
         # mask preserved)
         for time_idx, (zone_props, dry_props) in enumerate(
-            (zip(zone_sat_props, zone_dry_props))
+            zip(zone_sat_props, zone_dry_props)
         ):
             sat_rock_props_list[time_idx].vp.data[zone_mask] = zone_props.vp.data[
                 zone_mask
@@ -161,10 +161,10 @@ def estimate_saturated_rock(
                 dry_props.bulk_modulus.data[zone_mask]
             )
             dry_rock_props_list[time_idx].shear_modulus.data[zone_mask] = (
-                zone_props.vs.data[zone_mask]
+                dry_props.shear_modulus.data[zone_mask]
             )
             dry_rock_props_list[time_idx].density.data[zone_mask] = (
-                zone_props.density.data[zone_mask]
+                dry_props.density.data[zone_mask]
             )
     # Recalculate derived properties (ai, si, vpvs) after all zones have been
     # merged

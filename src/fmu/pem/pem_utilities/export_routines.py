@@ -34,7 +34,7 @@ def save_results(
     difference_date_strs: list[str],
     matrix_props: EffectiveMineralProperties,
     fluid_props: list[EffectiveFluidProperties],
-    bubble_point_grids: list[np.ma.MaskedArray],
+    bubble_point_grids: list[dict[str, np.ma.MaskedArray]],
     dry_rock_props: list[DryRockProperties],
 ) -> None:
     """Saves all intermediate and final results according to the settings in the PEM
@@ -153,7 +153,7 @@ def save_results(
                 "_FLUID",
                 "_MINERAL",
                 "",
-                "DRY_ROCK",
+                "_DRY_ROCK",
             ]
             dates = [seis_dates, None, seis_dates, seis_dates]
             for props, date_info, suffix in zip(export_dicts, dates, suffices):

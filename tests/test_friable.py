@@ -5,6 +5,7 @@ import pytest
 
 from fmu.pem.pem_functions.run_friable_model import run_friable
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -104,11 +105,13 @@ def test_run_friable_valid_input(
     valid_mineral, valid_fluid, valid_porosity, valid_pressure, valid_matrix_mock
 ):
     """Test run_friable with valid inputs."""
-    results = run_friable(
+    results, dry_props = run_friable(
         valid_mineral, valid_fluid, valid_porosity, valid_pressure, valid_matrix_mock
     )
     assert isinstance(results, list)
     assert all(isinstance(item, SaturatedRockProperties) for item in results)
+    assert isinstance(dry_props, list)
+    assert all(isinstance(item, DryRockProperties) for item in dry_props)
 
 
 def test_run_friable_invalid_input_type(
@@ -150,7 +153,7 @@ def test_run_friable_list_fluid_and_pressure(
     valid_matrix_mock,
 ):
     """Test run_friable with list of fluids and pressures."""
-    results = run_friable(
+    results, _ = run_friable(
         valid_mineral,
         valid_fluid_list,
         valid_porosity,

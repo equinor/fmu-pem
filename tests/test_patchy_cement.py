@@ -6,6 +6,7 @@ import pytest
 
 from fmu.pem.pem_functions.run_patchy_cement_model import run_patchy_cement
 from fmu.pem.pem_utilities import (
+    DryRockProperties,
     EffectiveFluidProperties,
     EffectiveMineralProperties,
     PressureProperties,
@@ -107,7 +108,7 @@ def test_run_patchy_cement_valid_input(
     valid_matrix_mock,
 ):
     """Test run_patchy_cement with valid inputs."""
-    results = run_patchy_cement(
+    results, dry_props = run_patchy_cement(
         valid_mineral,
         valid_fluid,
         valid_cement,
@@ -117,6 +118,8 @@ def test_run_patchy_cement_valid_input(
     )
     assert isinstance(results, list)
     assert all(isinstance(item, SaturatedRockProperties) for item in results)
+    assert isinstance(dry_props, list)
+    assert all(isinstance(item, DryRockProperties) for item in dry_props)
 
 
 def test_run_patchy_cement_invalid_input_type(
@@ -161,7 +164,7 @@ def test_run_patchy_cement_list_fluid_and_pressure(
     valid_matrix_mock,
 ):
     """Test run_patchy_cement with list of fluids and pressures."""
-    results = run_patchy_cement(
+    results, dry_props = run_patchy_cement(
         valid_mineral,
         fluid_list,
         valid_cement,
@@ -170,6 +173,7 @@ def test_run_patchy_cement_list_fluid_and_pressure(
         valid_matrix_mock,
     )
     assert isinstance(results, list)
+    assert isinstance(dry_props, list)
     assert len(results) == len(fluid_list)
     for result in results:
         assert isinstance(result, SaturatedRockProperties)

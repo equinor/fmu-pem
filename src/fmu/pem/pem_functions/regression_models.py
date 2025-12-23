@@ -128,7 +128,7 @@ def run_regression_models(
     Returns:
         list[SaturatedRockProperties]: Saturated rock properties for each time step.
             Only fluid properties change between time steps in this model.
-        list[DryRockProperties]: dry rock properties with bulk moduls [Pa], shear
+        list[DryRockProperties]: dry rock properties with bulk modulus [Pa], shear
             modulus [Pa] and density [kg/m^3]
     """
 
@@ -280,7 +280,9 @@ def run_regression_models(
         rho_sat = rho_dry + tmp_por * tmp_fl_prop_rho
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
 
-        vp, vs, rho_sat = reverse_filter_and_restore(mask, vp, vs, rho_sat)
+        vp, vs, rho_sat, k_dry, mu, rho_dry = reverse_filter_and_restore(
+            mask, vp, vs, rho_sat, k_dry, mu, rho_dry
+        )
         saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
         dry_props.append(
             DryRockProperties(bulk_modulus=k_dry, shear_modulus=mu, density=rho_dry)

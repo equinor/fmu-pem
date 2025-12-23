@@ -45,7 +45,7 @@ def run_friable(
     Returns:
         saturated rock properties with vp [m/s], vs [m/s], density [kg/m^3], ai
         (vp * density), si (vs * density), vpvs (vp / vs)
-        dry rock properties with bulk moduls [Pa], shear modulus [Pa] and density
+        dry rock properties with bulk modulus [Pa], shear modulus [Pa] and density
         [kg/m^3]
     """
     # Mineral and porosity are assumed to be single objects, fluid and
@@ -133,11 +133,14 @@ def run_friable(
 
         # Saturate rock
         k_sat = gassmann(k_dry, tmp_por, tmp_fl_prop_k, tmp_min_k)
-        rho_sat = (1.0 - tmp_por) * tmp_min_rho + tmp_por * tmp_fl_prop_rho
+        rho_dry = (1.0 - tmp_por) * tmp_min_rho
+        rho_sat = rho_dry + tmp_por * tmp_fl_prop_rho
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
 
         # Restore original size and shape
-        vp, vs, rho_sat = reverse_filter_and_restore(mask, vp, vs, rho_sat)
+        vp, vs, rho_sat, k_dry, mu, rho_dry = reverse_filter_and_restore(
+            mask, vp, vs, rho_sat, k_dry, mu, rho_dry
+        )
         # Add results to list
         saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
         dry_props.append(

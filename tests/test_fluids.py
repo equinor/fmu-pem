@@ -288,15 +288,16 @@ def test_co2_path(sim_props_high_pressure, fluids, pvtnum_grid, monkeypatch):
 
 
 def test_density_and_bulk_shapes(sim_props_high_pressure, fluids, pvtnum_grid):
-    res = effective_fluid_properties_zoned(
+    res, bp = effective_fluid_properties_zoned(
         sim_props_high_pressure, fluids, pvtnum_grid
-    )[0][0]
-    assert res.density.shape == res.bulk_modulus.shape
-    assert res.density.ndim == 1
-    assert np.all(res.bulk_modulus > 0.0)
+    )
+    assert res[0].density.shape == res[0].bulk_modulus.shape
+    assert bp[0]["below_bubble_point"].shape == res[0].bulk_modulus.shape
+    assert res[0].density.ndim == 1
+    assert np.all(res[0].bulk_modulus > 0.0)
     # Verify masked arrays are returned
-    assert isinstance(res.density, np.ma.MaskedArray)
-    assert isinstance(res.bulk_modulus, np.ma.MaskedArray)
+    assert isinstance(res[0].density, np.ma.MaskedArray)
+    assert isinstance(res[0].bulk_modulus, np.ma.MaskedArray)
 
 
 def test_list_multiple(
