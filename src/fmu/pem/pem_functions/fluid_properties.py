@@ -478,11 +478,11 @@ def effective_fluid_properties_zoned(
             # Assign into masked arrays (preserve mask)
             rho_eff_full.data[mask_cells] = rho_mix
             bulk_eff_full.data[mask_cells] = bulk_mix
-            below_bubble_point_grid_full[mask_cells] = below_bp
+            below_bubble_point_grid_full.data[mask_cells] = below_bp
 
         results.append(
             EffectiveFluidProperties(density=rho_eff_full, bulk_modulus=bulk_eff_full)
         )
-        bp_grids.append({"below_bubble_point": below_bp})
+        bp_grids.append({"below_bubble_point": below_bubble_point_grid_full})
 
     return results, bp_grids
