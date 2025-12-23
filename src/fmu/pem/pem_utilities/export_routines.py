@@ -35,7 +35,7 @@ def save_results(
     matrix_props: EffectiveMineralProperties,
     fluid_props: list[EffectiveFluidProperties],
     bubble_point_grids: list[np.ma.MaskedArray],
-    dry_rock: list[DryRockProperties],
+    dry_rock_props: list[DryRockProperties],
 ) -> None:
     """Saves all intermediate and final results according to the settings in the PEM
     and global config files
@@ -147,7 +147,7 @@ def save_results(
                 [asdict(fl_props) for fl_props in fluid_props],
                 asdict(matrix_props),
                 bubble_point_grids,
-                [asdict(dry_props) for dry_props in dry_rock],
+                [asdict(dry_props) for dry_props in dry_rock_props],
             ]
             suffices = [
                 "_FLUID",
@@ -155,13 +155,14 @@ def save_results(
                 "",
                 "DRY_ROCK",
             ]
-            for props, suffix in zip(export_dicts, suffices):
+            dates = [seis_dates, None, seis_dates, seis_dates]
+            for props, date_info, suffix in zip(export_dicts, dates, suffices):
                 export_results_disk(
                     result_props=props,
                     grid=sim_grid,
                     grid_name=grid_name,
                     results_dir=full_output_path,
-                    time_steps=seis_dates,
+                    time_steps=date_info,
                     name_suffix=suffix,
                 )
     except KeyError:
