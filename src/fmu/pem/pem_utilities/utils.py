@@ -1,6 +1,7 @@
 import os
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Generator
 
 import numpy as np
 import xtgeo
@@ -9,7 +10,7 @@ from .pem_class_definitions import EffectiveMineralProperties, PressurePropertie
 
 
 @contextmanager
-def restore_dir(path: Path) -> None:  # type: ignore[return-value]
+def restore_dir(path: Path) -> Generator:  # type: ignore[return-value]
     """restore_dir run block of code from a given path, restore original path
 
     Args:
@@ -299,7 +300,7 @@ def pa_to_bar(
 
 def convert_single_pressure_to_pa(
     single_press_bar: PressureProperties,
-) -> list[PressureProperties]:
+) -> PressureProperties:
     return PressureProperties(
         effective_pressure=bar_to_pa(single_press_bar.effective_pressure),
         formation_pressure=bar_to_pa(single_press_bar.formation_pressure),

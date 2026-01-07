@@ -33,7 +33,6 @@ def input_num_string_to_list(
     return unique_integer_list
 
 
-# TODO: Should num_array type here instead be numpy?
 def num_boolean_array(
     input_string: str,
     num_array: list[int],
@@ -43,7 +42,6 @@ def num_boolean_array(
     definition, which is of format e.g. "10-20, 25"
     """
 
-    # ToDo: should we let input_num_string_to_list handle '*'?
     if input_string.strip() == "*":
         return np.ones(np.shape(num_array), dtype=bool)
 
@@ -57,7 +55,6 @@ def num_boolean_array(
     return np.isin(num_array, input_num_string_to_list(input_string, num_array))
 
 
-# TODO: Should num_array type here instead be numpy?
 def missing_num_areas(
     input_strings: list[str],
     num_array: list[int],

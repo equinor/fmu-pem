@@ -3,6 +3,7 @@ Define enumerated strings
 """
 
 from enum import Enum
+from typing import Literal
 
 
 class OverburdenPressureTypes(str, Enum):
@@ -55,9 +56,10 @@ class GasModels(str, Enum):
     HC2016 = "HC2016"
 
 
-class CoordinationNumberFunction(str, Enum):
-    PORBASED = "PorBased"
-    CONSTANT = "ConstVal"
+# class CoordinationNumberFunction(str, Enum):
+#     PORBASED = "PorBased"
+#     CONSTANT = "ConstVal"
+CoordinationNumberFunction = Literal["PorBased", "ConstVal"]
 
 
 class TemperatureMethod(str, Enum):

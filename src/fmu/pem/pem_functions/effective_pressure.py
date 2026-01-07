@@ -73,7 +73,7 @@ def estimate_pressure(
             is negative for any cells.
     """
     # Validate zone coverage
-    fipnum_strings: list[str] = [zone.fipnum for zone in overburden_pressure]
+    fipnum_strings: list[str] = [str(zone.fipnum) for zone in overburden_pressure]
     validate_zone_coverage(fipnum_strings, fipnum, zone_name="FIPNUM")
 
     # Get FIPNUM grid data and mask

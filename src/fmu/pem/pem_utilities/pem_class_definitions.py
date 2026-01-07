@@ -1,4 +1,5 @@
 from dataclasses import dataclass, fields
+from typing import Self
 
 import numpy as np
 from numpy.ma import MaskedArray
@@ -10,17 +11,22 @@ class PropertiesSubgridMasked:
     come from a numpy masked array.
 
     In a numpy masked array, True means masked, False means not masked
-
-    Args:
-        self: object with np.ndarray or np.ma.MaskedArray attributes
-        mask: Boolean mask to apply
-        invert: If True, invert the mask with ~mask
-
-    Returns:
-        New instance of the same type with masked arrays
     """
 
-    def masked_where(self, mask: np.ndarray, invert_mask: bool = True):
+    def masked_where(self: Self, mask: np.ndarray, invert_mask: bool = True) -> Self:
+        """
+            Method to derive object properties in a subgrid. The mask is assumed to
+            come from a numpy masked array.
+
+        In a numpy masked array, True means masked, False means not masked
+            Args:
+                self: object with np.ndarray or np.ma.MaskedArray attributes
+                mask: Boolean mask to apply
+                invert_mask: If True, invert the mask with ~mask
+
+            Returns:
+                New instance of the same type with masked arrays
+        """
         actual_mask = ~mask if invert_mask else mask
 
         field_values = {}

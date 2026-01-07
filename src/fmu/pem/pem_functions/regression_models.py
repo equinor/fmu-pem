@@ -52,7 +52,9 @@ def gen_regression(
         Vp [m/s]
     """
     pol = np.polynomial.Polynomial(polynom_weights)
-    poly_val: np.ndarray = pol(porosity)
+    # Call to Polynomial class will return ndarray or float, depending on input.
+    # This is not recognised by the
+    poly_val: np.ndarray = pol(porosity)  # type: ignore
     return poly_val
 
 

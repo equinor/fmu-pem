@@ -5,7 +5,6 @@ from .pem_class_definitions import (
     SimInitProperties,
     TwoWayTime,
 )
-from .pem_config_validation import PemConfig
 
 
 def estimate_delta_time(

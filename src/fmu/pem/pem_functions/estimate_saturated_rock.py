@@ -41,7 +41,7 @@ def estimate_saturated_rock(
     fluid_props: list[EffectiveFluidProperties],
     model_directory: Path,
     fipnum_param: np.ma.MaskedArray,
-) -> list[SaturatedRockProperties]:
+) -> tuple[list[SaturatedRockProperties], list[DryRockProperties]]:
     """Estimate saturated rock properties with zone-specific RPM selection.
 
     Each FIPNUM zone (string specification allowing lists/ranges/wildcards) can have
@@ -64,7 +64,7 @@ def estimate_saturated_rock(
     Args:
         rock_matrix: zone-aware rock matrix configuration
         sim_init: simulation model initial properties (contains porosity, vsh, etc.)
-        eff_pres: effective / formation / overburden pressure objects per time step
+        press_props: effective / formation / overburden pressure objects per time step
         matrix_props: effective mineral properties (already estimated upstream)
         fluid_props: effective fluid properties per time step
         model_directory: directory for model-specific parameter files (T-Matrix)
@@ -83,11 +83,6 @@ def estimate_saturated_rock(
     # Get FIPNUM grid data and mask
     fipnum_data = fipnum_param.data
     fipnum_mask = get_masked_array_mask(fipnum_param)
-
-    # Initialize result grids for each time step
-    # We'll accumulate results per zone and merge them
-    sat_rock_props_list: list[SaturatedRockProperties] = []
-    dry_rock_props_list: list[DryRockProperties] = []
 
     # Initialize grids for each time step
     sat_rock_props_list = [
@@ -183,7 +178,7 @@ def _call_zone_rpm_model(
     zone_fluid_props: list[EffectiveFluidProperties],
     zone_eff_pres: list[PressureProperties],
     model_directory: Path,
-) -> list[SaturatedRockProperties]:
+) -> tuple[list[SaturatedRockProperties], list[DryRockProperties]]:
     """Call the appropriate rock physics model for a specific zone.
 
     This helper function dispatches to the correct RPM model (Patchy Cement, Friable,
@@ -211,6 +206,7 @@ def _call_zone_rpm_model(
     # because Pydantic validators expect dict input. Instead, create a namespace object
     # with the attributes that RPM functions need.
 
+    # SimpleNamespace causes confusion for IDE linter, type is ignored below
     zone_rock_matrix = SimpleNamespace(
         model=zone_region.model,
         pressure_sensitivity=zone_region.pressure_sensitivity,
@@ -240,7 +236,7 @@ def _call_zone_rpm_model(
             cement=cement_properties,
             porosity=zone_porosity,
             pressure=zone_eff_pres,
-            rock_matrix_props=zone_rock_matrix,
+            rock_matrix_props=zone_rock_matrix,  # type: ignore
         )
     elif isinstance(zone_region.model, FriableRPM):
         # Friable sandstone model
@@ -249,7 +245,7 @@ def _call_zone_rpm_model(
             fluid=zone_fluid_props,
             porosity=zone_porosity,
             pressure=zone_eff_pres,
-            rock_matrix=zone_rock_matrix,
+            rock_matrix=zone_rock_matrix,  # type: ignore
         )
     elif isinstance(zone_region.model, RegressionRPM):
         # Regression models for dry rock properties, saturation by Gassmann
@@ -262,7 +258,7 @@ def _call_zone_rpm_model(
             fluid_properties=zone_fluid_props,
             porosity=zone_porosity,
             pressure=zone_eff_pres,
-            rock_matrix=zone_rock_matrix,
+            rock_matrix=zone_rock_matrix,  # type: ignore
             vsh=zone_vsh,
         )
     elif isinstance(zone_region.model, TMatrixRPM):
@@ -277,7 +273,7 @@ def _call_zone_rpm_model(
             porosity=zone_porosity,
             vsh=zone_vsh,
             pressure=zone_eff_pres,
-            rock_matrix=zone_rock_matrix,
+            rock_matrix=zone_rock_matrix,  # type: ignore
             model_directory=model_directory,
         )
     else:

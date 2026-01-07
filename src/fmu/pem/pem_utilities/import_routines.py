@@ -1,10 +1,8 @@
 from pathlib import Path
 
-import numpy as np
 import xtgeo
 
 from .pem_class_definitions import SimInitProperties, SimRstProperties
-from .pem_config_validation import PemConfig
 from .utils import bar_to_pa, restore_dir
 
 
@@ -139,8 +137,8 @@ def import_fractions(
             grid_props = [
                 xtgeo.gridproperty_from_file(
                     file,
-                    name=name,
-                    grid=grd,
+                    name=name,  # type: ignore
+                    grid=grd,  # type: ignore
                 )
                 for name in fraction_names
                 for file in fraction_files

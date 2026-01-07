@@ -58,6 +58,7 @@ def run_patchy_cement(
     # to please the IDE:
     k_dry = None
     mu = None
+    rho_dry = None
     k_init = None
     mu_init = None
 

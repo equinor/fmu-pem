@@ -13,7 +13,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic.json_schema import SkipJsonSchema
 from rock_physics_open.equinor_utilities.machine_learning_utilities import (
     ExponentialPressureModel,
     PolynomialPressureModel,
@@ -61,7 +60,7 @@ class FriableParams(BaseModel):
     critical_porosity: float = Field(
         ge=0.3, le=0.5, default=0.4, description="Critical porosity"
     )
-    coordination_number_function: str = Field(
+    coordination_number_function: CoordinationNumberFunction = Field(
         default="PorBased", description="Coordination number function"
     )
     coord_num: float = Field(
@@ -347,7 +346,7 @@ class RegressionPressureSensitivity(BaseModel):
 
     @field_validator("parameters", mode="before")
     @classmethod
-    def check_parameters(cls, v: dict, info: ValidationInfo) -> str:
+    def check_parameters(cls, v: dict, info: ValidationInfo) -> dict:
         for key, value in v.items():
             if key not in list(ParameterTypes):
                 raise ValueError(f"unknown pressure parameter: {key}")
