@@ -7,7 +7,7 @@
 
 DEFINE <USER> $USER
 DEFINE <SCRATCH> /scratch/fmu
-DEFINE <CONFIG_PATH> /private/hfle/drogon_hfle/dev/rms/model
+DEFINE <CONFIG_PATH> /private/hfle/drogon_hfle/dev/sim2seis/model
 DEFINE <MODEL_PATH> /private/hfle/drogon_hfle/dev/sim2seis/model
 
 NUM_REALIZATIONS 1
@@ -29,10 +29,10 @@ FORWARD_MODEL MAKE_DIRECTORY(<DIRECTORY> = <RUNPATH>/sim2seis/output/pem)
 FORWARD_MODEL MAKE_DIRECTORY(<DIRECTORY> = <RUNPATH>/share/results/grids)
 
 -- Create start directory
-FORWARD_MODEL MAKE_DIRECTORY(<DIRECTORY> = <RUNPATH>/rms/model)
+FORWARD_MODEL MAKE_DIRECTORY(<DIRECTORY> = <RUNPATH>/sim2seis/model)
 
 -- PEM parameter setting
-DEFINE <PEM_STARTDIR> <RUNPATH>/rms/model
+DEFINE <PEM_STARTDIR> <RUNPATH>/sim2seis/model
 DEFINE <RELPATH_PEM> <RUNPATH>/sim2seis/model
 DEFINE <PEM_CONFIG_FILE_NAME> new_pem_config.yml
 

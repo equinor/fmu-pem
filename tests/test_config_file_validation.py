@@ -8,7 +8,7 @@ from src.fmu.pem.pem_utilities.import_config import find_key_first
 
 
 def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "rms/model")
+    monkeypatch.chdir(data_dir / "sim2seis/model")
     pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate_multi.yml")
     if INTERNAL_EQUINOR:
         try:
@@ -21,7 +21,7 @@ def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
 
 
 def test_validate_new_pem_config_condensate(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "rms/model")
+    monkeypatch.chdir(data_dir / "sim2seis/model")
     pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate.yml")
     if INTERNAL_EQUINOR:
         try:
@@ -34,7 +34,7 @@ def test_validate_new_pem_config_condensate(testdata, monkeypatch, data_dir):
 
 
 def test_validate_new_pem_config(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "rms/model")
+    monkeypatch.chdir(data_dir / "sim2seis/model")
     pem_config_file_name = Path("../../sim2seis/model/pem_config_no_condensate.yml")
     try:
         _ = read_pem_config(pem_config_file_name)

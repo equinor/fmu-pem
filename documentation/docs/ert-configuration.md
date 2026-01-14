@@ -4,7 +4,7 @@ You can include `fmu-pem` in your ERT setup by including the following snippet:
 
 ````ert
 -- Define your variables:
-DEFINE <JOB_STARTDIR> <RUNPATH>/rms/model
+DEFINE <JOB_STARTDIR> <RUNPATH>/sim2seis/model
 DEFINE <RELPATH_CONFIG_FILES> <RUNPATH>/sim2seis/model
 DEFINE <PEM_CONFIG_FILE_NAME> pem_config.yml
 DEFINE <MODEL_PATH> /my_fmu_structure/sim2seis/model

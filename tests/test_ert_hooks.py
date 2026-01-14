@@ -20,7 +20,7 @@ except ImportError:
     not HAVE_ERT, reason="ERT is not installed, skipping hook implementation tests."
 )
 def test_pem_through_ert(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "rms/model")
+    monkeypatch.chdir(data_dir / "sim2seis/model")
     pem_output_path = data_dir / "sim2seis/output/pem"
     share_output_path = data_dir / "share/results/grids"
 

@@ -47,14 +47,14 @@ def main():
     )
     args = parser.parse_args()
     cwd = args.config_dir.absolute()
-    if str(cwd).endswith("rms/model"):
+    if str(cwd).endswith("sim2seis/model"):
         run_folder = cwd
     else:
         try:
-            run_folder = cwd.joinpath("rms/model")
+            run_folder = cwd.joinpath("sim2seis/model")
             assert run_folder.exists() and run_folder.is_dir()
         except AssertionError as e:
-            warn(f"PEM model should be run from the rms/model folder. {e}")
+            warn(f"PEM model should be run from the sim2seis/model folder. {e}")
             run_folder = cwd
     with restore_dir(run_folder):
         pem_fcn(
