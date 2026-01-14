@@ -10,13 +10,6 @@ from .run_pem import pem_fcn
 def main():
     parser = argparse.ArgumentParser(__file__)
     parser.add_argument(
-        "-s",
-        "--start-dir",
-        type=Path,
-        required=True,
-        help="Start directory for running script (required)",
-    )
-    parser.add_argument(
         "-c",
         "--config-dir",
         type=Path,
@@ -31,6 +24,20 @@ def main():
         help="Configuration yaml file name (required)",
     )
     parser.add_argument(
+        "-g",
+        "--global-dir",
+        type=Path,
+        required=True,
+        help="Relative path to global config file (required)",
+    )
+    parser.add_argument(
+        "-o",
+        "--global-file",
+        type=Path,
+        required=True,
+        help="Global configuration yaml file name (required)",
+    )
+    parser.add_argument(
         "-m",
         "--model-dir",
         type=Path,
@@ -39,7 +46,7 @@ def main():
         "needed for command line run",
     )
     args = parser.parse_args()
-    cwd = args.start_dir.absolute()
+    cwd = args.config_dir.absolute()
     if str(cwd).endswith("rms/model"):
         run_folder = cwd
     else:
@@ -51,9 +58,10 @@ def main():
             run_folder = cwd
     with restore_dir(run_folder):
         pem_fcn(
-            start_dir=run_folder,
-            rel_path_pem=args.config_dir,
+            config_dir=run_folder,
             pem_config_file_name=args.config_file,
+            global_config_dir=args.global_dir,
+            global_config_file=args.global_file,
         )
 
 

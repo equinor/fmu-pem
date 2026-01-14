@@ -6,9 +6,10 @@ from fmu.pem import pem_utilities as pem_utils
 
 
 def pem_fcn(
-    start_dir: Path,
-    rel_path_pem: Path,
+    config_dir: Path,
     pem_config_file_name: Path,
+    global_config_dir: Path,
+    global_config_file: Path,
     run_from_rms=False,
     proj=None,
 ) -> None:
@@ -18,14 +19,14 @@ def pem_fcn(
 
     """
     # Read and validate all PEM parameters
-    config = pem_utils.read_pem_config(
-        yaml_file=start_dir.joinpath(rel_path_pem, pem_config_file_name)
-    )
+    config = pem_utils.read_pem_config(yaml_file=config_dir / pem_config_file_name)
 
     # Read necessary part of global configurations and parameters
+    # ToDo: update call with parser arguments
     config.update_with_global(
         pem_utils.get_global_params_and_dates(
-            root_dir=start_dir, conf_path=config.paths.rel_path_fmu_config
+            global_config_dir=(config_dir / global_config_dir).resolve(),
+            global_conf_file=global_config_file,
         )
     )
 
@@ -42,7 +43,7 @@ def pem_fcn(
     # Calculate rock properties - fluids and minerals
     # Effective mineral (matrix) properties - one set valid for all time-steps
     vsh, matrix_properties = pem_fcns.effective_mineral_properties(
-        root_dir=start_dir,
+        root_dir=config_dir,
         matrix=config.rock_matrix,
         sim_init=constant_props,
         sim_grid=sim_grid,
@@ -103,7 +104,7 @@ def pem_fcn(
 
     # Save results to disk or RMS project according to settings in the PEM config
     pem_utils.save_results(
-        start_dir=start_dir,
+        config_dir=config_dir,
         run_from_rms_flag=run_from_rms,
         rms_project=proj,
         sim_grid=sim_grid,
@@ -125,5 +126,5 @@ def pem_fcn(
     )
 
     # Restore original path
-    os.chdir(start_dir)
+    os.chdir(config_dir)
     return

@@ -42,7 +42,9 @@ def find_key_first(d: dict, key: str) -> str | None:
     return None
 
 
-def get_global_params_and_dates(root_dir: Path, conf_path: Path) -> dict:
+def get_global_params_and_dates(
+    global_config_dir: Path, global_conf_file: Path
+) -> dict:
     """Read global configuration parameters, simulation model dates and seismic dates
     for difference calculation
 
@@ -55,38 +57,35 @@ def get_global_params_and_dates(root_dir: Path, conf_path: Path) -> dict:
         list of tuples with
                 strings of dates to calculate difference properties
     """
-    # prediction_mode is set to empty string if HIST else to PRED. Normally set in
-    # env variable
-    env_flowsim = os.getenv("FLOWSIM_IS_PREDICTION", default=False)
-    if env_flowsim:
-        conf_file = conf_path.joinpath("global_variables_pred.yml")
+    global_config_par = yaml_load(str(global_config_dir / global_conf_file))
+    # check if 'HIST' or 'PRED' is used
+    if "SEISMIC_PRED_DATES" in global_config_par["global"]["dates"]:
         date_str = "SEISMIC_PRED_DATES"
+    else:
+        date_str = "SEISMIC_HIST_DATES"
+    if "SEISMIC_PRED_DIFFDATES" in global_config_par["global"]["dates"]:
         diff_str = "SEISMIC_PRED_DIFFDATES"
     else:
-        conf_file = conf_path.joinpath("global_variables.yml")
-        date_str = "SEISMIC_HIST_DATES"
         diff_str = "SEISMIC_HIST_DIFFDATES"
-    with restore_dir(root_dir):
-        global_config_par = yaml_load(str(conf_file))
-        seismic_dates = [
-            str(sdate).replace("-", "")
-            for sdate in global_config_par["global"]["dates"][date_str]
-        ]
-        diff_dates = [
-            [str(sdate).replace("-", "") for sdate in datepairs]
-            for datepairs in global_config_par["global"]["dates"][diff_str]
-        ]
-        grid_model_name = find_key_first(global_config_par["global"], "ECLGRIDNAME_PEM")
-        if grid_model_name is None:
-            raise ValueError(
-                f"{__file__}: no value for ECLGRIDNAME_PEM in global config file"
-            )
-        return {
-            "grid_model": grid_model_name,
-            "seis_dates": seismic_dates,
-            "diff_dates": diff_dates,
-            "global_config": global_config_par,
-        }
+    seismic_dates = [
+        str(sdate).replace("-", "")
+        for sdate in global_config_par["global"]["dates"][date_str]
+    ]
+    diff_dates = [
+        [str(sdate).replace("-", "") for sdate in datepairs]
+        for datepairs in global_config_par["global"]["dates"][diff_str]
+    ]
+    grid_model_name = find_key_first(global_config_par["global"], "ECLGRIDNAME_PEM")
+    if grid_model_name is None:
+        raise ValueError(
+            f"{__file__}: no value for ECLGRIDNAME_PEM in global config file"
+        )
+    return {
+        "grid_model": grid_model_name,
+        "seis_dates": seismic_dates,
+        "diff_dates": diff_dates,
+        "global_config": global_config_par,
+    }
 
 
 def read_pem_config(yaml_file: Path) -> PemConfig:

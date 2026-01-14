@@ -17,7 +17,7 @@ from .utils import _verify_export_inputs, restore_dir
 
 
 def save_results(
-    start_dir: Path,
+    config_dir: Path,
     run_from_rms_flag: bool,
     rms_project: object,
     sim_grid: xtgeo.grid3d.Grid,
@@ -41,7 +41,7 @@ def save_results(
     and global config files
 
     Args:
-        start_dir: initial directory setting
+        config_dir: initial directory setting
         run_from_rms_flag: call to PEM from RMS
         rms_project: RMS project
         sim_grid: grid definition
@@ -66,8 +66,8 @@ def save_results(
     # Saving results:
 
     # 1. Mandatory part: Save Vp, Vs, Density to disk for seismic forward modelling.
-    full_mandatory_path = start_dir / mandatory_path
-    full_output_path = start_dir / pem_output_path
+    full_mandatory_path = config_dir / mandatory_path
+    full_output_path = config_dir / pem_output_path
     output_set = [
         {
             k: v

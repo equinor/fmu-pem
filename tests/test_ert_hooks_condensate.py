@@ -48,16 +48,16 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
         "eclipse--effective_pressure--20180101.roff": 360008292337.79907,
         "eclipse--formation_pressure--20180101.roff": 2204158466687.0117,
         "eclipse--overburden_pressure--20180101.roff": 2564166759072.876,
-        "eclipse--density--20180101.roff": 169816156.46154785,
-        "eclipse--vp--20180101.roff": 275351799.046875,
+        "eclipse--density--20180101.roff": 169814178.1279297,
+        "eclipse--vp--20180101.roff": 275354659.3679199,
         "eclipse--vs--20180101.roff": 163354489.54553223,
-        "pem--20180101.grdecl_vp": 275351799.013,
+        "pem--20180101.grdecl_vp": 275354659.318,
         "pem--20180101.grdecl_vs": 163354489.538,
-        "pem--20180101.grdecl_dens": 169816156.465,
-        "eclipsegrid_pem--sidiff--20180701_20180101.roff": 3304280474.6736765,
-        "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": 60567.49019091868,
+        "pem--20180101.grdecl_dens": 169814178.144,
+        "eclipsegrid_pem--sidiff--20180701_20180101.roff": 3304694686.2208695,
+        "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": 60577.2778733396,
         "eclipsegrid_pem--siratio--20180701_20180101.roff": 72080.67490541935,
-        "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4969.172195576051,
+        "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4968.309265971911,
     }
 
     estimated_values = {
