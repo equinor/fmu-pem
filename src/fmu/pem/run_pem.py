@@ -22,7 +22,6 @@ def pem_fcn(
     config = pem_utils.read_pem_config(yaml_file=config_dir / pem_config_file_name)
 
     # Read necessary part of global configurations and parameters
-    # ToDo: update call with parser arguments
     config.update_with_global(
         pem_utils.get_global_params_and_dates(
             global_config_dir=(config_dir / global_config_dir).resolve(),

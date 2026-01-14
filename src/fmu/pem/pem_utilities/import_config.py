@@ -49,8 +49,8 @@ def get_global_params_and_dates(
     for difference calculation
 
     Args:
-        root_dir: start dir for PEM script run
-        conf_path: path to global variables configuration file
+        global_config_dir: path to the global config file
+        global_conf_file: name of the global config file
 
     Returns:
         global parameter configuration dict, list of strings for simulation dates,
