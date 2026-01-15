@@ -4,13 +4,14 @@ You can include `fmu-pem` in your ERT setup by including the following snippet:
 
 ````ert
 -- Define your variables:
-DEFINE <JOB_STARTDIR> <RUNPATH>/sim2seis/model
-DEFINE <RELPATH_CONFIG_FILES> <RUNPATH>/sim2seis/model
+DEFINE <CONFIG_PATH> <RUNPATH>/sim2seis/model
 DEFINE <PEM_CONFIG_FILE_NAME> pem_config.yml
+DEFINE <GLOBAL_CONFIG_DIR> ../../fmuconfig/output
+DEFINE <GLOBAL_CONFIG_FILE> global_variables.yml
 DEFINE <MODEL_PATH> /my_fmu_structure/sim2seis/model
 
 -- Run the pre-installed ERT forward model:
-FORWARD_MODEL PEM(<START_DIR>=<JOB_STARTDIR>, <CONFIG_DIR>=<RELPATH_CONFIG_FILES>, <CONFIG_FILE>=<PEM_CONFIG_FILE_NAME>, <MODEL_DIR>=<MODEL_PATH>)
+FORWARD_MODEL PEM(<CONFIG_DIR>=<CONFIG_PATH>, <CONFIG_FILE>=<PEM_CONFIG_FILE_NAME>, <GLOBAL_DIR>=<GLOBAL_CONFIG_DIR>, <GLOBAL_FILE>=<GLOBAL_CONFIG_FILE>, <MODEL_DIR>=<MODEL_PATH>)
 ````
 
-On the next page you will get help setting up your `pem_config.yml`.
+On the next page you will get help on setting up your `pem_config.yml`.

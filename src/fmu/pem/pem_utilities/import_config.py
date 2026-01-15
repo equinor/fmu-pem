@@ -43,13 +43,14 @@ def find_key_first(d: dict, key: str) -> str | None:
 
 
 def get_global_params_and_dates(
-    global_config_dir: Path, global_conf_file: Path
+    global_config_dir: Path,
+    global_conf_file: Path,
 ) -> dict:
     """Read global configuration parameters, simulation model dates and seismic dates
     for difference calculation
 
     Args:
-        global_config_dir: path to the global config file
+        global_config_dir: directory path for the global config file
         global_conf_file: name of the global config file
 
     Returns:

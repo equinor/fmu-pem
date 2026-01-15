@@ -23,12 +23,12 @@ class PetroElasticModel(ForwardModelStepPlugin):
                 "<CONFIG_DIR>",
                 "--config-file",
                 "<CONFIG_FILE>",
-                "--model-dir",
-                "<MODEL_DIR>",
                 "--global-dir",
                 "<GLOBAL_DIR>",
                 "--global-file",
                 "<GLOBAL_FILE>",
+                "--model-dir",
+                "<MODEL_DIR>",
             ],
         )
 
@@ -41,7 +41,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
         # Parse YAML parameter file by pydantic pre-experiment to catch errors at an
         # early stage
         config_file = Path(fm_step_json["argList"][3])
-        model_dir = Path(fm_step_json["argList"][5])
+        model_dir = Path(fm_step_json["argList"][9])
         try:
             os.chdir(model_dir)
             _ = read_pem_config(config_file)
@@ -58,8 +58,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
             examples="""
 .. code-block:: console
 
-  FORWARD_MODEL PEM(<CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml, <MODEL_DIR>=/my_fmu_structure/sim2seis/model, <GLOBAL_DIR>=../../fmuconfig/output,
-  <GLOBAL_FILE>=global_variables.yml)
+  FORWARD_MODEL PEM(<CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DiR>=../../fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MODEL_DIR>=/my_fmu_structure/sim2seis/model)
 
 """,  # noqa: E501,
         )
