@@ -132,7 +132,7 @@ def import_fractions(
     Returns:
         list: fraction properties
     """
-    with restore_dir(root_dir.joinpath(fraction_path)):
+    with restore_dir(root_dir / fraction_path):
         try:
             grid_props = [
                 xtgeo.gridproperty_from_file(

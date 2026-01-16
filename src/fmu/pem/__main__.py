@@ -51,7 +51,7 @@ def main():
         run_folder = cwd
     else:
         try:
-            run_folder = cwd.joinpath("sim2seis/model")
+            run_folder = cwd / "sim2seis" / "model"
             assert run_folder.exists() and run_folder.is_dir()
         except AssertionError as e:
             warn(f"PEM model should be run from the sim2seis/model folder. {e}")

@@ -6,7 +6,7 @@ from fmu.pem import INTERNAL_EQUINOR, pem_fcn
 
 
 def test_pem_fcn(data_dir, monkeypatch):
-    monkeypatch.chdir(data_dir / "sim2seis/model")
+    monkeypatch.chdir(data_dir / "sim2seis" / "model")
 
     if not INTERNAL_EQUINOR:
         with pytest.raises((NotImplementedError, ImportError)):
@@ -26,7 +26,7 @@ def test_pem_fcn(data_dir, monkeypatch):
 
 
 def test_pem_fcn_multi(data_dir, monkeypatch):
-    monkeypatch.chdir(data_dir / "sim2seis/model")
+    monkeypatch.chdir(data_dir / "sim2seis" / "model")
 
     if not INTERNAL_EQUINOR:
         with pytest.raises((NotImplementedError, ImportError)):
