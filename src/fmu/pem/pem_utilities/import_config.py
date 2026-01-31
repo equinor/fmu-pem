@@ -45,6 +45,8 @@ def find_key_first(d: dict, key: str) -> str | None:
 def get_global_params_and_dates(
     global_config_dir: Path,
     global_conf_file: Path,
+    mod_prefix: str,
+    obs_prefix: str,
 ) -> dict:
     """Read global configuration parameters, simulation model dates and seismic dates
     for difference calculation
@@ -58,34 +60,24 @@ def get_global_params_and_dates(
         list of tuples with
                 strings of dates to calculate difference properties
     """
-    global_config_par = yaml_load(str(global_config_dir / global_conf_file))
-    # check if 'HIST' or 'PRED' is used
-    if "SEISMIC_PRED_DATES" in global_config_par["global"]["dates"]:
-        date_str = "SEISMIC_PRED_DATES"
-    else:
-        date_str = "SEISMIC_HIST_DATES"
-    if "SEISMIC_PRED_DIFFDATES" in global_config_par["global"]["dates"]:
-        diff_str = "SEISMIC_PRED_DIFFDATES"
-    else:
-        diff_str = "SEISMIC_HIST_DIFFDATES"
-    seismic_dates = [
-        str(sdate).replace("-", "")
-        for sdate in global_config_par["global"]["dates"][date_str]
-    ]
-    diff_dates = [
-        [str(sdate).replace("-", "") for sdate in datepairs]
-        for datepairs in global_config_par["global"]["dates"][diff_str]
-    ]
+    global_config_par = yaml_load(
+        str(global_config_dir / global_conf_file),
+    )
     grid_model_name = find_key_first(global_config_par["global"], "ECLGRIDNAME_PEM")
     if grid_model_name is None:
         raise ValueError(
             f"{__file__}: no value for ECLGRIDNAME_PEM in global config file"
         )
+    # Find the correct seismic dates references
+    dates_config = global_config_par["global"]["dates"]
+
     return {
         "grid_model": grid_model_name,
-        "seis_dates": seismic_dates,
-        "diff_dates": diff_dates,
-        "global_config": global_config_par,
+        "mod_dates": dates_config.get(f"SEISMIC_{mod_prefix}_DATES", None),
+        "mod_diffdates": dates_config.get(f"SEISMIC_{mod_prefix}_DIFFDATES", None),
+        "obs_dates": dates_config.get(f"SEISMIC_{obs_prefix}_DATES", None),
+        "obs_diffdates": dates_config.get(f"SEISMIC_{obs_prefix}_DIFFDATES", None),
+        "seismic_section": global_config_par["global"]["seismic"],
     }
 
 

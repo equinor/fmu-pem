@@ -556,53 +556,25 @@ class Fluids(BaseModel):
         return v
 
 
-def possible_date_string(date_strings: list[str]) -> bool:
-    """
-    Validate a list of date strings in YYYYMMDD format.
-
-    Args:
-        date_strings: list of strings to validate
-
-    Returns:
-        bool: True if all strings are valid dates
-
-    Raises:
-        ValueError: If any string is not a valid date in YYYYMMDD format
-    """
-    for date_string in date_strings:
-        if len(date_string) != 8:
-            raise ValueError(
-                f"Invalid date format: '{date_string}' must be exactly 8 characters"
-            )
-        try:
-            date(
-                year=int(date_string[0:4]),
-                month=int(date_string[4:6]),
-                day=int(date_string[6:]),
-            )
-        except ValueError:
-            raise ValueError(
-                f"Invalid date: '{date_string}' must be a valid date in YYYYMMDD format"
-            )
-    return True
+def date_to_string(date_obj: date) -> str:
+    return date_obj.strftime(format="%Y%m%d")
 
 
 class FromGlobal(BaseModel):
     grid_model: str
-    seis_dates: list[str]
-    diff_dates: list[list[str]]
-    global_config: dict[str, Any]
+    mod_dates: list[str]
+    mod_diffdates: list[list[str]]
+    obs_dates: list[str]
+    obs_diffdates: list[list[str]]
+    seismic_section: dict[str, Any]
 
-    @field_validator("seis_dates", mode="before")
-    def check_date_string(cls, v: list[str]) -> list[str]:
-        possible_date_string(v)
-        return v
+    @field_validator("mod_dates", "obs_dates", mode="before")
+    def make_date_strings(cls, v: list[date]) -> list[str]:
+        return [date_to_string(date) for date in v]
 
-    @field_validator("diff_dates", mode="before")
-    def check_diffdate_string(cls, v: list[list[str]]) -> list[list[str]]:
-        for ll in v:
-            possible_date_string(ll)
-        return v
+    @field_validator("mod_diffdates", "obs_diffdates", mode="before")
+    def make_diffdate_strings(cls, v: list[list[str]]) -> list[list[str]]:
+        return [[date_to_string(date) for date in diffdate] for diffdate in v]
 
 
 class PemPaths(BaseModel):
