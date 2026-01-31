@@ -3,16 +3,33 @@ from pathlib import Path
 import pytest
 
 from fmu.pem import INTERNAL_EQUINOR
-from fmu.pem.pem_utilities.import_config import read_pem_config
+from fmu.pem.pem_utilities.import_config import (
+    get_global_params_and_dates,
+    read_pem_config,
+)
 from src.fmu.pem.pem_utilities.import_config import find_key_first
 
 
 def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "sim2seis" / "model")
+    run_folder = data_dir / "sim2seis" / "model"
+    monkeypatch.chdir(run_folder)
+    global_dir = "../../fmuconfig/output"
+    global_file = "global_variables.yml"
+    obs_date_prefix = "HIST"
+    mod_date_prefix = "HIST"
     pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate_multi.yml")
     if INTERNAL_EQUINOR:
         try:
-            _ = read_pem_config(pem_config_file_name)
+            config = read_pem_config(pem_config_file_name)
+            # Read necessary part of global configurations and parameters
+            config.update_with_global(
+                get_global_params_and_dates(
+                    global_config_dir=(run_folder / global_dir).resolve(),
+                    global_conf_file=global_file,
+                    mod_prefix=mod_date_prefix,
+                    obs_prefix=obs_date_prefix,
+                )
+            )
         except Exception as e:
             pytest.fail(f"Validation failed: {e}")
     else:
