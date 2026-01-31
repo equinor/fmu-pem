@@ -11,9 +11,11 @@ except (ImportError, ModuleNotFoundError):
 else:
     INTERNAL_EQUINOR = True
 
+from .__main__ import main as pem
 from .run_pem import pem_fcn
 
 __all__ = [
     "pem_fcn",
+    "pem",
     "INTERNAL_EQUINOR",
 ]
