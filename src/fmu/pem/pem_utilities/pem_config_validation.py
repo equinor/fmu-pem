@@ -5,6 +5,7 @@ from typing import Any, Self
 
 import numpy as np
 from pydantic import (
+    AliasChoices,
     BaseModel,
     ConfigDict,
     DirectoryPath,
@@ -560,13 +561,34 @@ def date_to_string(date_obj: date) -> str:
     return date_obj.strftime(format="%Y%m%d")
 
 
+class SeismicSurvey(BaseModel):
+    ecldate: list[str]
+    time: dict[str, str] | None = None
+    depth: dict[str, str] | None = None
+
+    @field_validator("ecldate", mode="before")
+    def make_date_strings(cls, v: list[date]) -> list[str]:
+        return [date_to_string(date) for date in v]
+
+
+class SeismicSection(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    templatecube_4d: str = Field(
+        validation_alias=AliasChoices("4d_templatecube", "templatecube_4d"),
+        serialization_alias="4d_templatecube",
+    )
+    real_4d_cropped_path: DirectoryPath
+    real_4d: dict[str, SeismicSurvey]
+
+
 class FromGlobal(BaseModel):
     grid_model: str
     mod_dates: list[str]
     mod_diffdates: list[list[str]]
     obs_dates: list[str]
     obs_diffdates: list[list[str]]
-    seismic_section: dict[str, Any]
+    seismic: SeismicSection
 
     @field_validator("mod_dates", "obs_dates", mode="before")
     def make_date_strings(cls, v: list[date]) -> list[str]:

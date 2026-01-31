@@ -77,7 +77,7 @@ def get_global_params_and_dates(
         "mod_diffdates": dates_config.get(f"SEISMIC_{mod_prefix}_DIFFDATES", None),
         "obs_dates": dates_config.get(f"SEISMIC_{obs_prefix}_DATES", None),
         "obs_diffdates": dates_config.get(f"SEISMIC_{obs_prefix}_DIFFDATES", None),
-        "seismic_section": global_config_par["global"]["seismic"],
+        "seismic": global_config_par["global"]["seismic"],
     }
 
 
