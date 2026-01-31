@@ -33,36 +33,33 @@ def test_pem_fcn(data_dir, monkeypatch):
 
     conf, config_dir = setup(
         data_dir=data_dir,
-        config_file="pem_config_condensate.yml",
+        config_file="pem_config_no_condensate.yml",
     )
 
-    if not INTERNAL_EQUINOR:
-        with pytest.raises((NotImplementedError, ImportError)):
-            pem_fcn(
-                config=conf,
-                config_dir=config_dir,
-            )
-    else:
-        pem_fcn(
-            config=conf,
-            config_dir=config_dir,
-        )
+    pem_fcn(
+        config=conf,
+        config_dir=config_dir,
+    )
 
 
 def test_pem_fcn_multi(data_dir, monkeypatch):
     monkeypatch.chdir(data_dir / "sim2seis" / "model")
 
-    conf, config_dir = setup(
-        data_dir=data_dir,
-        config_file="pem_config_condensate_multi.yml",
-    )
     if not INTERNAL_EQUINOR:
         with pytest.raises((NotImplementedError, ImportError)):
+            conf, config_dir = setup(
+                data_dir=data_dir,
+                config_file="pem_config_condensate_multi.yml",
+            )
             pem_fcn(
                 config=conf,
                 config_dir=config_dir,
             )
     else:
+        conf, config_dir = setup(
+            data_dir=data_dir,
+            config_file="pem_config_condensate_multi.yml",
+        )
         pem_fcn(
             config=conf,
             config_dir=config_dir,
@@ -72,21 +69,41 @@ def test_pem_fcn_multi(data_dir, monkeypatch):
 def test_pem_main(data_dir, monkeypatch):
     monkeypatch.chdir(data_dir / "sim2seis" / "model")
 
-    pem(
-        arguments=[
-            "--config-dir",
-            str((data_dir / "sim2seis" / "model").resolve()),
-            "--config-file",
-            "pem_config_condensate_multi.yml",
-            "--global-dir",
-            "../../fmuconfig/output",
-            "--global-file",
-            "global_variables.yml",
-            "--model-dir",
-            str((data_dir / "sim2seis" / "model").resolve()),
-            "--obs-date-prefix",
-            "HIST",
-            "--mod-date-prefix",
-            "HIST",
-        ]
-    )
+    if not INTERNAL_EQUINOR:
+        pem(
+            arguments=[
+                "--config-dir",
+                str((data_dir / "sim2seis" / "model").resolve()),
+                "--config-file",
+                "pem_config_no_condensate.yml",
+                "--global-dir",
+                "../../fmuconfig/output",
+                "--global-file",
+                "global_variables.yml",
+                "--model-dir",
+                str((data_dir / "sim2seis" / "model").resolve()),
+                "--obs-date-prefix",
+                "HIST",
+                "--mod-date-prefix",
+                "HIST",
+            ]
+        )
+    else:
+        pem(
+            arguments=[
+                "--config-dir",
+                str((data_dir / "sim2seis" / "model").resolve()),
+                "--config-file",
+                "pem_config_condensate_multi.yml",
+                "--global-dir",
+                "../../fmuconfig/output",
+                "--global-file",
+                "global_variables.yml",
+                "--model-dir",
+                str((data_dir / "sim2seis" / "model").resolve()),
+                "--obs-date-prefix",
+                "HIST",
+                "--mod-date-prefix",
+                "HIST",
+            ]
+        )
