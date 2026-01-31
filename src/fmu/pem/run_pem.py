@@ -6,10 +6,8 @@ from fmu.pem import pem_utilities as pem_utils
 
 
 def pem_fcn(
+    config: pem_utils.PemConfig,
     config_dir: Path,
-    pem_config_file_name: Path,
-    global_config_dir: Path,
-    global_config_file: Path,
     run_from_rms=False,
     proj=None,
 ) -> None:
@@ -18,24 +16,13 @@ def pem_fcn(
     yaml-file control the selections made in the PEM.
 
     """
-    # Read and validate all PEM parameters
-    config = pem_utils.read_pem_config(yaml_file=config_dir / pem_config_file_name)
-
-    # Read necessary part of global configurations and parameters
-    config.update_with_global(
-        pem_utils.get_global_params_and_dates(
-            global_config_dir=(config_dir / global_config_dir).resolve(),
-            global_conf_file=global_config_file,
-        )
-    )
-
     # Import Eclipse simulation grid - INIT and RESTART
     sim_grid, constant_props, time_step_props = pem_utils.read_sim_grid_props(
         rel_dir_sim_files=config.eclipse_files.rel_path_simgrid,
         egrid_file=config.eclipse_files.egrid_file,
         init_property_file=config.eclipse_files.init_property_file,
         restart_property_file=config.eclipse_files.restart_property_file,
-        seis_dates=config.global_params.seis_dates,
+        seis_dates=config.global_params.mod_dates,
         fipnum_name=config.alternative_fipnum_name,
     )
 
@@ -65,7 +52,7 @@ def pem_fcn(
         sim_rst=time_step_props,
         matrix_props=matrix_properties,
         fluid_props=fluid_properties,
-        sim_dates=config.global_params.seis_dates,
+        sim_dates=config.global_params.mod_dates,
         fipnum=constant_props.fipnum,
     )
 
@@ -89,8 +76,8 @@ def pem_fcn(
     # Calculate difference properties. Possible properties are all that vary with time
     diff_props, diff_date_strs = pem_utils.calculate_diff_properties(
         props=[time_step_props, eff_pres, sat_rock_props, sum_delta_time],
-        diff_dates=config.global_params.diff_dates,
-        seis_dates=config.global_params.seis_dates,
+        diff_dates=config.global_params.mod_diffdates,
+        seis_dates=config.global_params.mod_dates,
         diff_calculation=config.diff_calculation,
     )
 
@@ -108,7 +95,7 @@ def pem_fcn(
         rms_project=proj,
         sim_grid=sim_grid,
         grid_name=config.global_params.grid_model,
-        seis_dates=config.global_params.seis_dates,
+        seis_dates=config.global_params.mod_dates,
         save_to_rms=config.results.save_results_to_rms,
         save_to_disk=config.results.save_results_to_disk,
         save_intermediate=config.results.save_intermediate_results,

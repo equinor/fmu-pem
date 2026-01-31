@@ -30,7 +30,6 @@ from .pem_config_validation import (
     MineralProperties,
     PemConfig,
     RockMatrixProperties,
-    possible_date_string,
 )
 from .update_grid import update_inactive_grid_cells
 from .utils import (
@@ -66,7 +65,6 @@ __all__ = [
     "input_num_string_to_list",
     "missing_num_areas",
     "num_boolean_array",
-    "possible_date_string",
     "read_pem_config",
     "read_sim_grid_props",
     "restore_dir",
