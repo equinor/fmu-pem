@@ -10,7 +10,7 @@ from fmu.pem.pem_utilities import (
 )
 
 
-def setup(data_dir: Path, config_file: Path) -> PemConfig:
+def setup(data_dir: Path, config_file: Path) -> tuple[PemConfig, Path]:
     run_folder = data_dir / "sim2seis" / "model"
     global_dir = Path("../../fmuconfig/output")
     global_file = Path("global_variables.yml")
@@ -71,7 +71,7 @@ def test_pem_main(data_dir, monkeypatch):
 
     if not INTERNAL_EQUINOR:
         pem(
-            arguments=[
+            args_list=[
                 "--config-dir",
                 str((data_dir / "sim2seis" / "model").resolve()),
                 "--config-file",
@@ -90,7 +90,7 @@ def test_pem_main(data_dir, monkeypatch):
         )
     else:
         pem(
-            arguments=[
+            args_list=[
                 "--config-dir",
                 str((data_dir / "sim2seis" / "model").resolve()),
                 "--config-file",

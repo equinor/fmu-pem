@@ -9,9 +9,9 @@ from .pem_utilities import get_global_params_and_dates, read_pem_config, restore
 from .run_pem import pem_fcn
 
 
-def main(arguments=None):
-    if arguments is None:
-        arguments = sys.argv[1:]
+def main(args_list=None):
+    if args_list is None:
+        args_list = sys.argv[1:]
     parser = argparse.ArgumentParser(__file__)
     parser.add_argument(
         "-c",
@@ -74,12 +74,11 @@ def main(arguments=None):
     parser.add_argument(
         "-s",
         "--rms-project",
-        type=Any,
         required=False,
         default=None,
         help="In case PEM is called from RMS: RMS project",
     )
-    args = parser.parse_args(arguments)
+    args = parser.parse_args(args_list)
     cwd = args.config_dir.absolute()
     if str(cwd).endswith("sim2seis/model"):
         run_folder = cwd

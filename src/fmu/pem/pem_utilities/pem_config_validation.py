@@ -578,7 +578,7 @@ class SeismicSection(BaseModel):
         validation_alias=AliasChoices("4d_templatecube", "templatecube_4d"),
         serialization_alias="4d_templatecube",
     )
-    real_4d_cropped_path: DirectoryPath
+    real_4d_cropped_path: Path
     real_4d: dict[str, SeismicSurvey]
 
 

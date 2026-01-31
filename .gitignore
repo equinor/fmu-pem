@@ -29,3 +29,4 @@ fmu-pem-schema.json
 /ERT/.runpath_list
 /logs/
 /tests/data/sim2seis/input/pem/venv_ext/
+scripts/debug_lines.py
