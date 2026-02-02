@@ -16,6 +16,7 @@ from pydantic import (
 from pydantic.json_schema import SkipJsonSchema
 from pydantic_core.core_schema import ValidationInfo
 
+from fmu.datamodels.fmu_results.global_configuration import GlobalConfiguration
 from fmu.pem import INTERNAL_EQUINOR
 
 from .enum_defs import (
@@ -567,7 +568,7 @@ class SeismicSurvey(BaseModel):
     depth: dict[str, str] | None = None
 
     @field_validator("ecldate", mode="before")
-    def make_date_strings(cls, v: list[date]) -> list[str]:
+    def convert_ecldate_strings(cls, v: list[date]) -> list[str]:
         return [date_to_string(date) for date in v]
 
 
@@ -584,19 +585,24 @@ class SeismicSection(BaseModel):
 
 class FromGlobal(BaseModel):
     grid_model: str
-    mod_dates: list[str]
-    mod_diffdates: list[list[str]]
-    obs_dates: list[str]
-    obs_diffdates: list[list[str]]
+    mod_dates: list[str] | None = None
+    mod_diffdates: list[list[str]] | None = None
+    obs_dates: list[str] | None = None
+    obs_diffdates: list[list[str]] | None = None
     seismic: SeismicSection
+    global_config: GlobalConfiguration
 
     @field_validator("mod_dates", "obs_dates", mode="before")
-    def make_date_strings(cls, v: list[date]) -> list[str]:
-        return [date_to_string(date) for date in v]
+    def make_date_strings(cls, v: list[date]) -> list[str] | None:
+        if v:
+            return [date_to_string(date) for date in v]
+        return None
 
     @field_validator("mod_diffdates", "obs_diffdates", mode="before")
-    def make_diffdate_strings(cls, v: list[list[str]]) -> list[list[str]]:
-        return [[date_to_string(date) for date in diffdate] for diffdate in v]
+    def make_diffdate_strings(cls, v: list[list[str]]) -> list[list[str]] | None:
+        if v:
+            return [[date_to_string(date) for date in diffdate] for diffdate in v]
+        return None
 
 
 class PemPaths(BaseModel):

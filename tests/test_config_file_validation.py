@@ -37,6 +37,29 @@ def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
             _ = read_pem_config(pem_config_file_name)
 
 
+def test_validate_new_pem_config_multizone_no_prefix(testdata, monkeypatch, data_dir):
+    run_folder = data_dir / "sim2seis" / "model"
+    monkeypatch.chdir(run_folder)
+    global_dir = "../../fmuconfig/output"
+    global_file = "global_variables.yml"
+    pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate_multi.yml")
+    if INTERNAL_EQUINOR:
+        try:
+            config = read_pem_config(pem_config_file_name)
+            # Read necessary part of global configurations and parameters
+            config.update_with_global(
+                get_global_params_and_dates(
+                    global_config_dir=(run_folder / global_dir).resolve(),
+                    global_conf_file=global_file,
+                )
+            )
+        except Exception as e:
+            pytest.fail(f"Validation failed: {e}")
+    else:
+        with pytest.raises(NotImplementedError):
+            _ = read_pem_config(pem_config_file_name)
+
+
 def test_validate_new_pem_config_condensate(testdata, monkeypatch, data_dir):
     monkeypatch.chdir(data_dir / "sim2seis" / "model")
     pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate.yml")
