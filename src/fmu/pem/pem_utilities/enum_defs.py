@@ -27,7 +27,6 @@ class FluidMixModel(str, Enum):
 
 
 class SaveTypes(str, Enum):
-    SAVE_TO_RMS = "save_results_to_rms"
     SAVE_TO_DISK = "save_results_to_disk"
     SAVE_INTERMEDIATE_RESULTS = "save_intermediate_results"
     SAVE_RESULTS_TO_CSV = "save_results_to_csv"

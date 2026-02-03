@@ -4,8 +4,7 @@
 The FMU `pem` workflow calculates elastic parameters based on input from reservoir simulator results, model selections
 and constant parameters. `pem` is an important step in the FMU `sim2seis` workflow, see [sim2seis documentation](https://equinor.github.io/fmu-sim2seis/).
 
-Whilst `pem` can be run as an independent tool, its primary use is as part of the `sim2seis` workflow. This is
-described in a chapter below.
+Whilst `pem` can be run as an independent tool, its primary use is as part of the `sim2seis` workflow. This is described in a chapter below.
 
 `pem` performs of the following tasks:
 

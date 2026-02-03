@@ -18,12 +18,9 @@ from .utils import _verify_export_inputs, restore_dir
 
 def save_results(
     config_dir: Path,
-    run_from_rms_flag: bool,
-    rms_project: object,
     sim_grid: xtgeo.grid3d.Grid,
     grid_name: str,
     seis_dates: list[str],
-    save_to_rms: bool,
     save_to_disk: bool,
     save_intermediate: bool,
     mandatory_path: Path,
@@ -42,12 +39,9 @@ def save_results(
 
     Args:
         config_dir: initial directory setting
-        run_from_rms_flag: call to PEM from RMS
-        rms_project: RMS project
         sim_grid: grid definition
         grid_name: stem of output grid name
         seis_dates: list of dates for simulation runs
-        save_to_rms: save results to RMS project
         save_to_disk: save non-mandatory results to disk
         save_intermediate: save intermediate calculations to disk
         mandatory_path: path for mandatory output
@@ -85,37 +79,12 @@ def save_results(
         export_format="grdecl",
     )
 
-    # 2. Save results to rms and/or disk according to config file
+    # 2. Save results to disk according to config file
 
     # create list of dict from list of pressure and saturated rock objects
     eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
     sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]
 
-    try:
-        if save_to_rms and run_from_rms_flag:
-            # Time dependent absolute properties
-            for props in [eff_pres_dict_list, sat_prop_dict_list]:
-                prop_dict = list(props)
-                export_results_roxar(
-                    prj=rms_project,
-                    result_props=prop_dict,
-                    grid=sim_grid,
-                    rms_grid_name=grid_name,
-                    time_steps=seis_dates,
-                )
-            # Difference properties
-            export_results_roxar(
-                prj=rms_project,
-                result_props=difference_props,
-                grid=sim_grid,
-                rms_grid_name=grid_name,
-                time_steps=difference_date_strs,
-            )
-    except KeyError:  # warn user that results are not saved
-        warnings.warn(
-            f"{__file__}: no parameter for saving results to rms is found in the "
-            f"config file"
-        )
     try:
         if save_to_disk:
             for props in [eff_pres_dict_list, sat_prop_dict_list]:
@@ -169,63 +138,6 @@ def save_results(
         # just skip silently if save_intermediate_results is not present in the
         # pem_config
         pass
-    return
-
-
-def export_results_roxar(
-    prj: object,
-    result_props: list[dict] | dict,
-    grid: xtgeo.grid3d.Grid,
-    rms_grid_name: str,
-    time_steps: list[str] | None = None,
-    name_suffix: str = "",
-    force_write_grid: bool = False,
-) -> None:
-    """Export results directly to RMS. Properties to be exported can be with time-steps
-        or single
-
-    Args:
-        prj: rms project
-        result_props: properties, list of or single dict, with numpy masked array
-            values
-        grid: 3D grid definition
-        rms_grid_name: name of grid within rms project
-        time_steps: list of simulation model dates, None if properties is not linked to
-            a simulation model date
-        name_suffix: extra suffix for variable names
-        force_write_grid: lag to overwrite grid model in RMS
-
-    Returns:
-        None
-    """
-    result_props, time_steps = _verify_export_inputs(result_props, grid, time_steps)
-    if force_write_grid:
-        grid.to_roxar(prj, rms_grid_name)  # type: ignore
-    else:
-        _verify_gridmodel(prj, rms_grid_name, grid)
-    for props, step in zip(result_props, time_steps):  # type: ignore
-        if step != "":
-            step = "_" + step
-        for key, value in props.items():
-            grid_property_name = key.upper() + name_suffix + step
-            grid_prop = xtgeo.grid3d.GridProperty(
-                grid, values=value, name=grid_property_name, date=step
-            )
-            grid_prop.to_roxar(prj, rms_grid_name, grid_property_name)  # type: ignore
-    return
-
-
-def _verify_gridmodel(prj: object, rms_grid_model_name: str, grid: xtgeo.grid3d.Grid):
-    if hasattr(prj, "grid_models"):
-        for model in prj.grid_models:
-            if model.name == rms_grid_model_name:
-                return
-        grid.to_roxar(prj, rms_grid_model_name)  # type: ignore
-    else:
-        raise AttributeError(
-            f'{__file__}: RMS project object does not have "grid_model" attribute '
-            f"({print(prj)})s"
-        )
     return
 
 

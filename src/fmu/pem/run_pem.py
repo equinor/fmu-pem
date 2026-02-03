@@ -8,8 +8,6 @@ from fmu.pem import pem_utilities as pem_utils
 def pem_fcn(
     config: pem_utils.PemConfig,
     config_dir: Path,
-    run_from_rms=False,
-    proj=None,
 ) -> None:
     """
     Run script for extended petro elastic module within sim2seis. Parameters in
@@ -88,15 +86,12 @@ def pem_fcn(
         props=sat_rock_props,
     )
 
-    # Save results to disk or RMS project according to settings in the PEM config
+    # Save results to disk according to settings in the PEM config
     pem_utils.save_results(
         config_dir=config_dir,
-        run_from_rms_flag=run_from_rms,
-        rms_project=proj,
         sim_grid=sim_grid,
         grid_name=config.global_params.grid_model,
         seis_dates=config.global_params.mod_dates,
-        save_to_rms=config.results.save_results_to_rms,
         save_to_disk=config.results.save_results_to_disk,
         save_intermediate=config.results.save_intermediate_results,
         mandatory_path=config.paths.rel_path_mandatory_output,

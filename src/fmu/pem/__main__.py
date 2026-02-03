@@ -56,21 +56,6 @@ def main(args_list=None):
         required=True,
         help="Global seismic section: Prefix for seismic dates for modelled data",
     )
-    parser.add_argument(
-        "-r",
-        "--run-from-rms",
-        type=bool,
-        required=False,
-        default=False,
-        help="Is PEM run as part of an RMS workflow?",
-    )
-    parser.add_argument(
-        "-s",
-        "--rms-project",
-        required=False,
-        default=None,
-        help="In case PEM is called from RMS: RMS project",
-    )
     args = parser.parse_args(args_list)
     cwd = args.config_dir.absolute()
     if str(cwd).endswith("sim2seis/model"):
@@ -97,8 +82,6 @@ def main(args_list=None):
         pem_fcn(
             config=config,
             config_dir=run_folder,
-            run_from_rms=args.run_from_rms,
-            proj=args.rms_project,
         )
 
 
