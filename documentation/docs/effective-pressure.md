@@ -12,7 +12,7 @@ provided by drilling or operational geology disciplines, and for most fields, it
 or in some cases one model per structure in the field. The relationship between overburden, formation and effective
 pressures is given as:
 
-$$P_{eff} = P_{ob} - \alpha \cdot P_f$$,
+$$P_{eff} = P_{ob} - \alpha \cdot P_f$$
 
 where $\alpha$ is the formation factor, also known as the Biot coefficient.
 

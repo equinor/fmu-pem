@@ -38,3 +38,15 @@ from the asset, it is highly likely that wrong assumptions are made. The main re
 | Production history         | Reservoir Engineering, Production Engineering               | Historical production data for model validation                         |
 
 <span id="table-1-discipline-topics"><strong>Table 1:</strong> Topics that should be coordinated between disciplines during PEM calibration.</span>
+
+## Command-line runs
+
+PEM can be called from ERT, run as an external command in RMS, or run from command-line.
+In all cases, there is a number of required call arguments that must be provided:
+
+```shell
+> # Go to top of the project structure
+> cd /project/fmu/tutorial/drogon/resmod/ff/users/hfle/dev
+> # Call PEM, `--help` will show all call arguments
+> pem --help
+> pem -c ./sim2seis/model -f new_pem_config.yml -g ../../fmuconfig/output -o global_variables.yml -m ./sim2seis/model --mod-date-prefix HIST
