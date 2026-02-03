@@ -642,11 +642,6 @@ class PemPaths(BaseModel):
 
 
 class Results(BaseModel):
-    save_results_to_rms: bool = Field(
-        default=False,
-        description="When the PEM is run from RMS, the results can be saved "
-        "directly to the RMS project",
-    )
     save_results_to_disk: bool = Field(
         default=True,
         description="Results must be saved to disk for use in sim2seis setting etc",

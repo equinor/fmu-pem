@@ -1,5 +1,4 @@
-# Paths: relative paths to directories within the RMS/sim2seis folder structure. The initial path
-# is set in the PEM run script
+# Paths: relative paths to directories within the FMU/sim2seis folder structure. The initial path is set in the PEM run script
 paths:
 #  rel_path_output: ../../share/results/grids
 #  rel_path_mandatory_output ../../sim2seis/output/pem
@@ -168,7 +167,6 @@ pressure:
 
 # Settings for saving results
 results:
-  save_results_to_rms: False  # This will only work if PEM is run from an RMS-workflow
   save_results_to_disk: True
   save_intermediate_results: True
 
