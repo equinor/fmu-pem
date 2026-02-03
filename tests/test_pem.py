@@ -82,8 +82,6 @@ def test_pem_main(data_dir, monkeypatch):
                 "global_variables.yml",
                 "--model-dir",
                 str((data_dir / "sim2seis" / "model").resolve()),
-                "--obs-date-prefix",
-                "HIST",
                 "--mod-date-prefix",
                 "HIST",
             ]
@@ -101,8 +99,6 @@ def test_pem_main(data_dir, monkeypatch):
                 "global_variables.yml",
                 "--model-dir",
                 str((data_dir / "sim2seis" / "model").resolve()),
-                "--obs-date-prefix",
-                "HIST",
                 "--mod-date-prefix",
                 "HIST",
             ]

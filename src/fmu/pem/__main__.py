@@ -50,13 +50,6 @@ def main(args_list=None):
         "needed for command line run",
     )
     parser.add_argument(
-        "-p",
-        "--obs-date-prefix",
-        type=str,
-        required=True,
-        help="Global seismic section: Prefix for seismic dates for observed data",
-    )
-    parser.add_argument(
         "-q",
         "--mod-date-prefix",
         type=str,
@@ -99,7 +92,6 @@ def main(args_list=None):
                 global_config_dir=(run_folder / args.global_dir).resolve(),
                 global_conf_file=args.global_file,
                 mod_prefix=args.mod_date_prefix,
-                obs_prefix=args.obs_date_prefix,
             )
         )
         pem_fcn(
