@@ -10,7 +10,7 @@ from ert import (
     ForwardModelStepValidationError,
 )
 
-from fmu.pem.pem_utilities import parse_arguments, read_pem_config
+from fmu.pem.pem_utilities import parse_arguments, read_pem_config, restore_dir
 
 
 class PetroElasticModel(ForwardModelStepPlugin):
@@ -44,8 +44,8 @@ class PetroElasticModel(ForwardModelStepPlugin):
         args = parse_arguments(fm_step_json["argList"])
 
         try:
-            os.chdir(args.config_dir)
-            _ = read_pem_config(args.config_file)
+            with restore_dir(args.config_dir):
+                _ = read_pem_config(args.config_file)
         except Exception as e:
             raise ForwardModelStepValidationError(f"pem validation failed:\n {str(e)}")
 
@@ -59,7 +59,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
             examples="""
 .. code-block:: console
 
-  FORWARD_MODEL PEM(<CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DiR>=../../fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MODEL_DIR>=/my_fmu_structure/sim2seis/model, <MOD_DATE_PREFIX>=HIST)
+  FORWARD_MODEL PEM(<CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DIR>=../../fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MOD_DATE_PREFIX>=HIST)
 
 """,  # noqa: E501,
         )

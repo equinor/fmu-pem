@@ -80,8 +80,6 @@ def test_pem_main(data_dir, monkeypatch):
                 "../../fmuconfig/output",
                 "--global-file",
                 "global_variables.yml",
-                "--model-dir",
-                str((data_dir / "sim2seis" / "model").resolve()),
                 "--mod-date-prefix",
                 "HIST",
             ]
@@ -97,8 +95,6 @@ def test_pem_main(data_dir, monkeypatch):
                 "../../fmuconfig/output",
                 "--global-file",
                 "global_variables.yml",
-                "--model-dir",
-                str((data_dir / "sim2seis" / "model").resolve()),
                 "--mod-date-prefix",
                 "HIST",
             ]

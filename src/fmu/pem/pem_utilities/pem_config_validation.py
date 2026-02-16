@@ -203,7 +203,8 @@ class RockMatrixProperties(BaseModel):
         "mineral must be defined in the mineral properties dictionary"
     )
     shale_fractions: list[str] = Field(
-        description="List the fractions that should be regarded as non-net reservoir"
+        description="List the names of volume fractions (`fraction names`) that should "
+        "be regarded as non-net reservoir"
     )
     complement: str = Field(
         description="For grid cells where the sum of the fractions does not add "

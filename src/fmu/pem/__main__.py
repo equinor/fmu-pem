@@ -1,8 +1,4 @@
-# pylint: disable=missing-module-docstring
-import argparse
 import sys
-from pathlib import Path
-from typing import Any
 from warnings import warn
 
 from .pem_utilities import (
@@ -18,43 +14,7 @@ def main(args_list=None):
     if args_list is None:
         args_list = sys.argv[1:]
     args = parse_arguments(args_list)
-    # parser = argparse.ArgumentParser(__file__)
-    # parser.add_argument(
-    #     "-c",
-    #     "--config-dir",
-    #     type=Path,
-    #     required=True,
-    #     help="Path to config file (required)",
-    # )
-    # parser.add_argument(
-    #     "-f",
-    #     "--config-file",
-    #     type=Path,
-    #     required=True,
-    #     help="Configuration yaml file name (required)",
-    # )
-    # parser.add_argument(
-    #     "-g",
-    #     "--global-dir",
-    #     type=Path,
-    #     required=True,
-    #     help="Relative path to global config file (required)",
-    # )
-    # parser.add_argument(
-    #     "-o",
-    #     "--global-file",
-    #     type=Path,
-    #     required=True,
-    #     help="Global configuration yaml file name (required)",
-    # )
-    # parser.add_argument(
-    #     "-q",
-    #     "--mod-date-prefix",
-    #     type=str,
-    #     required=True,
-    #     help="Global seismic section: Prefix for seismic dates for modelled data",
-    # )
-    # args = parser.parse_args(args_list)
+
     cwd = args.config_dir.absolute()
     if str(cwd).endswith("sim2seis/model"):
         run_folder = cwd

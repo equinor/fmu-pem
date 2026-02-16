@@ -2,19 +2,6 @@ import argparse
 from pathlib import Path
 
 
-def _str2bool(value: object) -> bool:
-    if isinstance(value, bool):
-        return value
-    text = str(value).strip().lower()
-    if text in {"1", "true", "t", "yes", "y", "on"}:
-        return True
-    if text in {"0", "false", "f", "no", "n", "off"}:
-        return False
-    raise argparse.ArgumentTypeError(
-        f"Invalid boolean value: {value!r}. Expected true/false."
-    )
-
-
 def parse_arguments(
     arguments: list[str],
 ) -> argparse.Namespace:
@@ -27,7 +14,10 @@ def parse_arguments(
         "--config-dir",
         type=Path,
         required=True,
-        help="Path to config directory (required), should end with 'sim2seis/model'",
+        help=(
+            "Path to config directory (required). This can be the 'sim2seis/model' "
+            "directory itself or a parent directory containing it."
+        ),
     )
     parser.add_argument(
         "-f",
@@ -41,7 +31,7 @@ def parse_arguments(
         "--global-dir",
         type=Path,
         required=True,
-        help="Relative path to global config file (required)",
+        help="Relative path to global config directory (required)",
     )
     parser.add_argument(
         "-o",
