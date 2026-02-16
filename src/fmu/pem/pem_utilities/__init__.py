@@ -1,3 +1,4 @@
+from .argument_parser import parse_arguments
 from .cumsum_properties import calculate_diff_properties
 from .delta_cumsum_time import (
     estimate_delta_time,
@@ -65,6 +66,7 @@ __all__ = [
     "input_num_string_to_list",
     "missing_num_areas",
     "num_boolean_array",
+    "parse_arguments",
     "read_pem_config",
     "read_sim_grid_props",
     "restore_dir",

@@ -5,58 +5,56 @@ from pathlib import Path
 from typing import Any
 from warnings import warn
 
-from .pem_utilities import get_global_params_and_dates, read_pem_config, restore_dir
+from .pem_utilities import (
+    get_global_params_and_dates,
+    parse_arguments,
+    read_pem_config,
+    restore_dir,
+)
 from .run_pem import pem_fcn
 
 
 def main(args_list=None):
     if args_list is None:
         args_list = sys.argv[1:]
-    parser = argparse.ArgumentParser(__file__)
-    parser.add_argument(
-        "-c",
-        "--config-dir",
-        type=Path,
-        required=True,
-        help="Path to config file (required)",
-    )
-    parser.add_argument(
-        "-f",
-        "--config-file",
-        type=Path,
-        required=True,
-        help="Configuration yaml file name (required)",
-    )
-    parser.add_argument(
-        "-g",
-        "--global-dir",
-        type=Path,
-        required=True,
-        help="Relative path to global config file (required)",
-    )
-    parser.add_argument(
-        "-o",
-        "--global-file",
-        type=Path,
-        required=True,
-        help="Global configuration yaml file name (required)",
-    )
-    parser.add_argument(
-        "-m",
-        "--model-dir",
-        type=Path,
-        required=False,
-        help="For ERT run: Absolute directory name for model file, pre-experiment. Not "
-        "needed for command line run",
-    )
-    parser.add_argument(
-        "-q",
-        "--mod-date-prefix",
-        type=str,
-        required=True,
-        help="Global seismic section: Prefix for seismic dates for modelled data",
-    )
-    args = parser.parse_args(args_list)
+    args = parse_arguments(args_list)
+    # parser = argparse.ArgumentParser(__file__)
+    # parser.add_argument(
+    #     "-c",
+    #     "--config-dir",
+    #     type=Path,
+    #     required=True,
+    #     help="Path to config file (required)",
+    # )
+    # parser.add_argument(
+    #     "-f",
+    #     "--config-file",
+    #     type=Path,
+    #     required=True,
+    #     help="Configuration yaml file name (required)",
+    # )
+    # parser.add_argument(
+    #     "-g",
+    #     "--global-dir",
+    #     type=Path,
+    #     required=True,
+    #     help="Relative path to global config file (required)",
+    # )
+    # parser.add_argument(
+    #     "-o",
+    #     "--global-file",
+    #     type=Path,
+    #     required=True,
+    #     help="Global configuration yaml file name (required)",
+    # )
+    # parser.add_argument(
+    #     "-q",
+    #     "--mod-date-prefix",
+    #     type=str,
+    #     required=True,
+    #     help="Global seismic section: Prefix for seismic dates for modelled data",
+    # )
+    # args = parser.parse_args(args_list)
     cwd = args.config_dir.absolute()
     if str(cwd).endswith("sim2seis/model"):
         run_folder = cwd
