@@ -38,6 +38,7 @@ export default defineConfig({
                             {text: 'Model file formats', link: '/model-file-formats'},
                         ]
                     },
+                    {text: 'Command-line-runs', link: 'command-line-runs'},
                     {text: 'ERT configuration', link: '/ert-configuration'},
                     {text: 'PEM configuration', link: '/pem-configuration'}
                 ]
