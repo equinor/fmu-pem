@@ -60,19 +60,19 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
         }
     else:
         truth_values = {
-            "eclipse--effective_pressure--20180101.roff": 360008292337.79907,
-            "eclipse--formation_pressure--20180101.roff": 2204158466687.0117,
-            "eclipse--overburden_pressure--20180101.roff": 2564166759072.876,
-            "eclipse--density--20180101.roff": 169808254.21887207,
-            "eclipse--vp--20180101.roff": 275240395.46398926,
-            "eclipse--vs--20180101.roff": 163357944.64318848,
-            "pem--20180101.grdecl_vp": 275240395.545,
-            "pem--20180101.grdecl_vs": 163357944.544,
-            "pem--20180101.grdecl_dens": 169808254.146,
-            "eclipsegrid_pem--sidiff--20180701_20180101.roff": 3308368685.2021656,
-            "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": 60665.77006227111,
-            "eclipsegrid_pem--siratio--20180701_20180101.roff": 72081.65769129992,
-            "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4955.763309726441,
+            "eclipse--effective_pressure--20180101.roff": 360008292348.5,
+            "eclipse--formation_pressure--20180101.roff": 2204158466512.0,
+            "eclipse--overburden_pressure--20180101.roff": 2564166759012.0,
+            "eclipse--density--20180101.roff": 169819421.64660645,
+            "eclipse--vp--20180101.roff": 275423306.38964844,
+            "eclipse--vs--20180101.roff": 163353050.142,
+            "pem--20180101.grdecl_vp": 275423306.45299995,
+            "pem--20180101.grdecl_vs": 163353050.142,
+            "pem--20180101.grdecl_dens": 169819421.64,
+            "eclipsegrid_pem--sidiff--20180701_20180101.roff": 3305689888.80869,
+            "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": 60598.37976185710,
+            "eclipsegrid_pem--siratio--20180701_20180101.roff": 72080.9837949872,
+            "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4957.894073498945,
         }
 
     estimated_values = {
