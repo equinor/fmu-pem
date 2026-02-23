@@ -32,7 +32,7 @@ dependencies = [
     "fmu-config",
     "fmu-dataio",
     "fmu-datamodels",
-    "rock-physics-open >= 0.3.3",
+    "rock-physics-open >= 0.6.0",
     "PyYAML >=6.0.1",
     "pydantic",
     "ert >= 14.1.10",
