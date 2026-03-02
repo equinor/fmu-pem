@@ -138,7 +138,7 @@ def run_friable(
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
 
         # Restore original size and shape
-        vp, vs, rho_sat, k_dry, mu, rho_dry = reverse_filter_and_restore(
+        vp, vs, rho_sat, k_dry, mu, rho_dry_tmp = reverse_filter_and_restore(
             mask, vp, vs, rho_sat, k_dry, mu, rho_dry
         )
         # Add results to list
@@ -147,7 +147,7 @@ def run_friable(
             DryRockProperties(
                 bulk_modulus=k_dry,
                 shear_modulus=mu,
-                density=(1.0 - tmp_por) * tmp_min_rho,
+                density=rho_dry_tmp,
             )
         )
 
