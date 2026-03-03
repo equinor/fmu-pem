@@ -146,15 +146,15 @@ def run_patchy_cement(
         rho_sat = rho_dry + tmp_por * tmp_fl_prop_rho
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
 
-        vp, vs, rho_sat, k_dry, mu, rho_dry = reverse_filter_and_restore(
+        vp, vs, rho_sat, k_dry_out, mu_out, rho_dry_out = reverse_filter_and_restore(
             mask, vp, vs, rho_sat, k_dry, mu, rho_dry
         )
         saturated_props.append(SaturatedRockProperties(vp=vp, vs=vs, density=rho_sat))
         dry_props.append(
             DryRockProperties(
-                bulk_modulus=k_dry,
-                shear_modulus=mu,
-                density=rho_dry,
+                bulk_modulus=k_dry_out,
+                shear_modulus=mu_out,
+                density=rho_dry_out,
             )
         )
     return saturated_props, dry_props

@@ -347,11 +347,9 @@ class RegressionPressureSensitivity(BaseModel):
     @field_validator("parameters", mode="before")
     @classmethod
     def check_parameters(cls, v: dict, info: ValidationInfo) -> dict:
-        for key, value in v.items():
+        for key in v:
             if key not in list(ParameterTypes):
                 raise ValueError(f"unknown pressure parameter: {key}")
-            if not isinstance(value, (ExpParams, PolyParams)):
-                raise ValueError(f"unknown pressure parameter type: {value}")
         return v
 
     @model_validator(mode="after")
