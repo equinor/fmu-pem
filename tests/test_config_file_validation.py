@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import pytest
@@ -119,8 +120,6 @@ def test_read_pem_config_pre_experiment_skips_filesystem_checks(
     succeed and still enforce non-filesystem validators (e.g. numeric ranges,
     fluid parameters).
     """
-    import shutil
-
     # Create a bare directory structure that only contains the model YAML file,
     # without any realization subdirectories (no sim2seis/input/pem, output/pem, etc.)
     bare_root = tmp_path / "bare"

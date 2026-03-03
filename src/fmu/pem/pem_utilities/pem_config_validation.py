@@ -83,7 +83,9 @@ class EclipseFiles(BaseModel):
         ]:
             full_name = self.rel_path_simgrid / sim_file
             if not full_name.exists():
-                raise FileNotFoundError(f"fraction prop file is missing: {full_name}")
+                raise FileNotFoundError(
+                    f"Reservoir simulation file is missing: {full_name}"
+                )
         return self
 
 
