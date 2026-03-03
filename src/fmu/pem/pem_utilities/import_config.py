@@ -97,11 +97,17 @@ def get_global_params_and_dates(
     return return_dict
 
 
-def read_pem_config(yaml_file: Path) -> PemConfig:
+def read_pem_config(yaml_file: Path, pre_experiment: bool = False) -> PemConfig:
     """Read PEM specific parameters
 
     Args:
         yaml_file: file name for PEM parameters
+        pre_experiment: when True, realization-specific filesystem validators
+            (directory/file existence checks) are skipped. This is intended for
+            use from ERT's ``validate_pre_experiment`` hook, where the
+            per-realization directory tree has not yet been created. Non-path
+            validators (type checks, numeric ranges, etc.) still run normally.
+            Defaults to False.
 
     Returns:
         PemConfig object with PEM parameters
@@ -116,4 +122,4 @@ def read_pem_config(yaml_file: Path) -> PemConfig:
 
     with yaml_file.open() as f:
         data = yaml.load(f, Loader=yaml.Loader)
-    return PemConfig(**data)
+    return PemConfig.model_validate(data, context={"pre_experiment": pre_experiment})
