@@ -8,7 +8,6 @@ from pydantic import (
     AliasChoices,
     BaseModel,
     ConfigDict,
-    DirectoryPath,
     Field,
     field_validator,
     model_validator,
@@ -49,7 +48,7 @@ REGEX_FIPNUM_PVTNUM = r"^(?:\*|(?:\d+(?:-\d+)?)(?:,(?:\d+(?:-\d+)?))*)$"
 
 
 class EclipseFiles(BaseModel):
-    rel_path_simgrid: DirectoryPath = Field(
+    rel_path_simgrid: Path = Field(
         default=Path("../../sim2seis/input/pem"),
         description="Relative path of the simulation grid",
     )
@@ -67,7 +66,16 @@ class EclipseFiles(BaseModel):
     )
 
     @model_validator(mode="after")
-    def check_fractions(self) -> Self:
+    def check_eclipse_files_exist(self, info: ValidationInfo) -> Self:
+        pre_experiment = (
+            info.context.get("pre_experiment", False) if info.context else False
+        )
+        if pre_experiment:
+            return self
+        if not self.rel_path_simgrid.exists():
+            raise FileNotFoundError(
+                f"simulation grid directory is missing: {self.rel_path_simgrid}"
+            )
         for sim_file in [
             self.egrid_file,
             self.init_property_file,
@@ -80,7 +88,7 @@ class EclipseFiles(BaseModel):
 
 
 class FractionFiles(BaseModel):
-    rel_path_fractions: DirectoryPath = Field(
+    rel_path_fractions: Path = Field(
         default=Path("../../sim2seis/input/pem"),
         description="Directory for volume fractions",
     )
@@ -95,7 +103,16 @@ class FractionFiles(BaseModel):
     )
 
     @model_validator(mode="after")
-    def check_fractions(self) -> Self:
+    def check_fraction_files_exist(self, info: ValidationInfo) -> Self:
+        pre_experiment = (
+            info.context.get("pre_experiment", False) if info.context else False
+        )
+        if pre_experiment:
+            return self
+        if not self.rel_path_fractions.exists():
+            raise FileNotFoundError(
+                f"fractions directory is missing: {self.rel_path_fractions}"
+            )
         for frac_prop in self.fractions_prop_file_names:
             full_fraction_prop = self.rel_path_fractions / frac_prop
             if not full_fraction_prop.exists():
@@ -607,34 +624,34 @@ class FromGlobal(BaseModel):
 
 
 class PemPaths(BaseModel):
-    rel_path_mandatory_output: SkipJsonSchema[DirectoryPath] = Field(
+    rel_path_mandatory_output: SkipJsonSchema[Path] = Field(
         default=Path("../../sim2seis/output/pem"),
         description="Directory of PEM results that will be used as input "
         "to seismic_forward",
         frozen=True,
     )
-    rel_path_output: SkipJsonSchema[DirectoryPath] = Field(
+    rel_path_output: SkipJsonSchema[Path] = Field(
         default=Path("../../share/results/grids"),
         description="Directory for grid parameter results from PEM for "
         "later visualization",
         frozen=True,
     )
-    rel_path_pem: SkipJsonSchema[DirectoryPath] = Field(
+    rel_path_pem: SkipJsonSchema[Path] = Field(
         default=Path("../../sim2seis/model"),
         description="Relative path to the directory containing the PEM's config file",
         frozen=True,
     )
-    rel_path_fmu_config: SkipJsonSchema[DirectoryPath] = Field(
+    rel_path_fmu_config: SkipJsonSchema[Path] = Field(
         default=Path("../../fmuconfig/output"),
         description="Relative path to the directory containing the global config "
         "file for the FMU workflow",
         frozen=True,
     )
-    rel_path_simgrid: SkipJsonSchema[DirectoryPath] = Field(
+    rel_path_simgrid: SkipJsonSchema[Path] = Field(
         default=Path("../../sim2seis/input/pem"),
         description="Directory for eclipse simulation grid",
     )
-    rel_path_geogrid: SkipJsonSchema[DirectoryPath] = Field(
+    rel_path_geogrid: SkipJsonSchema[Path] = Field(
         default=Path("../../sim2seis/input/pem"),
         description="If the porosity property is read from geogrid instead of from "
         "simgrid, this directory is used. At present, porosity is expected "
@@ -698,8 +715,13 @@ class PemConfig(BaseModel):
 
     @field_validator("paths", mode="before")
     def check_and_create_directories(cls, v: dict, info: ValidationInfo):
+        pre_experiment = (
+            info.context.get("pre_experiment", False) if info.context else False
+        )
         if v is None:
             return PemPaths()
+        if pre_experiment:
+            return v
         for key, path in v.items():
             if key == "rel_path_intermed_output" or key == "rel_path_output":
                 os.makedirs(path, exist_ok=True)
