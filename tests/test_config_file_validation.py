@@ -109,5 +109,44 @@ def test_first_occurrence_with_duplicates():
     assert find_key_first(d, "target") == 0
 
 
+def test_read_pem_config_pre_experiment_skips_filesystem_checks(
+    testdata, monkeypatch, tmp_path
+):
+    """Verify that pre_experiment=True allows config parsing without realization dirs.
+
+    Without realization-specific directories present, pre_experiment=False must raise
+    an exception (filesystem checks fail as expected), while pre_experiment=True must
+    succeed and still enforce non-filesystem validators (e.g. numeric ranges,
+    fluid parameters).
+    """
+    import shutil
+
+    # Create a bare directory structure that only contains the model YAML file,
+    # without any realization subdirectories (no sim2seis/input/pem, output/pem, etc.)
+    bare_root = tmp_path / "bare"
+    bare_model_dir = bare_root / "sim2seis" / "model"
+    bare_model_dir.mkdir(parents=True)
+
+    # Copy the PEM config file into the bare model directory
+    src_config = testdata / "sim2seis" / "model" / "pem_config_no_condensate.yml"
+    shutil.copy(src_config, bare_model_dir / "pem_config_no_condensate.yml")
+
+    # Change to the bare model directory - there are no realization subdirs here
+    monkeypatch.chdir(bare_model_dir)
+    pem_config_file_name = Path("../../sim2seis/model/pem_config_no_condensate.yml")
+
+    # pre_experiment=False should raise because realization directories are absent
+    with pytest.raises(Exception):
+        read_pem_config(pem_config_file_name, pre_experiment=False)
+
+    # pre_experiment=True should succeed without realization directories
+    config = read_pem_config(pem_config_file_name, pre_experiment=True)
+
+    # Non-filesystem validators should still have run: check a few basic fields
+    assert config.fluids is not None
+    assert config.rock_matrix is not None
+    assert config.diff_calculation is not None
+
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main()
