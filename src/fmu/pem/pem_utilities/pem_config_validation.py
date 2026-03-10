@@ -49,7 +49,7 @@ REGEX_FIPNUM_PVTNUM = r"^(?:\*|(?:\d+(?:-\d+)?)(?:,(?:\d+(?:-\d+)?))*)$"
 
 class EclipseFiles(BaseModel):
     rel_path_simgrid: Path = Field(
-        default=Path("../../sim2seis/input/pem"),
+        default=Path("sim2seis/input/pem"),
         description="Relative path of the simulation grid",
     )
     egrid_file: Path = Field(
@@ -91,7 +91,7 @@ class EclipseFiles(BaseModel):
 
 class FractionFiles(BaseModel):
     rel_path_fractions: Path = Field(
-        default=Path("../../sim2seis/input/pem"),
+        default=Path("sim2seis/input/pem"),
         description="Directory for volume fractions",
     )
     fractions_prop_file_names: list[Path] = Field(description="Volume fractions")
@@ -627,34 +627,34 @@ class FromGlobal(BaseModel):
 
 class PemPaths(BaseModel):
     rel_path_mandatory_output: SkipJsonSchema[Path] = Field(
-        default=Path("../../sim2seis/output/pem"),
+        default=Path("sim2seis/output/pem"),
         description="Directory of PEM results that will be used as input "
         "to seismic_forward",
         frozen=True,
     )
     rel_path_output: SkipJsonSchema[Path] = Field(
-        default=Path("../../share/results/grids"),
+        default=Path("share/results/grids"),
         description="Directory for grid parameter results from PEM for "
         "later visualization",
         frozen=True,
     )
     rel_path_pem: SkipJsonSchema[Path] = Field(
-        default=Path("../../sim2seis/model"),
+        default=Path("sim2seis/model"),
         description="Relative path to the directory containing the PEM's config file",
         frozen=True,
     )
     rel_path_fmu_config: SkipJsonSchema[Path] = Field(
-        default=Path("../../fmuconfig/output"),
+        default=Path("fmuconfig/output"),
         description="Relative path to the directory containing the global config "
         "file for the FMU workflow",
         frozen=True,
     )
     rel_path_simgrid: SkipJsonSchema[Path] = Field(
-        default=Path("../../sim2seis/input/pem"),
+        default=Path("sim2seis/input/pem"),
         description="Directory for eclipse simulation grid",
     )
     rel_path_geogrid: SkipJsonSchema[Path] = Field(
-        default=Path("../../sim2seis/input/pem"),
+        default=Path("sim2seis/input/pem"),
         description="If the porosity property is read from geogrid instead of from "
         "simgrid, this directory is used. At present, porosity is expected "
         "to come from the simgrid",

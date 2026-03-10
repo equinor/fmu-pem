@@ -63,7 +63,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
             examples="""
 .. code-block:: console
 
-  FORWARD_MODEL PEM(<CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DIR>=../../fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MOD_DATE_PREFIX>=HIST)
+  FORWARD_MODEL PEM(<CONFIG_DIR>=sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DIR>=fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MOD_DATE_PREFIX>=HIST)
 
 """,  # noqa: E501,
         )

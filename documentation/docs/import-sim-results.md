@@ -12,11 +12,11 @@ file names are also fixed, but they are links/pointers to the actual results fro
 The directory and file names used by `pem` are shown below:
 
 ```yaml
-rel_path_simgrid: ../../sim2seis/input/pem
+rel_path_simgrid: sim2seis/input/pem
 ```
 
 ```shell
-> cd ../../sim2seis/input/pem
+> cd sim2seis/input/pem
 > ls -l ECLIPSE*
 lrwxrwxrwx 1 hfle fmu        36 Jun 26  2024 ECLIPSE.EGRID -> ../../../eclipse/model/ECLIPSE.EGRID
 lrwxrwxrwx 1 hfle fmu        35 Jun 26  2024 ECLIPSE.INIT -> ../../../eclipse/model/ECLIPSE.INIT
@@ -40,7 +40,7 @@ the same grid resolution as the reservoir simulator grid, and in the **.roff** f
 
 ```yaml
   volume_fractions:
-    rel_path_fractions: ../../sim2seis/input/pem
+    rel_path_fractions: sim2seis/input/pem
     fractions_prop_file_names: [simgrid--vsh_pem.roff, ]
     fractions_are_mineral_fraction: False  # volume fractions, not mineral fractions are assumed by default
   fraction_names: [vsh_pem, ]  # matching the names of properties in the fractions properties file

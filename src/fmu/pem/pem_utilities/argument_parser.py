@@ -15,8 +15,8 @@ def parse_arguments(
         type=Path,
         required=True,
         help=(
-            "Path to config directory (required). This can be the 'sim2seis/model' "
-            "directory itself or a parent directory containing it."
+            "Path to config directory (required), normally the 'sim2seis/model' "
+            "directory under the FMU top direectory."
         ),
     )
     parser.add_argument(
@@ -31,7 +31,10 @@ def parse_arguments(
         "--global-dir",
         type=Path,
         required=True,
-        help="Relative path to global config directory (required)",
+        help=(
+            "Path to global config directory (required) relative top the FMU top "
+            "directory"
+        ),
     )
     parser.add_argument(
         "-o",

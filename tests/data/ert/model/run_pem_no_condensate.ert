@@ -5,7 +5,8 @@ NUM_REALIZATIONS 1
 -- PEM parameter setting
 DEFINE <PEM_PATH> <CONFIG_PATH>/../../sim2seis/model
 DEFINE <PEM_CONFIG_FILE_NAME> pem_config_no_condensate.yml
-DEFINE <GLOBAL_PATH> ../../fmuconfig/output
+RUNPATH <CONFIG_PATH>/../..
+DEFINE <GLOBAL_PATH> fmuconfig/output
 DEFINE <GLOBAL_CONFIG_FILE> global_variables.yml
 DEFINE <MOD_PREFIX> HIST
 
