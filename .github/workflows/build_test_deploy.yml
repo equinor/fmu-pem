@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -27,8 +29,8 @@ jobs:
       - name: Install Dependencies
         run: pip install .[tests]
 
-#      - name: "Format: ruff"
-#        run: ruff format . --diff
+      - name: "Format: ruff"
+        run: ruff format . --diff
 
       - name: "Lint: ruff"
         run: ruff check .
