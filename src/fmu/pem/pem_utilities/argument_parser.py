@@ -50,4 +50,14 @@ def parse_arguments(
         required=True,
         help="Global seismic section: Prefix for seismic dates for modelled data",
     )
+    parser.add_argument(
+        "-m",
+        "--model-dir",
+        type=Path,
+        required=False,
+        help=(
+            "Only required for ERT runs: pointer to the project area's "
+            "`sim2seis/model` folder"
+        ),
+    )
     return parser.parse_args(arguments)
