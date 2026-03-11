@@ -12,13 +12,13 @@ from src.fmu.pem.pem_utilities.import_config import find_key_first
 
 
 def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
-    run_folder = data_dir / "sim2seis" / "model"
+    run_folder = data_dir
     monkeypatch.chdir(run_folder)
-    global_dir = "../../fmuconfig/output"
+    global_dir = "fmuconfig/output"
     global_file = "global_variables.yml"
     obs_date_prefix = "HIST"
     mod_date_prefix = "HIST"
-    pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate_multi.yml")
+    pem_config_file_name = Path("sim2seis/model/pem_config_condensate_multi.yml")
     if INTERNAL_EQUINOR:
         try:
             config = read_pem_config(pem_config_file_name)
@@ -39,11 +39,11 @@ def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
 
 
 def test_validate_new_pem_config_multizone_no_prefix(testdata, monkeypatch, data_dir):
-    run_folder = data_dir / "sim2seis" / "model"
+    run_folder = data_dir
     monkeypatch.chdir(run_folder)
-    global_dir = "../../fmuconfig/output"
+    global_dir = "fmuconfig/output"
     global_file = "global_variables.yml"
-    pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate_multi.yml")
+    pem_config_file_name = Path("sim2seis/model/pem_config_condensate_multi.yml")
     if INTERNAL_EQUINOR:
         try:
             config = read_pem_config(pem_config_file_name)
@@ -62,8 +62,8 @@ def test_validate_new_pem_config_multizone_no_prefix(testdata, monkeypatch, data
 
 
 def test_validate_new_pem_config_condensate(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "sim2seis" / "model")
-    pem_config_file_name = Path("../../sim2seis/model/pem_config_condensate.yml")
+    monkeypatch.chdir(data_dir)
+    pem_config_file_name = Path("sim2seis/model/pem_config_condensate.yml")
     if INTERNAL_EQUINOR:
         try:
             _ = read_pem_config(pem_config_file_name)
@@ -75,8 +75,8 @@ def test_validate_new_pem_config_condensate(testdata, monkeypatch, data_dir):
 
 
 def test_validate_new_pem_config(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "sim2seis" / "model")
-    pem_config_file_name = Path("../../sim2seis/model/pem_config_no_condensate.yml")
+    monkeypatch.chdir(data_dir)
+    pem_config_file_name = Path("sim2seis/model/pem_config_no_condensate.yml")
     try:
         _ = read_pem_config(pem_config_file_name)
     except Exception as e:
@@ -131,8 +131,8 @@ def test_read_pem_config_pre_experiment_skips_filesystem_checks(
     shutil.copy(src_config, bare_model_dir / "pem_config_no_condensate.yml")
 
     # Change to the bare model directory - there are no realization subdirs here
-    monkeypatch.chdir(bare_model_dir)
-    pem_config_file_name = Path("../../sim2seis/model/pem_config_no_condensate.yml")
+    monkeypatch.chdir(bare_root)
+    pem_config_file_name = Path("sim2seis/model/pem_config_no_condensate.yml")
 
     # pre_experiment=False should raise because realization directories are absent
     with pytest.raises(Exception):

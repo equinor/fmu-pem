@@ -23,11 +23,11 @@ except ImportError:
 def test_pem_through_ert(testdata, monkeypatch, data_dir):
     if not INTERNAL_EQUINOR:
         pytest.skip("condensate model requires proprietary code, skipping test")
-    monkeypatch.chdir(data_dir / "sim2seis" / "model")
+    monkeypatch.chdir(data_dir)
     pem_output_path = data_dir / "sim2seis/output/pem"
     share_output_path = data_dir / "share/results/grids"
     subprocess.run(
-        ["ert", "test_run", "../../ert/model/run_pem_condensate.ert"],
+        ["ert", "test_run", "ert/model/run_pem_condensate.ert"],
         check=True,
     )
 

@@ -6,7 +6,7 @@ You can include `fmu-pem` in your ERT setup by including the following snippet:
 -- Define your variables:
 DEFINE <CONFIG_PATH> <RUNPATH>/sim2seis/model
 DEFINE <PEM_CONFIG_FILE_NAME> pem_config.yml
-DEFINE <GLOBAL_CONFIG_DIR> ../../fmuconfig/output
+DEFINE <GLOBAL_CONFIG_DIR> fmuconfig/output
 DEFINE <GLOBAL_CONFIG_FILE> global_variables.yml
 DEFINE <MOD_PREFIX> HIST
 
