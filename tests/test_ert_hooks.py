@@ -20,12 +20,12 @@ except ImportError:
     not HAVE_ERT, reason="ERT is not installed, skipping hook implementation tests."
 )
 def test_pem_through_ert(testdata, monkeypatch, data_dir):
-    monkeypatch.chdir(data_dir / "sim2seis" / "model")
+    monkeypatch.chdir(data_dir)
     pem_output_path = data_dir / "sim2seis/output/pem"
     share_output_path = data_dir / "share/results/grids"
 
     subprocess.run(
-        ["ert", "test_run", "../../ert/model/run_pem_no_condensate.ert"],
+        ["ert", "test_run", "ert/model/run_pem_no_condensate.ert"],
         check=True,
     )
 

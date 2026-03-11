@@ -27,6 +27,8 @@ class PetroElasticModel(ForwardModelStepPlugin):
                 "<GLOBAL_DIR>",
                 "--global-file",
                 "<GLOBAL_FILE>",
+                "--model-dir",
+                "<MODEL_DIR>",
                 "--mod-date-prefix",
                 "<MOD_DATE_PREFIX>",
             ],
@@ -48,7 +50,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
         args = parse_arguments(fm_step_json["argList"])
 
         try:
-            with restore_dir(args.config_dir):
+            with restore_dir(args.model_dir):
                 _ = read_pem_config(args.config_file, pre_experiment=True)
         except Exception as e:
             raise ForwardModelStepValidationError(f"pem validation failed:\n {str(e)}")
@@ -63,7 +65,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
             examples="""
 .. code-block:: console
 
-  FORWARD_MODEL PEM(<CONFIG_DIR>=../../sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DIR>=../../fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MOD_DATE_PREFIX>=HIST)
+  FORWARD_MODEL PEM(<CONFIG_DIR>=<RUNPATH>/sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DIR>=fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MODEL_DIR>=sim2seis/model, <MOD_DATE_PREFIX>=HIST)
 
 """,  # noqa: E501,
         )

@@ -15,8 +15,8 @@ def parse_arguments(
         type=Path,
         required=True,
         help=(
-            "Path to config directory (required). This can be the 'sim2seis/model' "
-            "directory itself or a parent directory containing it."
+            "Path to config directory (required), normally the 'sim2seis/model' "
+            "directory under the FMU top direectory."
         ),
     )
     parser.add_argument(
@@ -31,7 +31,10 @@ def parse_arguments(
         "--global-dir",
         type=Path,
         required=True,
-        help="Relative path to global config directory (required)",
+        help=(
+            "Path to global config directory (required) relative to the FMU top "
+            "directory"
+        ),
     )
     parser.add_argument(
         "-o",
@@ -46,5 +49,15 @@ def parse_arguments(
         type=str,
         required=True,
         help="Global seismic section: Prefix for seismic dates for modelled data",
+    )
+    parser.add_argument(
+        "-m",
+        "--model-dir",
+        type=Path,
+        required=False,
+        help=(
+            "Only required for ERT runs: pointer to the project area's "
+            "`sim2seis/model` folder"
+        ),
     )
     return parser.parse_args(arguments)
