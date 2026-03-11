@@ -32,7 +32,7 @@ def parse_arguments(
         type=Path,
         required=True,
         help=(
-            "Path to global config directory (required) relative top the FMU top "
+            "Path to global config directory (required) relative to the FMU top "
             "directory"
         ),
     )
