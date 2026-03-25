@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from fmu.pem import INTERNAL_EQUINOR
 from fmu.pem.pem_utilities.import_config import (
     find_key_first,
     get_global_params_and_dates,
     read_pem_config,
 )
+from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
 
 def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
@@ -19,7 +19,7 @@ def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
     obs_date_prefix = "HIST"
     mod_date_prefix = "HIST"
     pem_config_file_name = Path("sim2seis/model/pem_config_condensate_multi.yml")
-    if INTERNAL_EQUINOR:
+    if HAS_PROPRIETARY_ROCK_PHYSICS:
         try:
             config = read_pem_config(pem_config_file_name)
             # Read necessary part of global configurations and parameters
@@ -44,7 +44,7 @@ def test_validate_new_pem_config_multizone_no_prefix(testdata, monkeypatch, data
     global_dir = "fmuconfig/output"
     global_file = "global_variables.yml"
     pem_config_file_name = Path("sim2seis/model/pem_config_condensate_multi.yml")
-    if INTERNAL_EQUINOR:
+    if HAS_PROPRIETARY_ROCK_PHYSICS:
         try:
             config = read_pem_config(pem_config_file_name)
             # Read necessary part of global configurations and parameters
@@ -64,7 +64,7 @@ def test_validate_new_pem_config_multizone_no_prefix(testdata, monkeypatch, data
 def test_validate_new_pem_config_condensate(testdata, monkeypatch, data_dir):
     monkeypatch.chdir(data_dir)
     pem_config_file_name = Path("sim2seis/model/pem_config_condensate.yml")
-    if INTERNAL_EQUINOR:
+    if HAS_PROPRIETARY_ROCK_PHYSICS:
         try:
             _ = read_pem_config(pem_config_file_name)
         except Exception as e:

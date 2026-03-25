@@ -5,7 +5,7 @@ from math import isclose
 import pytest
 import xtgeo
 
-from fmu.pem import INTERNAL_EQUINOR
+from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
 try:
     # pylint: disable=unused-import
@@ -42,7 +42,7 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
     assert actnum.sum() == 71475
     assert (grid.actnum_array == actnum).all()
 
-    if INTERNAL_EQUINOR:
+    if HAS_PROPRIETARY_ROCK_PHYSICS:
         truth_values = {
             "eclipse--effective_pressure--20180101.roff": 360008292337.79907,
             "eclipse--formation_pressure--20180101.roff": 2204158466687.0117,

@@ -178,7 +178,6 @@ def run_t_matrix_model(
             )
         if time_step > 0 and rock_matrix.pressure_sensitivity:
             vp, vs, rho, _, _ = carbonate_pressure_model(
-                tmp_fl_rho,
                 vp,
                 vs,
                 rho,

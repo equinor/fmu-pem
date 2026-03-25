@@ -2,11 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from fmu.pem import INTERNAL_EQUINOR, pem, pem_fcn
+from fmu.pem import pem, pem_fcn
 from fmu.pem.pem_utilities import (
     PemConfig,
     get_global_params_and_dates,
     read_pem_config,
+)
+from fmu.pem.pem_utilities.rock_physics_adapter import (
+    HAS_PROPRIETARY_ROCK_PHYSICS,
 )
 
 
@@ -46,7 +49,7 @@ def test_pem_fcn(data_dir, monkeypatch):
 def test_pem_fcn_multi(data_dir, monkeypatch):
     monkeypatch.chdir(data_dir)
 
-    if not INTERNAL_EQUINOR:
+    if not HAS_PROPRIETARY_ROCK_PHYSICS:
         with pytest.raises((NotImplementedError, ImportError)):
             conf, config_dir = setup(
                 data_dir=data_dir,
@@ -69,34 +72,22 @@ def test_pem_fcn_multi(data_dir, monkeypatch):
 
 def test_pem_main(data_dir, monkeypatch):
     monkeypatch.chdir(data_dir)
-
-    if not INTERNAL_EQUINOR:
-        pem(
-            args_list=[
-                "--config-dir",
-                str((data_dir / "sim2seis" / "model").resolve()),
-                "--config-file",
-                "pem_config_no_condensate.yml",
-                "--global-dir",
-                "fmuconfig/output",
-                "--global-file",
-                "global_variables.yml",
-                "--mod-date-prefix",
-                "HIST",
-            ]
-        )
-    else:
-        pem(
-            args_list=[
-                "--config-dir",
-                str((data_dir / "sim2seis" / "model").resolve()),
-                "--config-file",
-                "pem_config_condensate_multi.yml",
-                "--global-dir",
-                "fmuconfig/output",
-                "--global-file",
-                "global_variables.yml",
-                "--mod-date-prefix",
-                "HIST",
-            ]
-        )
+    config_file = (
+        "pem_config_condensate_multi.yml"
+        if HAS_PROPRIETARY_ROCK_PHYSICS
+        else "pem_config_no_condensate.yml"
+    )
+    pem(
+        args_list=[
+            "--config-dir",
+            str((data_dir / "sim2seis" / "model").resolve()),
+            "--config-file",
+            config_file,
+            "--global-dir",
+            "fmuconfig/output",
+            "--global-file",
+            "global_variables.yml",
+            "--mod-date-prefix",
+            "HIST",
+        ]
+    )

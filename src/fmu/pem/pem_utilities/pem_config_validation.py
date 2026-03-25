@@ -16,7 +16,7 @@ from pydantic.json_schema import SkipJsonSchema
 from pydantic_core.core_schema import ValidationInfo
 
 from fmu.datamodels.fmu_results.global_configuration import GlobalConfiguration
-from fmu.pem import INTERNAL_EQUINOR
+from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
 from .enum_defs import (
     CO2Models,
@@ -506,7 +506,7 @@ class PVTZone(BaseModel):
 
     @model_validator(mode="after")
     def check_fluid_type(self) -> Self:
-        if self.calculate_condensate and not INTERNAL_EQUINOR:
+        if self.calculate_condensate and not HAS_PROPRIETARY_ROCK_PHYSICS:
             raise NotImplementedError(
                 "Missing model for condensate, proprietary model required"
             )

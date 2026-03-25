@@ -5,7 +5,7 @@ from math import isclose
 import pytest
 import xtgeo
 
-from fmu.pem import INTERNAL_EQUINOR
+from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
 try:
     # pylint: disable=unused-import
@@ -21,7 +21,7 @@ except ImportError:
     not HAVE_ERT, reason="ERT is not installed, skipping hook implementation tests."
 )
 def test_pem_through_ert(testdata, monkeypatch, data_dir):
-    if not INTERNAL_EQUINOR:
+    if not HAS_PROPRIETARY_ROCK_PHYSICS:
         pytest.skip("condensate model requires proprietary code, skipping test")
     monkeypatch.chdir(data_dir)
     pem_output_path = data_dir / "sim2seis/output/pem"
