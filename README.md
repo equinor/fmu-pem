@@ -27,14 +27,14 @@ prior to running the PEM. Fluid and mineral properties can be found in the RokDo
 project, or from LFP logs, if they are available.
 
 > [!NOTE]
-> The fluid models contained in this module may not cover all possible cases. Gas
-condensate, very heavy oil, > or reservoir pressure under hydrocarbon bubble point will
-need additional proprietary code to run.
+> The fluid models contained in this module may not cover all possible cases.
+> Gas condensate, very heavy oil, or reservoir pressure under hydrocarbon bubble point
+> will need additional proprietary code to run.
 >
 > Equinor users can install additional proprietary models using
-
+>
 > ```bash
-> pip install "git+ssh://git@github.com/equinor/rock-physics"`
+> pip install "git+https://github.com/equinor/rock-physics@v2.0.0"`
 > ```
 
 ## How to develop fmu-pem?

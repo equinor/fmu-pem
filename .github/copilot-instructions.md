@@ -120,8 +120,6 @@ are validated via `read_pem_config` in `import_config.py`.
   known.
 - Test files are named `test_<module>.py`. Keep tests focused on a single
   behaviour per function.
-- Tests that require the internal Equinor `rock-physics` package must be
-  guarded with `if INTERNAL_EQUINOR`.
 
 ---
 

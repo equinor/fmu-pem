@@ -5,12 +5,8 @@ from math import isclose
 from typing import TYPE_CHECKING
 
 import numpy as np
-from rock_physics_open import fluid_models as flag
-from rock_physics_open import span_wagner
 from rock_physics_open.equinor_utilities.std_functions import brie, multi_wood
-from rock_physics_open.fluid_models.oil_model.oil_bubble_point import bp_standing
 
-from fmu.pem import INTERNAL_EQUINOR
 from fmu.pem.pem_utilities import (
     EffectiveFluidProperties,
     Fluids,
@@ -21,14 +17,20 @@ from fmu.pem.pem_utilities.fipnum_pvtnum_utilities import (
     input_num_string_to_list,
     validate_zone_coverage,
 )
+from fmu.pem.pem_utilities.rock_physics_adapter import (
+    HAS_PROPRIETARY_ROCK_PHYSICS,
+    bp_standing,
+    brine_properties,
+    co2_properties,
+    condensate_properties,
+    gas_properties,
+    oil_properties,
+    saturations_below_bubble_point,
+)
 
 if TYPE_CHECKING:
     from fmu.pem.pem_utilities.pem_config_validation import PVTZone
 
-if INTERNAL_EQUINOR:
-    from rock_physics_open.fluid_models import (
-        saturations_below_bubble_point,  # noqa: F821
-    )
 
 # Hard-code the default tolerance limit for fraction of cells below bubble point
 BUBBLE_POINT_FRACTION_TOLERANCE = 0.01
@@ -67,61 +69,50 @@ def _adjust_bubble_point(
     to be taken into account
 
     If below bubble point: evolve saturations, GOR and free gas gravity."""
-    try:
-        bp = bp_standing(
-            density=oil_density_ref,
-            gas_oil_ratio=gor,
-            gas_gravity=oil_gas_gravity,
-            temperature=temp,
-        )
-        # Only consider cells where the oil saturation is positive
-        idx_below = np.logical_and(pres <= bp, so > 0.0)
-        if np.any(idx_below):
-            # More than 1% of cells below bubble point will be regarded as an error
-            # situation if the gas Z-factor is set to default value of 1.0. If the
-            # user modifies the Z-factor, we regard cells below bubble point to be
-            # an expected situation and not an error.
-            frac_below = np.sum(idx_below) / pres.size
-            if frac_below > BUBBLE_POINT_FRACTION_TOLERANCE and isclose(
-                zone.gas_z_factor, 1.0
-            ):
-                raise ValueError(
-                    f"Fraction of cells with pressure below oil bubble point is "
-                    f"{frac_below:.3f}. "
-                    "If you experience this, please raise an issue in "
-                    "https://github.com/equinor/fmu-pem/issues. "
-                    "If this is an expected situation, add a "
-                    "gas Z-factor (deviation from an ideal gas) to the YAML parameter "
-                    "file for each PVTNUM zone, e.g.: 'gas_z_factor: 0.97' "
-                    "The gas Z-factor must deviate from 1.0."
-                )
-            warnings.warn(
-                f"Detected pressure below bubble point for oil in {np.sum(idx_below)} "
-                f"cells, this is {frac_below:.3f} of total number of cells."
-            )
-    except NotImplementedError:
-        warnings.warn("Bubble point function unavailable; assuming above bubble point.")
-        idx_below = np.zeros_like(pres, dtype=bool)
-
+    bp = bp_standing(
+        density=oil_density_ref,
+        gas_oil_ratio=gor,
+        gas_gravity=oil_gas_gravity,
+        temperature=temp,
+    )
+    # Only consider cells where the oil saturation is positive
+    idx_below = np.logical_and(pres <= bp, so > 0.0)
     if np.any(idx_below):
-        try:
-            sg, so, gor, free_gas_gravity = saturations_below_bubble_point(
-                gas_saturation_init=sg,
-                oil_saturation_init=so,
-                brine_saturation_init=sw,
-                gor_init=gor,
-                oil_gas_gravity=oil_gas_gravity,
-                free_gas_gravity=free_gas_gravity,
-                oil_density=oil_density_ref,
-                z_factor=zone.gas_z_factor,
-                pres_depl=pres,
-                temp_res=temp,
+        # More than 1% of cells below bubble point will be regarded as an error
+        # situation if the gas Z-factor is set to default value of 1.0. If the
+        # user modifies the Z-factor, we regard cells below bubble point to be
+        # an expected situation and not an error.
+        frac_below = np.sum(idx_below) / pres.size
+        if frac_below > BUBBLE_POINT_FRACTION_TOLERANCE and isclose(
+            zone.gas_z_factor, 1.0
+        ):
+            raise ValueError(
+                f"Fraction of cells with pressure below oil bubble point is "
+                f"{frac_below:.3f}. "
+                "If you experience this, please raise an issue in "
+                "https://github.com/equinor/fmu-pem/issues. "
+                "If this is an expected situation, add a "
+                "gas Z-factor (deviation from an ideal gas) to the YAML parameter "
+                "file for each PVTNUM zone, e.g.: 'gas_z_factor: 0.97' "
+                "The gas Z-factor must deviate from 1.0."
             )
-        except (NameError, ModuleNotFoundError, NotImplementedError):
-            warnings.warn(
-                "Estimation of oil properties below bubble point requires proprietary "
-                "model. Estimation of oil properties below bubble point are uncertain."
-            )
+        warnings.warn(
+            f"Detected pressure below bubble point for oil in {np.sum(idx_below)} "
+            f"cells, this is {frac_below:.3f} of total number of cells."
+        )
+
+        sg, so, gor, free_gas_gravity = saturations_below_bubble_point(
+            gas_saturation_init=sg,
+            oil_saturation_init=so,
+            brine_saturation_init=sw,
+            gor_init=gor,
+            oil_gas_gravity=oil_gas_gravity,
+            free_gas_gravity=free_gas_gravity,
+            oil_density=oil_density_ref,
+            z_factor=zone.gas_z_factor,
+            pres_depl=pres,
+            temp_res=temp,
+        )
     return sw, sg, so, gor, free_gas_gravity, idx_below
 
 
@@ -131,11 +122,11 @@ def _brine_props(
     salinity: np.ndarray,
     zone: PVTZone,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Estimate brine properties by FLAG or Batzle & Wang model."""
+    """Estimate brine properties."""
     p_na = np.array(zone.brine.perc_na)
     p_ca = np.array(zone.brine.perc_ca)
     p_k = np.array(zone.brine.perc_k)
-    vp, rho, bulk = flag.brine_properties(
+    vp, rho, bulk = brine_properties(
         temperature=temp,
         pressure=pres,
         salinity=salinity,
@@ -153,13 +144,13 @@ def _oil_props(
     oil_density_ref: np.ndarray,
     oil_gas_gravity: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Estimate oil properties by FLAG or Batzle & Wang model."""
-    vp, rho, bulk = flag.oil_properties(
+    """Estimate oil properties."""
+    vp, rho, bulk = oil_properties(
         temperature=temp,
         pressure=pres,
-        gas_gravity=oil_gas_gravity,
         rho0=oil_density_ref,
         gas_oil_ratio=gor,
+        gas_gravity=oil_gas_gravity,
     )
     return rho, bulk, vp
 
@@ -170,26 +161,20 @@ def _gas_or_co2_props(
     gas_gravity: np.ndarray,
     zone: PVTZone,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Estimate gas properties by FLAG or Batzle & Wang and co2 properties by
-    FLAG or Span & Wagner model."""
+    """Estimate gas properties or co2 properties."""
     if zone.gas_saturation_is_co2:
-        if zone.co2_model == CO2Models.FLAG and INTERNAL_EQUINOR:
-            vp, rho, bulk = flag.co2_properties(  # noqa: F821
-                temp=temp,
-                pres=pres,
-            )
-        else:
-            vp, rho, bulk = span_wagner.co2_properties(
-                temp=temp,
-                pres=pres,
-            )
+        vp, rho, bulk = co2_properties(
+            temperature=temp,
+            pressure=pres,
+            use_proprietary_model=zone.co2_model == CO2Models.FLAG,
+        )
     else:
-        vp, rho, bulk = flag.gas_properties(
+        vp, rho, bulk = gas_properties(
             temperature=temp,
             pressure=pres,
             gas_gravity=gas_gravity,
             model=zone.gas.model,
-        )[0:3]
+        )
     return rho, bulk, vp
 
 
@@ -213,31 +198,31 @@ def _apply_condensate_if_any(
     0.0. An RV of 0.0 means that the gas is dry, which is already calculated
     NB: condensate properties calculation requires proprietary model
     """
-    if not (zone.calculate_condensate and rv is not None and INTERNAL_EQUINOR):
+    if not zone.calculate_condensate:
+        return
+    if rv is None:
+        return
+    if not HAS_PROPRIETARY_ROCK_PHYSICS:
         return
     idx_dry = np.isclose(rv, 0.0, atol=1e-10)
     if np.all(idx_dry):
         return
+
     cond = zone.condensate
     cond_gor = 1.0 / rv[~idx_dry]
     cond_gr = cond.gas_gravity * np.ones_like(cond_gor)
     cond_rho0 = cond.reference_density * np.ones_like(cond_gor)
-    if rv is not None and temp is not None and pres is not None:
-        vp_c, rho_c, bulk_c = flag.condensate_properties(  # noqa: F821
-            temperature=temp[~idx_dry],
-            pressure=pres[~idx_dry],
-            rho0=cond_rho0,
-            gas_oil_ratio=cond_gor,
-            gas_gravity=cond_gr,
-        )
-        gas_rho[~idx_dry] = rho_c
-        gas_bulk[~idx_dry] = bulk_c
-        gas_vp[~idx_dry] = vp_c
-    else:
-        raise ValueError(
-            "Condensate properties calculation requires non-null `rv`, `temp`, and "
-            "`pres`."
-        )
+
+    vp_c, rho_c, bulk_c = condensate_properties(
+        temperature=temp[~idx_dry],
+        pressure=pres[~idx_dry],
+        rho0=cond_rho0,
+        gas_oil_ratio=cond_gor,
+        gas_gravity=cond_gr,
+    )
+    gas_rho[~idx_dry] = rho_c
+    gas_bulk[~idx_dry] = bulk_c
+    gas_vp[~idx_dry] = vp_c
 
 
 def _mix(
@@ -324,8 +309,8 @@ def effective_fluid_properties_zoned(
         ValueError: If PVT zone definitions overlap, have uncovered grid values, misuse
             wildcard '*', or condensate calculation is requested but `rv` is missing.
         NotImplementedError: If condensate modeling is requested without proprietary
-            implementation (`INTERNAL_EQUINOR` is False), or bubble point evolution
-            depends on an unavailable model.
+            implementation (`HAS_PROPRIETARY_ROCK_PHYSICS` is False), or bubble point
+            evolution depends on an unavailable model.
         RuntimeError: If array shape mismatches prevent assignment to result arrays.
         TypeError: If input types do not conform to expected models / masked arrays.
 
