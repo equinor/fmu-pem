@@ -5,10 +5,10 @@ import pytest
 
 from fmu.pem import INTERNAL_EQUINOR
 from fmu.pem.pem_utilities.import_config import (
+    find_key_first,
     get_global_params_and_dates,
     read_pem_config,
 )
-from src.fmu.pem.pem_utilities.import_config import find_key_first
 
 
 def test_validate_new_pem_config_multizone(testdata, monkeypatch, data_dir):
