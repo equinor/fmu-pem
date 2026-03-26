@@ -32,9 +32,9 @@ export const YamlEdit = () => {
 
   // Each time user reads YAML from disk, we remount the Form component
   // by setting key to an integer increasing by 1 on each read. The Form component
-  // otherwise does not react to change in initial formData. 
+  // otherwise does not react to change in initial formData.
   const [numberRead, setNumberRead] = React.useState(0)
-  
+
   const [initialConfig, setInitialConfig] = React.useState(() => {
     const savedFormData = sessionStorage.getItem('formData');
     if (savedFormData) {
@@ -154,7 +154,7 @@ export const YamlEdit = () => {
             onChange={(event) => {
               userInputRef.current = event.formData;
               sessionStorage.setItem('formData', JSON.stringify(event.formData));
-              
+
               if (
                 event.errors.length === 0 &&
                 // @ts-ignore

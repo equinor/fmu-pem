@@ -44,7 +44,7 @@ tests = [
     "pytest",
     "pytest-cov",
     "pytest-xdist",
-    "ruff",
+    "ruff==0.11.7",
 ]
 docs = [
     "autoapi",
@@ -70,6 +70,7 @@ pem_jobs = "fmu.pem.hook_implementations.jobs"
 ignore_missing_imports = true
 
 [tool.ruff]
+src = ["src"]
 lint.ignore = [
     "C901",
     "F401"
