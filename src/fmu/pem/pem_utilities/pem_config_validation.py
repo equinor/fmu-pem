@@ -177,26 +177,26 @@ class RockMatrixProperties(BaseModel):
     )
     minerals: dict[str, MineralProperties] = Field(
         default={
-            "shale": {
-                "bulk_modulus": 25.0e9,
-                "shear_modulus": 12.0e9,
-                "density": 2680.0,
-            },
-            "quartz": {
-                "bulk_modulus": 36.8e9,
-                "shear_modulus": 44.0e9,
-                "density": 2650.0,
-            },
-            "calcite": {
-                "bulk_modulus": 76.8e9,
-                "shear_modulus": 32.0e9,
-                "density": 2710.0,
-            },
-            "dolomite": {
-                "bulk_modulus": 94.9e9,
-                "shear_modulus": 45.0e9,
-                "density": 2870.0,
-            },
+            "shale": MineralProperties(
+                bulk_modulus=25.0e9,
+                shear_modulus=12.0e9,
+                density=2680.0,
+            ),
+            "quartz": MineralProperties(
+                bulk_modulus=36.8e9,
+                shear_modulus=44.0e9,
+                density=2650.0,
+            ),
+            "calcite": MineralProperties(
+                bulk_modulus=76.8e9,
+                shear_modulus=32.0e9,
+                density=2710.0,
+            ),
+            "dolomite": MineralProperties(
+                bulk_modulus=94.9e9,
+                shear_modulus=45.0e9,
+                density=2870.0,
+            ),
         },
         description="Define minerals relevant for the field. Default values are set "
         "for `shale`, `quartz`, `calcite` and `dolomite` (you can't "
@@ -231,7 +231,7 @@ class RockMatrixProperties(BaseModel):
         "e.g. when using net-to-gross instead of volume fractions"
     )
     mineral_mix_model: MineralMixModel = Field(
-        default="voigt-reuss-hill",
+        default=MineralMixModel.VOIGT_REUSS_HILL,
         description="Effective medium model selection: either "
         "`hashin-shtrikman-average` or `voigt-reuss-hill`",
     )
@@ -319,7 +319,7 @@ class RockMatrixProperties(BaseModel):
 
 # Pressure
 class OverburdenPressureTrend(BaseModel):
-    type: SkipJsonSchema[OverburdenPressureTypes] = "trend"
+    type: SkipJsonSchema[OverburdenPressureTypes] = OverburdenPressureTypes.TREND
     fipnum: str = Field(
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
         "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
@@ -334,7 +334,7 @@ class OverburdenPressureTrend(BaseModel):
 
 
 class OverburdenPressureConstant(BaseModel):
-    type: SkipJsonSchema[OverburdenPressureTypes] = "constant"
+    type: SkipJsonSchema[OverburdenPressureTypes] = OverburdenPressureTypes.CONSTANT
     fipnum: str = Field(
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
         "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
@@ -420,17 +420,17 @@ class Gas(BaseModel):
         description="Gas gravity is a ratio of gas molecular weight to that air",
     )
     model: SkipJsonSchema[GasModels] = Field(
-        default="HC2016",
+        default=GasModels.HC2016,
         description="Gas model is one of `Global`, `Light`, or `HC2016` (default)",
     )
 
 
 class MixModelWood(BaseModel):
-    method: FluidMixModel = "wood"
+    method: FluidMixModel = FluidMixModel.WOOD
 
 
 class MixModelBrie(BaseModel):
-    method: FluidMixModel = "brie"
+    method: FluidMixModel = FluidMixModel.BRIE
     brie_exponent: float = Field(
         default=3.0,
         description="Brie exponent selects the mixing curve shape, from linear mix "
@@ -440,12 +440,12 @@ class MixModelBrie(BaseModel):
 
 
 class ConstantTemperature(BaseModel):
-    type: SkipJsonSchema[TemperatureMethod] = "constant"
+    type: SkipJsonSchema[TemperatureMethod] = TemperatureMethod.CONSTANT
     temperature_value: float
 
 
 class TemperatureFromSim(BaseModel):
-    type: SkipJsonSchema[TemperatureMethod] = "from_sim"
+    type: SkipJsonSchema[TemperatureMethod] = TemperatureMethod.FROMSIM
 
 
 class SalinityFromSim(BaseModel):
@@ -532,7 +532,7 @@ class Fluids(BaseModel):
         "modelled in the simulation model, it is preferred to use that",
     )
     co2_model: CO2Models = Field(
-        default="span_wagner",
+        default=CO2Models.SPAN_WAGNER,
         description="Selection of model for CO₂ properties, `span_wagner` equation "
         "of state model or `flag`. Note that access to flag model depends "
         "on licence",
