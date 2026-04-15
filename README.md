@@ -1,7 +1,3 @@
-> [!WARNING]
-> `fmu-pem` is not yet qualified technology, and as of today only applicable for
-    selected pilot test fields.
-
 **[📚 User documentation](https://equinor.github.io/fmu-pem/)**
 
 ## What is fmu-pem?
