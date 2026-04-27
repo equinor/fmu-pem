@@ -2,6 +2,19 @@ import argparse
 from pathlib import Path
 
 
+def _str2bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if text in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(
+        f"Invalid boolean value: {value!r}. Expected true/false."
+    )
+
+
 def parse_arguments(
     arguments: list[str],
 ) -> argparse.Namespace:
@@ -59,5 +72,13 @@ def parse_arguments(
             "Only required for ERT runs: pointer to the project area's "
             "`sim2seis/model` folder"
         ),
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        type=_str2bool,
+        required=False,
+        default=False,
+        help="Select verbose or minimal output",
     )
     return parser.parse_args(arguments)
