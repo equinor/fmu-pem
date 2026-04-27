@@ -11,7 +11,11 @@ from fmu.pem.pem_utilities import (
     PressureProperties,
     SaturatedRockProperties,
 )
-from fmu.pem.pem_utilities.enum_defs import MineralMixModel, PhysicsPressureModelTypes
+from fmu.pem.pem_utilities.enum_defs import MineralMixModel
+from fmu.pem.pem_utilities.rpm_models import (
+    FriableParams,
+    PhysicsModelPressureSensitivity,
+)
 
 
 @pytest.fixture
@@ -71,17 +75,18 @@ def rock_matrix_pressure(rock_matrix):
     rm.mineral_mix_model = MineralMixModel.VOIGT_REUSS_HILL
     rm.model = rock_matrix.model
 
-    # Pick a valid enum member (first one)
-    model_type_any = next(iter(PhysicsPressureModelTypes))
-    rm.pressure_sensitivity_model = MagicMock(model_type=model_type_any)
-
-    # Provide cement mineral only if needed
-    if model_type_any == PhysicsPressureModelTypes.PATCHY_CEMENT:
-        rm.cement = "cement"
-        rm.minerals = {"cement": MagicMock()}
-    else:
-        rm.cement = None
-        rm.minerals = {}
+    # Use real PhysicsModelPressureSensitivity with FriableParams
+    rm.pressure_sensitivity_model = PhysicsModelPressureSensitivity(
+        parameters=FriableParams(
+            critical_porosity=0.4,
+            coordination_number_function="PorBased",
+            coord_num=9.0,
+            shear_reduction=1.0,
+            model_max_pressure=40.0,
+        )
+    )
+    rm.cement = None
+    rm.minerals = {}
 
     return rm
 

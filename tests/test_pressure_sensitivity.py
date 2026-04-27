@@ -26,7 +26,6 @@ from fmu.pem.pem_functions.pressure_sensitivity import (
 )
 from fmu.pem.pem_utilities.enum_defs import (
     ParameterTypes,
-    PhysicsPressureModelTypes,
     RegressionPressureModelTypes,
     RegressionPressureParameterTypes,
 )
@@ -252,7 +251,6 @@ def test_physics_friable_pressure_adjustment_monkeypatch(monkeypatch):
     monkeypatch.setattr(rpm_mod, "friable_model_dry", fake_friable_model_dry)
 
     model = PhysicsModelPressureSensitivity(
-        model_type=PhysicsPressureModelTypes.FRIABLE,
         parameters=FriableParams(
             critical_porosity=0.45,
             coordination_number_function="PorBased",
@@ -339,7 +337,6 @@ def test_physics_patchy_cement_pressure_adjustment_monkeypatch(monkeypatch):
     )
 
     model = PhysicsModelPressureSensitivity(
-        model_type=PhysicsPressureModelTypes.PATCHY_CEMENT,
         parameters=PatchyCementParams(
             cement_fraction=frac_cem,
             critical_porosity=0.45,
@@ -400,7 +397,6 @@ def test_missing_rho_raises():
 def test_physics_missing_mineral_properties_raises():
     """Physics model without mineral_properties should raise error."""
     model = PhysicsModelPressureSensitivity(
-        model_type=PhysicsPressureModelTypes.FRIABLE,
         parameters=FriableParams(
             critical_porosity=0.45,
             coordination_number_function="PorBased",
@@ -435,7 +431,6 @@ def test_patchy_cement_missing_cement_properties_raises(monkeypatch):
         lambda *a, **k: (np.array([1.0]), np.array([1.0]), np.array([1.0])),
     )
     model = PhysicsModelPressureSensitivity(
-        model_type=PhysicsPressureModelTypes.PATCHY_CEMENT,
         parameters=PatchyCementParams(
             cement_fraction=0.04,
             critical_porosity=0.45,
@@ -608,7 +603,6 @@ def test_sequential_regression_then_physics_chain(monkeypatch):
     )
 
     phys_model = PhysicsModelPressureSensitivity(
-        model_type=PhysicsPressureModelTypes.FRIABLE,
         parameters=FriableParams(
             critical_porosity=0.45,
             coordination_number_function="PorBased",

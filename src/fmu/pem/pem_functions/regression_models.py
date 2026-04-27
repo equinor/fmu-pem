@@ -27,10 +27,11 @@ from fmu.pem.pem_utilities import (
 from fmu.pem.pem_utilities.enum_defs import (
     MineralMixModel,
     ParameterTypes,
-    PhysicsPressureModelTypes,
 )
 from fmu.pem.pem_utilities.rpm_models import (
     KMuRegressionParams,
+    PatchyCementParams,
+    PhysicsModelPressureSensitivity,
     VpVsRegressionParams,
 )
 
@@ -238,10 +239,8 @@ def run_regression_models(
             # Regression model requirements are met as default, but in the case of a
             # "physics model" (friable or patchy cement), extra matrix properties are
             # needed
-            if hasattr(
-                rock_matrix.pressure_sensitivity_model, "model_type"
-            ) and rock_matrix.pressure_sensitivity_model.model_type in list(
-                PhysicsPressureModelTypes
+            if isinstance(
+                rock_matrix.pressure_sensitivity_model, PhysicsModelPressureSensitivity
             ):
                 # Create mineral properties from matrix properties
                 mineral_props = EffectiveMineralProperties(
@@ -251,9 +250,9 @@ def run_regression_models(
                 )
 
                 # If patchy cement model, create cement properties
-                if (
-                    rock_matrix.pressure_sensitivity_model.model_type
-                    == PhysicsPressureModelTypes.PATCHY_CEMENT
+                if isinstance(
+                    rock_matrix.pressure_sensitivity_model.parameters,
+                    PatchyCementParams,
                 ):
                     # Use specified cement mineral
                     cement_props = rock_matrix.minerals[rock_matrix.cement]

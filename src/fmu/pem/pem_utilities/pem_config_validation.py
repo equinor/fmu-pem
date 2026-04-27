@@ -36,6 +36,7 @@ from .fipnum_pvtnum_utilities import (
 from .rpm_models import (
     FriableRPM,
     MineralProperties,
+    NoPressureSensitivityModel,
     OptionalField,
     PatchyCementRPM,
     PhysicsModelPressureSensitivity,
@@ -139,19 +140,23 @@ class ZoneRegionMatrixParams(BaseModel):
     )
     model: FriableRPM | PatchyCementRPM | TMatrixRPM | RegressionRPM = Field(
         description="Selection of rock physics model and parameter set",
+        discriminator="model_name",
     )
     pressure_sensitivity: bool = Field(
         default=True,
         description="All RPM models can be run with or without pressure sensitivity.",
     )
     pressure_sensitivity_model: (
-        RegressionPressureSensitivity | PhysicsModelPressureSensitivity | OptionalField
+        RegressionPressureSensitivity
+        | PhysicsModelPressureSensitivity
+        | NoPressureSensitivityModel
     ) = Field(
-        default=OptionalField(),
+        default_factory=NoPressureSensitivityModel,
         description="For most RPM models, it is possible to choose between a "
         "regression based pressure sensitivity model from plug measurements "
         "or a theoretical one. For `T Matrix` model a calibrated model is set "
         "as default, and any model selection in this interface will be disregarded.",
+        discriminator="sensitivity_type",
     )
 
     @field_validator("model", mode="before")
@@ -311,7 +316,9 @@ class RockMatrixProperties(BaseModel):
         for fipnum_group in self.zone_regions:
             if fipnum_group.model.model_name != RPMType.T_MATRIX and (
                 fipnum_group.pressure_sensitivity
-                and not fipnum_group.pressure_sensitivity_model
+                and isinstance(
+                    fipnum_group.pressure_sensitivity_model, NoPressureSensitivityModel
+                )
             ):
                 raise ValueError("a model is required when pressure sensitivity is set")
         return self

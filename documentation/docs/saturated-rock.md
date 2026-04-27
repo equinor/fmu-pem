@@ -43,7 +43,7 @@ rock_matrix:
     # Zone 2: Patchy cement for deeper cemented zones
     - fipnum: "6-10"
       model:
-        model_name: "patchy-cement"
+        model_name: "patchy_cement"
         parameters:
           critical_porosity: 0.40
           cement_fraction: 0.02
@@ -53,7 +53,7 @@ rock_matrix:
     # Zone 3: T-Matrix for carbonate zones
     - fipnum: "11-15"
       model:
-        model_name: "t-matrix"
+        model_name: "t_matrix"
         # T-Matrix specific parameters
 ```
 

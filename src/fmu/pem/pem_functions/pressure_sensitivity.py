@@ -9,7 +9,6 @@ import numpy as np
 
 from fmu.pem.pem_utilities.enum_defs import (
     ParameterTypes,
-    PhysicsPressureModelTypes,
     RegressionPressureParameterTypes,
 )
 from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
@@ -45,8 +44,6 @@ class RegressionPressureModel(Protocol):
 @runtime_checkable
 class PhysicsPressureModel(Protocol):
     """Protocol for physics-based pressure sensitivity models."""
-
-    model_type: PhysicsPressureModelTypes
 
     def predict_elastic_properties(
         self,
