@@ -101,11 +101,6 @@ class RegressionPressureModelTypes(str, Enum):
     POLYNOMIAL = "polynomial"
 
 
-class PhysicsPressureModelTypes(str, Enum):
-    FRIABLE = "friable"
-    PATCHY_CEMENT = "patchy_cement"
-
-
 class RegressionPressureParameterTypes(str, Enum):
     VP_VS = "vp_vs"
     K_MU = "k_mu"

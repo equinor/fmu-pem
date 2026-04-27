@@ -61,6 +61,7 @@ rock_matrix:
         tau: 1.0e-7
     pressure_sensitivity: True
     pressure_sensitivity_model:
+      sensitivity_type: regression
       mode: vp_vs
       model_type: exponential
       parameters:

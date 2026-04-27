@@ -171,6 +171,27 @@ export const YamlEdit = () => {
               "ui:globalOptions": {
                 enableMarkdownInDescription: true,
               },
+              // Hide discriminator fields from UI - users select via dropdown, not by editing these
+              rock_matrix: {
+                zone_regions: {
+                  items: {
+                    model: {
+                      model_name: { "ui:widget": "hidden" },
+                      parameters: {
+                        // RegressionModels discriminators
+                        sandstone: { mode: { "ui:widget": "hidden" } },
+                        shale: { mode: { "ui:widget": "hidden" } },
+                      },
+                    },
+                    pressure_sensitivity_model: {
+                      sensitivity_type: { "ui:widget": "hidden" },
+                      parameters: {
+                        param_type: { "ui:widget": "hidden" },
+                      },
+                    },
+                  },
+                },
+              },
             }}
             showErrorList={false}
             translateString={customStrings}

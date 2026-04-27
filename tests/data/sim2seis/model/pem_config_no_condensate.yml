@@ -61,6 +61,7 @@ rock_matrix:
         tau: 1.0e-7
     pressure_sensitivity: True
     pressure_sensitivity_model:
+      sensitivity_type: regression
       mode: vp_vs
       model_type: exponential
       parameters:
@@ -108,6 +109,7 @@ rock_matrix:
 # User-defined pressure-sensitivity model
 
 #  pressure_sensitivity_model:
+#    sensitivity_type: regression
 #    mode: vp_vs
 #    model_type: polynomial
 #    parameters:
@@ -120,12 +122,14 @@ rock_matrix:
 
 
 #    pressure_sensitivity_model:
+#      sensitivity_type: physics
 #      model_type: friable
 #      parameters:
 #        critical_porosity: 0.45
 #        shear_reduction: 0.35
 
 #    pressure_sensitivity_model:
+#      sensitivity_type: physics
 #      model_type: patchy_cement
 #      parameters:
 #        critical_porosity: 0.45

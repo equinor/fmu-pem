@@ -25,7 +25,6 @@ from rock_physics_open.sandstone_models import (
 from fmu.pem.pem_utilities.enum_defs import (
     CoordinationNumberFunction,
     ParameterTypes,
-    PhysicsPressureModelTypes,
     RegressionPressureModelTypes,
     RegressionPressureParameterTypes,
     RPMType,
@@ -34,6 +33,8 @@ from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperti
 
 
 class OptionalField(BaseModel):
+    """Generic sentinel for 'not configured' in union types."""
+
     def __eq__(self, other):
         return other is None
 
@@ -44,6 +45,14 @@ class OptionalField(BaseModel):
         return False
 
     model_config = ConfigDict(title="This field is optional")
+
+
+class NoPressureSensitivityModel(BaseModel):
+    """Sentinel indicating no pressure sensitivity model is configured."""
+
+    sensitivity_type: Literal["none"] = "none"
+
+    model_config = ConfigDict(title="No pressure sensitivity model")
 
 
 class MineralProperties(BaseModel):
@@ -57,6 +66,10 @@ class FriableParams(BaseModel):
 
     model_config = ConfigDict(title="Friable Model Parameters")
 
+    param_type: Literal["friable"] = Field(
+        default="friable",
+        description="Parameter type discriminator for physics models",
+    )
     critical_porosity: float = Field(
         ge=0.3, le=0.5, default=0.4, description="Critical porosity"
     )
@@ -93,6 +106,10 @@ class PatchyCementParams(FriableParams):
 
     model_config = ConfigDict(title="Patchy Cement Parameters")
 
+    param_type: Literal["patchy_cement"] = Field(  # type: ignore[assignment]
+        default="patchy_cement",
+        description="Parameter type discriminator for physics models",
+    )
     cement_fraction: float = Field(gt=0, le=0.1, description="Cement volume fraction")
 
     def to_dict(self) -> dict[str, Any]:
@@ -226,34 +243,36 @@ class KMuRegressionParams(BaseModel):
 
 class RegressionModels(BaseModel):
     sandstone: VpVsRegressionParams | KMuRegressionParams = Field(
-        description="Selection of model type for sandstone regression model"
+        description="Selection of model type for sandstone regression model",
+        discriminator="mode",
     )
     shale: VpVsRegressionParams | KMuRegressionParams = Field(
-        description="Selection of model type for shale regression model"
+        description="Selection of model type for shale regression model",
+        discriminator="mode",
     )
 
 
 class PatchyCementRPM(BaseModel):
     model_config = ConfigDict(title="Patchy Cement Model")
-    model_name: Literal[RPMType.PATCHY_CEMENT]
+    model_name: Literal[RPMType.PATCHY_CEMENT] = RPMType.PATCHY_CEMENT
     parameters: PatchyCementParams
 
 
 class FriableRPM(BaseModel):
     model_config = ConfigDict(title="Friable Sand Model")
-    model_name: Literal[RPMType.FRIABLE]
+    model_name: Literal[RPMType.FRIABLE] = RPMType.FRIABLE
     parameters: FriableParams
 
 
 class TMatrixRPM(BaseModel):
     model_config = ConfigDict(title="T-Matrix Inclusion Model")
-    model_name: Literal[RPMType.T_MATRIX]
+    model_name: Literal[RPMType.T_MATRIX] = RPMType.T_MATRIX
     parameters: TMatrixParams
 
 
 class RegressionRPM(BaseModel):
     model_config = ConfigDict(title="Regression Model")
-    model_name: Literal[RPMType.REGRESSION]
+    model_name: Literal[RPMType.REGRESSION] = RPMType.REGRESSION
     parameters: RegressionModels
 
 
@@ -311,6 +330,10 @@ class RegressionPressureSensitivity(BaseModel):
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True, title="Regression Pressure Sensitivity"
+    )
+    sensitivity_type: Literal["regression"] = Field(
+        default="regression",
+        description="Discriminator for pressure sensitivity model type",
     )
     # Selections that cover model types Exponential/Polynomial and parameter types
     # VP-VS or K-MU
@@ -456,32 +479,14 @@ class PhysicsModelPressureSensitivity(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True, title="Physics Model Pressure Sensitivity"
     )
-    model_type: PhysicsPressureModelTypes = Field(description="Type of pressure model")
-    parameters: PatchyCementParams | FriableParams = Field(
-        description="Dry rock model parameters"
+    sensitivity_type: Literal["physics"] = Field(
+        default="physics",
+        description="Discriminator for pressure sensitivity model type",
     )
-
-    @field_validator("model_type", mode="before")
-    @classmethod
-    def check_model_type(cls, v: str, info: ValidationInfo) -> str:
-        if v in list(PhysicsPressureModelTypes):
-            return v
-        raise ValueError(
-            f"unknown physics pressure model type: {v}\n"
-            f"Should be one of {list(PhysicsPressureModelTypes)}"
-        )
-
-    @model_validator(mode="after")
-    def _validate_model_configuration(self) -> Self:
-        if self.model_type == PhysicsPressureModelTypes.FRIABLE and (
-            not isinstance(self.parameters, FriableParams)
-        ):
-            raise ValueError("Mismatch between Friable model and parameter set")
-        if self.model_type == PhysicsPressureModelTypes.PATCHY_CEMENT and (
-            not isinstance(self.parameters, PatchyCementParams)
-        ):
-            raise ValueError("Mismatch between Patchy cement model and parameter set")
-        return self
+    parameters: PatchyCementParams | FriableParams = Field(
+        description="Dry rock model parameters",
+        discriminator="param_type",
+    )
 
     def predict_elastic_properties(
         self,
@@ -496,10 +501,7 @@ class PhysicsModelPressureSensitivity(BaseModel):
         # The only differences in inputs and parameters between friable model and
         # patchy cement model are the parameter cement fraction and the cement
         # mineral properties.
-        if (
-            cem_prop is None
-            and self.model_type == PhysicsPressureModelTypes.PATCHY_CEMENT
-        ):
+        if cem_prop is None and isinstance(self.parameters, PatchyCementParams):
             raise ValueError("patchy cement model requires cement mineral properties")
 
         # To please the IDE ...
@@ -514,28 +516,7 @@ class PhysicsModelPressureSensitivity(BaseModel):
         max_depl = 1.0e6 * self.parameters.model_max_pressure
         depl_press = in_situ_press + np.minimum(depl_press - in_situ_press, max_depl)
 
-        if self.model_type == PhysicsPressureModelTypes.FRIABLE:
-            k_in_situ, mu_in_situ = friable_model_dry(
-                k_min=min_prop.bulk_modulus,
-                mu_min=min_prop.shear_modulus,
-                phi=poro,
-                p_eff=in_situ_press,
-                phi_c=self.parameters.critical_porosity,
-                coord_num_func=self.parameters.coordination_number_function,
-                n=self.parameters.coord_num,
-                shear_red=self.parameters.shear_reduction,
-            )
-            k_depl, mu_depl = friable_model_dry(
-                k_min=min_prop.bulk_modulus,
-                mu_min=min_prop.shear_modulus,
-                phi=poro,
-                p_eff=depl_press,
-                phi_c=self.parameters.critical_porosity,
-                coord_num_func=self.parameters.coordination_number_function,
-                n=self.parameters.coord_num,
-                shear_red=self.parameters.shear_reduction,
-            )
-        if self.model_type == PhysicsPressureModelTypes.PATCHY_CEMENT:
+        if isinstance(self.parameters, PatchyCementParams):
             k_in_situ, mu_in_situ, _ = patchy_cement_model_dry(
                 k_min=min_prop.bulk_modulus,
                 mu_min=min_prop.shear_modulus,
@@ -561,6 +542,28 @@ class PhysicsModelPressureSensitivity(BaseModel):
                 phi=poro,
                 p_eff=depl_press,
                 frac_cem=self.parameters.cement_fraction,
+                phi_c=self.parameters.critical_porosity,
+                coord_num_func=self.parameters.coordination_number_function,
+                n=self.parameters.coord_num,
+                shear_red=self.parameters.shear_reduction,
+            )
+        else:
+            # FriableParams (only other option due to discriminator)
+            k_in_situ, mu_in_situ = friable_model_dry(
+                k_min=min_prop.bulk_modulus,
+                mu_min=min_prop.shear_modulus,
+                phi=poro,
+                p_eff=in_situ_press,
+                phi_c=self.parameters.critical_porosity,
+                coord_num_func=self.parameters.coordination_number_function,
+                n=self.parameters.coord_num,
+                shear_red=self.parameters.shear_reduction,
+            )
+            k_depl, mu_depl = friable_model_dry(
+                k_min=min_prop.bulk_modulus,
+                mu_min=min_prop.shear_modulus,
+                phi=poro,
+                p_eff=depl_press,
                 phi_c=self.parameters.critical_porosity,
                 coord_num_func=self.parameters.coordination_number_function,
                 n=self.parameters.coord_num,
