@@ -31,6 +31,8 @@ class PetroElasticModel(ForwardModelStepPlugin):
                 "<MODEL_DIR>",
                 "--mod-date-prefix",
                 "<MOD_DATE_PREFIX>",
+                "--verbose",
+                "<VERBOSE>",
             ],
         )
 
@@ -65,7 +67,7 @@ class PetroElasticModel(ForwardModelStepPlugin):
             examples="""
 .. code-block:: console
 
-  FORWARD_MODEL PEM(<CONFIG_DIR>=<RUNPATH>/sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DIR>=fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MODEL_DIR>=sim2seis/model, <MOD_DATE_PREFIX>=HIST)
+  FORWARD_MODEL PEM(<CONFIG_DIR>=<RUNPATH>/sim2seis/model, <CONFIG_FILE>=new_pem.yml, <GLOBAL_DIR>=fmuconfig/output, <GLOBAL_FILE>=global_variables.yml, <MODEL_DIR>=sim2seis/model, <MOD_DATE_PREFIX>=HIST, <VERBOSE>=true)
 
 """,  # noqa: E501,
         )

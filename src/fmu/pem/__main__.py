@@ -58,6 +58,7 @@ def main(args_list=None):
         pem_fcn(
             config=config,
             run_dir=run_folder,
+            verbose=args.verbose,
         )
 
 

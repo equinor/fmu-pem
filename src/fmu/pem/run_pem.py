@@ -1,19 +1,34 @@
 import os
+import time
 from pathlib import Path
 
 from fmu.pem import pem_functions as pem_fcns
 from fmu.pem import pem_utilities as pem_utils
 
 
+def _format_elapsed(seconds: float) -> str:
+    minutes, secs = divmod(seconds, 60)
+    return f"{int(minutes)} min {secs:5.2f} sec"
+
+
 def pem_fcn(
     config: pem_utils.PemConfig,
     run_dir: Path,
+    verbose: bool = False,
 ) -> None:
     """
     Run script for extended petro elastic module within sim2seis. Parameters in
     yaml-file control the selections made in the PEM.
 
     """
+    start_time = time.monotonic()
+
+    def _log(message: str) -> None:
+        elapsed = time.monotonic() - start_time
+        print(f"PEM [{_format_elapsed(elapsed)}]: {message}")
+
+    if verbose:
+        _log("process started")
     with pem_utils.restore_dir(run_dir):
         # Import Eclipse simulation grid - INIT and RESTART
         sim_grid, constant_props, time_step_props = pem_utils.read_sim_grid_props(
@@ -24,6 +39,8 @@ def pem_fcn(
             seis_dates=config.global_params.mod_dates,
             fipnum_name=config.alternative_fipnum_name,
         )
+        if verbose:
+            _log("simgrid, init and restart properties read")
 
         # Calculate rock properties - fluids and minerals
         # Effective mineral (matrix) properties - one set valid for all time-steps
@@ -35,6 +52,8 @@ def pem_fcn(
         )
         # VSH is exported with other constant results, add it to the constant properties
         constant_props.vsh_pem = vsh
+        if verbose:
+            _log("mineral properties estimated")
 
         # Fluid properties calculated for all time-steps
         fluid_properties, below_bp_grids = pem_fcns.effective_fluid_properties_zoned(
@@ -42,6 +61,8 @@ def pem_fcn(
             fluids=config.fluids,
             pvtnum=constant_props.pvtnum,
         )
+        if verbose:
+            _log("fluid properties estimated")
 
         # Estimate effective pressure
         eff_pres = pem_fcns.estimate_pressure(
@@ -54,6 +75,8 @@ def pem_fcn(
             sim_dates=config.global_params.mod_dates,
             fipnum=constant_props.fipnum,
         )
+        if verbose:
+            _log("effective pressure estimated")
 
         # Estimate saturated rock properties
         sat_rock_props, dry_rock = pem_fcns.estimate_saturated_rock(
@@ -65,6 +88,8 @@ def pem_fcn(
             model_directory=config.paths.rel_path_pem,
             fipnum_param=constant_props.fipnum,
         )
+        if verbose:
+            _log("dry and saturated rock properties estimated")
 
         # Delta and cumulative time estimates (only TWT properties are kept)
         sum_delta_time = pem_utils.delta_cumsum_time.estimate_sum_delta_time(
@@ -80,6 +105,8 @@ def pem_fcn(
             seis_dates=config.global_params.mod_dates,
             diff_calculation=config.diff_calculation,
         )
+        if verbose:
+            _log("differential properties estimated")
 
         # As a precaution, update the grid mask for inactive cells, based on the
         # saturated rock properties
@@ -107,5 +134,7 @@ def pem_fcn(
             bubble_point_grids=below_bp_grids,
             dry_rock_props=dry_rock,
         )
+        if verbose:
+            _log("saved results, process finished")
 
     return
