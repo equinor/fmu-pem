@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {readFileSync} from "fs"
 import {defineConfig} from 'vitepress'
 
@@ -48,7 +49,8 @@ export default defineConfig({
                 items: [
                     {text: 'Zone-Aware Fluid Properties', link: '/zone-aware-fluids'},
                     {text: 'Zone-Based Saturated Rock Properties', link: '/zone-based-saturated-rock'},
-                    {text: 'Zone Implementation Roadmap', link: '/zone-implementation-roadmap'}
+                    {text: 'Zone Implementation Roadmap', link: '/zone-implementation-roadmap'},
+                    {text: 'Remote debugging with debugpy', link: '/remote-debugging'}
                 ]
             }
         ],

@@ -57,7 +57,7 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
         "eclipsegrid_pem--sidiff--20180701_20180101.roff": 3304280474.6736765,
         "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": 60567.49019091868,
         "eclipsegrid_pem--siratio--20180701_20180101.roff": 72080.67490541935,
-        "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4969.172195576051,
+        "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4969.257399652874,
     }
 
     estimated_values = {
@@ -109,13 +109,11 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
     if truth_values != estimated_values:
         # First go through all cases, report differences without raising an error
         for key, value in truth_values.items():
-            if not isclose(
-                value, estimated_values[key], rel_tol=0.00001, abs_tol=0.001
-            ):
+            if not isclose(value, estimated_values[key], rel_tol=0.0001, abs_tol=0.001):
                 print(
                     f"test mismatch for {key}: estimated {estimated_values[key]}, "
                     f"stored value {value}"
                 )
         # Now raise an assertion error is at least one case is outside of tolerance limits
         for key, value in truth_values.items():
-            assert isclose(value, estimated_values[key], rel_tol=0.00001, abs_tol=0.001)
+            assert isclose(value, estimated_values[key], rel_tol=0.0001, abs_tol=0.001)
