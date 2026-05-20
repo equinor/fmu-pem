@@ -30,3 +30,4 @@ fmu-pem-schema.json
 /logs/
 /tests/data/sim2seis/input/pem/venv_ext/
 scripts/debug_lines.py
+scripts/run_troll.py
