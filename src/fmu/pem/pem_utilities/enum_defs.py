@@ -2,8 +2,38 @@
 Define enumerated strings
 """
 
-from enum import Enum
+from enum import Enum, IntFlag
 from typing import Literal
+
+
+class PhaseSystem(IntFlag):
+    """Eclipse phase system as encoded in INTEHEAD item 15 of the UNRST file.
+
+    The Eclipse convention treats item 15 as a bitmask:
+    ``1 = oil``, ``2 = water``, ``4 = gas``. Combined values therefore
+    enumerate as:
+
+    ===== =======================
+    Value Phases present
+    ===== =======================
+    1     oil
+    2     water
+    3     oil + water
+    4     gas
+    5     oil + gas
+    6     water + gas
+    7     oil + water + gas
+    ===== =======================
+    """
+
+    OIL = 1
+    WATER = 2
+    GAS = 4
+
+    @property
+    def is_multiphase(self) -> bool:
+        """True if at least two phases are present."""
+        return bin(int(self)).count("1") >= 2
 
 
 class OverburdenPressureTypes(str, Enum):

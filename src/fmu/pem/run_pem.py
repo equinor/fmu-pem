@@ -30,13 +30,15 @@ def pem_fcn(
         _log("process started")
     with pem_utils.restore_dir(run_dir):
         # Import Eclipse simulation grid - INIT and RESTART
-        sim_grid, constant_props, time_step_props = pem_utils.read_sim_grid_props(
-            rel_dir_sim_files=config.eclipse_files.rel_path_simgrid,
-            egrid_file=config.eclipse_files.egrid_file,
-            init_property_file=config.eclipse_files.init_property_file,
-            restart_property_file=config.eclipse_files.restart_property_file,
-            seis_dates=config.global_params.mod_dates,
-            fipnum_name=config.alternative_fipnum_name,
+        sim_grid, constant_props, time_step_props, _phase_system = (
+            pem_utils.read_sim_grid_props(
+                rel_dir_sim_files=config.eclipse_files.rel_path_simgrid,
+                egrid_file=config.eclipse_files.egrid_file,
+                init_property_file=config.eclipse_files.init_property_file,
+                restart_property_file=config.eclipse_files.restart_property_file,
+                seis_dates=config.global_params.mod_dates,
+                fipnum_name=config.alternative_fipnum_name,
+            )
         )
         if verbose:
             _log("simgrid, init and restart properties read")

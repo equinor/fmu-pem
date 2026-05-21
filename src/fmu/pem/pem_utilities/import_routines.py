@@ -1,10 +1,15 @@
 from pathlib import Path
 
 import numpy as np
+import resfo
 import xtgeo
 
+from .enum_defs import PhaseSystem
 from .pem_class_definitions import SimInitProperties, SimRstProperties
 from .utils import bar_to_pa, restore_dir
+
+# Eclipse stores the phase indicator in INTEHEAD item 15 (1-indexed).
+_PHASE_INDICATOR_INDEX = 14
 
 
 def read_init_properties(
@@ -56,6 +61,13 @@ def create_rst_list(
     rst_prop_names: list[str],
 ) -> list[SimRstProperties]:
     """Create list of SimRstProperties from raw restart properties
+
+    Eclipse only writes the phase saturations that are physically present
+    (e.g. only ``SWAT`` in a gas+water run). Any of ``SWAT``/``SGAS``/``SOIL``
+    that is absent from ``rst_props`` is filled with a zero array shaped like
+    the pressure field; ``reconcile_phase_saturations`` then derives the
+    appropriate value using the run's :class:`PhaseSystem`.
+
     Args:
         rst_props: Raw restart properties
         seis_dates: list of dates to process
@@ -63,16 +75,43 @@ def create_rst_list(
     Returns:
         list[SimRstProperties]: list of processed restart properties by date
     """
-    return [
-        SimRstProperties(
-            **{
-                name.lower(): rst_props[name + "_" + date].values
-                for name in rst_prop_names
-                if name + "_" + date in rst_props.names
-            }
-        )
-        for date in seis_dates
-    ]
+    saturation_names = {"SWAT", "SGAS", "SOIL"}
+    result: list[SimRstProperties] = []
+    for date in seis_dates:
+        kwargs = {
+            name.lower(): rst_props[name + "_" + date].values
+            for name in rst_prop_names
+            if name + "_" + date in rst_props.names
+        }
+        # Fill any missing phase saturation with zeros sized like pressure.
+        pressure = kwargs["pressure"]
+        zeros = np.ma.masked_array(np.zeros_like(pressure.data), mask=pressure.mask)
+        for sat_name in saturation_names:
+            kwargs.setdefault(sat_name.lower(), zeros)
+        result.append(SimRstProperties(**kwargs))
+    return result
+
+
+def read_phase_system(unrst_file: Path) -> PhaseSystem:
+    """Read the Eclipse phase indicator from INTEHEAD item 15 of a UNRST file.
+
+    The UNRST file repeats the INTEHEAD record once per report step. The
+    phase indicator is invariant within a run, so the first occurrence is
+    used.
+
+    Args:
+        unrst_file: Path to the UNRST file.
+
+    Returns:
+        PhaseSystem flag enumerating the phases present in the simulation.
+
+    Raises:
+        ValueError: If no INTEHEAD record is found in the file.
+    """
+    for keyword, values in resfo.read(unrst_file):
+        if keyword.strip() == "INTEHEAD":
+            return PhaseSystem(int(values[_PHASE_INDICATOR_INDEX]))
+    raise ValueError(f"No INTEHEAD record found in {unrst_file}")
 
 
 def read_sim_grid_props(
@@ -82,7 +121,7 @@ def read_sim_grid_props(
     restart_property_file: Path,
     seis_dates: list[str],
     fipnum_name: str = "FIPNUM",
-) -> tuple[xtgeo.Grid, SimInitProperties, list[SimRstProperties]]:
+) -> tuple[xtgeo.Grid, SimInitProperties, list[SimRstProperties], PhaseSystem]:
     """Read grid and properties from simulation run, both initial and restart properties
 
     Args:
@@ -96,12 +135,15 @@ def read_sim_grid_props(
         sim_grid: grid definition for eclipse input
         init_props: object with initial properties of simulation grid
         rst_list: list with time-dependent simulation properties
+        phase_system: phases present in the simulation (from INTEHEAD item 15)
     """
     sim_grid = xtgeo.grid_from_file(rel_dir_sim_files / egrid_file)
 
     init_props = read_init_properties(
         rel_dir_sim_files / init_property_file, sim_grid, fipnum_name
     )
+
+    phase_system = read_phase_system(rel_dir_sim_files / restart_property_file)
 
     # TEMP will only be available for eclipse-300
     rst_props_names = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
@@ -141,7 +183,10 @@ def read_sim_grid_props(
     except (AttributeError, TypeError) as e:
         raise ValueError(f"eclipse simulator restart file is missing parameters: {e}")
 
-    return sim_grid, init_props, rst_list
+    for rst in rst_list:
+        rst.reconcile_phase_saturations(phase_system)
+
+    return sim_grid, init_props, rst_list, phase_system
 
 
 def import_fractions(

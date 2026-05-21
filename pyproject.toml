@@ -28,6 +28,7 @@ dynamic = ["version"]
 dependencies = [
     "numpy >= 1.24.3",
     "xtgeo >= 4.7.1",
+    "resfo",
     "fmu-tools",
     "fmu-config",
     "fmu-dataio",
