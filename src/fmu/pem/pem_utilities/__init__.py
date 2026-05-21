@@ -4,6 +4,7 @@ from .delta_cumsum_time import (
     estimate_delta_time,
     estimate_sum_delta_time,
 )
+from .enum_defs import PhaseSystem
 from .export_routines import save_results
 from .fipnum_pvtnum_utilities import (
     detect_overlaps,
@@ -15,6 +16,7 @@ from .fipnum_pvtnum_utilities import (
 from .import_config import get_global_params_and_dates, read_pem_config
 from .import_routines import (
     import_fractions,
+    read_phase_system,
     read_sim_grid_props,
 )
 from .pem_class_definitions import (
@@ -68,6 +70,7 @@ __all__ = [
     "num_boolean_array",
     "parse_arguments",
     "read_pem_config",
+    "read_phase_system",
     "read_sim_grid_props",
     "restore_dir",
     "reverse_filter_and_restore",
@@ -85,4 +88,5 @@ __all__ = [
     "SaturatedRockProperties",
     "SimInitProperties",
     "SimRstProperties",
+    "PhaseSystem",
 ]

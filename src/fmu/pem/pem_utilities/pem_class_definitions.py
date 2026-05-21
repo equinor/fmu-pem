@@ -4,6 +4,8 @@ from typing import Self
 import numpy as np
 from numpy.ma import MaskedArray
 
+from .enum_defs import PhaseSystem
+
 
 class PropertiesSubgridMasked:
     """
@@ -85,6 +87,74 @@ class SimRstProperties(PropertiesSubgridMasked):
     temp: MaskedArray | None = None
     rv: MaskedArray | None = None
     salt: MaskedArray | None = None
+
+    def reconcile_phase_saturations(
+        self, phase_system: PhaseSystem, tol: float = 1.0e-6
+    ) -> None:
+        """Validate saturations against ``phase_system`` and normalise in place.
+
+        For each of water/gas/oil:
+
+        - If the phase is declared absent in ``phase_system``, the saturation
+          must be at most ``tol`` in magnitude everywhere; otherwise
+          ``ValueError`` is raised. The array is then forced to exactly zero.
+        - If the phase is declared present but its saturation is (numerically)
+          zero everywhere, it is derived as ``1 - sum_of_other_phases``. At most
+          one present phase may be derived this way; if more than one is empty,
+          ``ValueError`` is raised.
+        - All other present phases are clipped to ``[0, 1]``.
+
+        After the per-phase handling, the three saturations are renormalised
+        cell-by-cell so they sum to 1, correcting any small numerical drift.
+        """
+        sats: dict[PhaseSystem, tuple[str, MaskedArray]] = {
+            PhaseSystem.WATER: ("water (SWAT)", np.ma.clip(self.swat, 0.0, 1.0)),
+            PhaseSystem.GAS: ("gas (SGAS)", np.ma.clip(self.sgas, 0.0, 1.0)),
+            PhaseSystem.OIL: ("oil (SOIL)", np.ma.clip(self.soil, 0.0, 1.0)),
+        }
+
+        for flag, (name, sat) in list(sats.items()):
+            if phase_system & flag:
+                continue
+            max_abs = float(np.ma.max(np.ma.abs(sat)))
+            if max_abs > tol:
+                raise ValueError(
+                    f"SimRstProperties: phase {name} is declared absent by "
+                    f"PhaseSystem={phase_system!r} but has non-zero saturation "
+                    f"(max |sat| = {max_abs:g})."
+                )
+            sats[flag] = (
+                name,
+                np.ma.masked_array(np.zeros_like(sat.data), mask=sat.mask),
+            )
+
+        derived = [
+            flag
+            for flag, (_name, sat) in sats.items()
+            if (phase_system & flag) and float(np.ma.max(np.ma.abs(sat))) <= tol
+        ]
+        if len(derived) > 1:
+            raise ValueError(
+                "SimRstProperties: more than one present phase has zero saturation "
+                f"({[sats[f][0] for f in derived]}); cannot derive both."
+            )
+        if derived:
+            flag = derived[0]
+            other_sum = sum(
+                (sat for f, (_n, sat) in sats.items() if f != flag),
+                start=np.ma.zeros_like(sats[flag][1]),
+            )
+            sats[flag] = (sats[flag][0], np.ma.clip(1.0 - other_sum, 0.0, 1.0))
+
+        total = (
+            sats[PhaseSystem.WATER][1]
+            + sats[PhaseSystem.GAS][1]
+            + sats[PhaseSystem.OIL][1]
+        )
+        safe_total = np.ma.where(total > 0.0, total, 1.0)
+        self.swat = sats[PhaseSystem.WATER][1] / safe_total
+        self.sgas = sats[PhaseSystem.GAS][1] / safe_total
+        self.soil = sats[PhaseSystem.OIL][1] / safe_total
 
 
 # Elastic properties for matrix, i.e. mixed minerals and volume fractions
