@@ -113,10 +113,15 @@ class SimRstProperties(PropertiesSubgridMasked):
             PhaseSystem.OIL: ("oil (SOIL)", np.ma.clip(self.soil, 0.0, 1.0)),
         }
 
+        def _max_abs(arr: MaskedArray) -> float:
+            # np.ma.max returns the masked constant for a fully-masked array,
+            # which fails to coerce to float. Treat that case as zero.
+            return float(np.ma.filled(np.ma.max(np.ma.abs(arr)), 0.0))
+
         for flag, (name, sat) in list(sats.items()):
             if phase_system & flag:
                 continue
-            max_abs = float(np.ma.max(np.ma.abs(sat)))
+            max_abs = _max_abs(sat)
             if max_abs > tol:
                 raise ValueError(
                     f"SimRstProperties: phase {name} is declared absent by "
@@ -131,7 +136,7 @@ class SimRstProperties(PropertiesSubgridMasked):
         derived = [
             flag
             for flag, (_name, sat) in sats.items()
-            if (phase_system & flag) and float(np.ma.max(np.ma.abs(sat))) <= tol
+            if (phase_system & flag) and _max_abs(sat) <= tol
         ]
         if len(derived) > 1:
             raise ValueError(

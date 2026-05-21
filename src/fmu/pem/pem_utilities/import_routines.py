@@ -83,6 +83,10 @@ def create_rst_list(
             for name in rst_prop_names
             if name + "_" + date in rst_props.names
         }
+        if "pressure" not in kwargs:
+            raise ValueError(
+                f"eclipse simulator restart file is missing PRESSURE for date {date}"
+            )
         # Fill any missing phase saturation with zeros sized like pressure.
         pressure = kwargs["pressure"]
         zeros = np.ma.masked_array(np.zeros_like(pressure.data), mask=pressure.mask)
@@ -106,11 +110,20 @@ def read_phase_system(unrst_file: Path) -> PhaseSystem:
         PhaseSystem flag enumerating the phases present in the simulation.
 
     Raises:
-        ValueError: If no INTEHEAD record is found in the file.
+        ValueError: If no INTEHEAD record is found in the file, or if the
+            phase indicator is zero or contains bits outside the documented
+            ``OIL | WATER | GAS`` mask.
     """
+    valid_mask = int(PhaseSystem.OIL | PhaseSystem.WATER | PhaseSystem.GAS)
     for keyword, values in resfo.read(unrst_file):
         if keyword.strip() == "INTEHEAD":
-            return PhaseSystem(int(values[_PHASE_INDICATOR_INDEX]))
+            indicator = int(values[_PHASE_INDICATOR_INDEX])
+            if indicator == 0 or indicator & ~valid_mask:
+                raise ValueError(
+                    f"Unexpected phase indicator {indicator} in INTEHEAD item 15 "
+                    f"of {unrst_file}; expected non-zero subset of 1|2|4."
+                )
+            return PhaseSystem(indicator)
     raise ValueError(f"No INTEHEAD record found in {unrst_file}")
 
 
@@ -180,7 +193,7 @@ def read_sim_grid_props(
 
     try:
         rst_list = create_rst_list(rst_props, seis_dates, rst_props_names)
-    except (AttributeError, TypeError) as e:
+    except (AttributeError, TypeError, KeyError) as e:
         raise ValueError(f"eclipse simulator restart file is missing parameters: {e}")
 
     for rst in rst_list:
