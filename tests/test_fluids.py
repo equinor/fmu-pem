@@ -10,6 +10,7 @@ from fmu.pem.pem_utilities.enum_defs import (
     CO2Models,
     FluidMixModel,
     GasModels,
+    PhaseSystem,
     TemperatureMethod,
 )
 
@@ -101,6 +102,11 @@ class StubSimRstProperties(SimRstProperties):
         self.temp = np.ma.MaskedArray(np.asarray(temp), mask=False)
         if rv is not None:
             self.rv = np.ma.MaskedArray(np.asarray(rv), mask=False)
+
+        # Derive soil saturation and renormalise as production code does.
+        self.reconcile_phase_saturations(
+            PhaseSystem.OIL | PhaseSystem.WATER | PhaseSystem.GAS
+        )
 
 
 @pytest.fixture

@@ -36,22 +36,6 @@ if TYPE_CHECKING:
 BUBBLE_POINT_FRACTION_TOLERANCE = 0.01
 
 
-def _saturation_triplet(
-    sw: np.ma.MaskedArray, sg: np.ma.MaskedArray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Clip water/gas and derive oil saturation; renormalize if sum exceeds 1."""
-    sw = np.ma.MaskedArray(np.ma.clip(sw, 0.0, 1.0))
-    sg = np.ma.MaskedArray(np.ma.clip(sg, 0.0, 1.0))
-    # sw and sg come from the same grid, and will have the same mask, so there
-    # should be no need for special handling of possible different masks
-    s_sum = np.ma.max(sw + sg)
-    if s_sum > 1.0:  # renormalize if overlapping
-        sw /= s_sum
-        sg /= s_sum
-    so = 1.0 - sw - sg
-    return sw, sg, so
-
-
 def _adjust_bubble_point(
     pres: np.ndarray,
     gor: np.ndarray,
@@ -369,7 +353,7 @@ def effective_fluid_properties_zoned(
             # Extract saturations, pressure, GOR, etc. (placeholder for existing logic)
             sw = rst_date_prop.swat[mask_cells]
             sg = rst_date_prop.sgas[mask_cells]
-            sw, sg, so = _saturation_triplet(sw, sg)
+            so = rst_date_prop.soil[mask_cells]
             pres = rst_date_prop.pressure[mask_cells]
             gor = rst_date_prop.rs[mask_cells]
 
