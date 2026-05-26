@@ -43,6 +43,15 @@ def pem_fcn(
         if verbose:
             _log("simgrid, init and restart properties read")
 
+        # Optionally adjust PORO for non-binary NTG (constant non-net porosity
+        # or a pre-adjusted grid parameter file).
+        pem_utils.apply_porosity_adjustment(
+            adjustment=config.rock_matrix.porosity_adjustment,
+            sim_init=constant_props,
+            sim_grid=sim_grid,
+            root_dir=run_dir,
+        )
+
         # Calculate rock properties - fluids and minerals
         # Effective mineral (matrix) properties - one set valid for all time-steps
         vsh, matrix_properties = pem_fcns.effective_mineral_properties(

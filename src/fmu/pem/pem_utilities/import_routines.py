@@ -6,6 +6,12 @@ import xtgeo
 
 from .enum_defs import PhaseSystem
 from .pem_class_definitions import SimInitProperties, SimRstProperties
+from .pem_config_validation import (
+    ConstantNonNetPorosity,
+    NoPorosityAdjustment,
+    PorosityAdjustment,
+    PreAdjustedPorosityGrid,
+)
 from .utils import bar_to_pa, restore_dir
 
 # Eclipse stores the phase indicator in INTEHEAD item 15 (1-indexed) and the
@@ -31,7 +37,9 @@ def read_init_properties(
         sim_grid: The simulation grid to use for reading properties
         fipnum_param: Name for zone/region parameter, normally 'FIPNUM'
     Returns:
-        SimInitProperties: The loaded initial grid properties
+        SimInitProperties: The loaded initial grid properties. ``ntg`` is
+        populated when the NTG keyword is present in the INIT file and
+        left as ``None`` otherwise.
     """
     init_props = ["PORO", "DEPTH", "PVTNUM", "AQUIFERN"] + [fipnum_param]
     sim_init_props = xtgeo.gridproperties_from_file(
@@ -59,7 +67,14 @@ def read_init_properties(
         sim_init_props[name].name.lower(): sim_init_props[name].values
         for name in sim_init_props.names
     }
-
+    try:
+        ntg_prop = xtgeo.gridproperty_from_file(
+            property_file, fformat="init", name="NTG", grid=sim_grid
+        )
+        props_dict["ntg"] = ntg_prop.values
+    except (ValueError, KeyError):
+        # NTG is optional; absence means each cell is treated as fully net.
+        pass
     return SimInitProperties(**props_dict)
 
 
@@ -257,6 +272,63 @@ def import_fractions(
     return [grid_prop.values for grid_prop in grid_props]
 
 
+def apply_porosity_adjustment(
+    adjustment: PorosityAdjustment,
+    sim_init: SimInitProperties,
+    sim_grid: xtgeo.Grid,
+    root_dir: Path,
+) -> None:
+    """Adjust ``sim_init.poro`` in-place according to the configured option.
+
+    Three options are supported:
+
+    * :class:`NoPorosityAdjustment`: leave PORO unchanged.
+    * :class:`ConstantNonNetPorosity`: use ``sim_init.ntg`` (read from the
+      Eclipse INIT file by :func:`read_init_properties`) to apply
+      ``por_tot = ntg * PORO + (1 - ntg) * non_net_porosity``.
+    * :class:`PreAdjustedPorosityGrid`: replace PORO with the values of a
+      grid parameter file (already containing the NTG-adjusted total
+      porosity).
+    """
+    if isinstance(adjustment, NoPorosityAdjustment):
+        return
+
+    if isinstance(adjustment, ConstantNonNetPorosity):
+        if sim_init.ntg is None:
+            raise ImportError(
+                "NTG is required for the constant non-net porosity adjustment "
+                "but is not present in the Eclipse INIT file."
+            )
+        ntg = np.ma.masked_array(sim_init.ntg.data, mask=sim_init.poro.mask)
+        _verify_ntg_is_non_binary(ntg)
+        sim_init.poro = ntg * sim_init.poro + (1.0 - ntg) * adjustment.non_net_porosity
+        return
+
+    if isinstance(adjustment, PreAdjustedPorosityGrid):
+        grid_file = root_dir / adjustment.rel_path / adjustment.file_name
+        try:
+            new_poro = xtgeo.gridproperty_from_file(grid_file, grid=sim_grid)
+        except (ValueError, FileNotFoundError) as exc:
+            raise ImportError(
+                f"failed to import pre-adjusted porosity grid {grid_file}"
+            ) from exc
+        except IndexError as exc:
+            raise ValueError(
+                f"pre-adjusted porosity grid {grid_file} does not match the "
+                f"simulation grid dimensions {tuple(sim_grid.dimensions)}."
+            ) from exc
+        _verify_grid_dimensions_match(new_poro, sim_grid, grid_file)
+        _verify_pre_adjusted_poro_mask_compatibility(
+            new_poro.values, sim_init.poro, grid_file
+        )
+        sim_init.poro = np.ma.masked_array(
+            new_poro.values.data, mask=sim_init.poro.mask
+        )
+        return
+
+    raise TypeError(f"unsupported porosity adjustment type: {type(adjustment)!r}")
+
+
 def adjust_mask(
     property: np.ma.MaskedArray,
     indicator: np.ma.MaskedArray,
@@ -285,3 +357,63 @@ def adjust_mask(
     ind_mask = indicator < threshold if filter_below else indicator > threshold
     property.mask = np.logical_or(property.mask, ind_mask)
     return property
+
+
+def _verify_grid_dimensions_match(
+    grid_prop: xtgeo.GridProperty,
+    sim_grid: xtgeo.Grid,
+    source: Path,
+) -> None:
+    """Raise if ``grid_prop`` does not have the same (ncol, nrow, nlay) as
+    the simulation grid.
+    """
+    grid_dims = sim_grid.dimensions
+    value_dims = tuple(grid_prop.values.shape)
+    prop_dims = (grid_prop.ncol, grid_prop.nrow, grid_prop.nlay)
+    if value_dims != tuple(grid_dims) or prop_dims != tuple(grid_dims):
+        raise ValueError(
+            f"pre-adjusted porosity grid {source} has dimensions {prop_dims} "
+            f"(values shape {value_dims}) which do not match the simulation "
+            f"grid dimensions {tuple(grid_dims)}."
+        )
+
+
+def _verify_pre_adjusted_poro_mask_compatibility(
+    new_poro: np.ma.MaskedArray,
+    reference_poro: np.ma.MaskedArray,
+    source: Path,
+) -> None:
+    """Raise if ``new_poro`` masks cells that are active in ``reference_poro``.
+
+    The pre-adjusted grid is considered invalid input if it masks cells that are
+    active in the simulation PORO mask.
+    """
+    new_mask = np.ma.getmaskarray(new_poro)
+    reference_mask = np.ma.getmaskarray(reference_poro)
+    invalid_mask = new_mask & ~reference_mask
+    if np.any(invalid_mask):
+        raise ValueError(
+            f"pre-adjusted porosity grid {source} masks active simulation cells; "
+            "input mask must be compatible with the simulation PORO mask."
+        )
+
+
+def _verify_ntg_is_non_binary(ntg: np.ma.MaskedArray, atol: float = 1.0e-3) -> None:
+    """Raise if NTG values are effectively binary (only 0 or 1 within ``atol``).
+
+    The constant non-net porosity adjustment is only meaningful when the
+    upscaled NTG is a continuous fraction; a binary NTG indicates the
+    adjustment is misconfigured.
+    """
+    values = ntg.compressed()
+    if values.size == 0:
+        return
+    is_zero_or_one = np.isclose(values, 0.0, atol=atol) | np.isclose(
+        values, 1.0, atol=atol
+    )
+    if np.all(is_zero_or_one):
+        raise ValueError(
+            "NTG read from the Eclipse INIT file is binary (all values within "
+            f"{atol} of 0 or 1); the constant non-net porosity adjustment is "
+            "only meaningful for a non-binary, fractional NTG."
+        )
