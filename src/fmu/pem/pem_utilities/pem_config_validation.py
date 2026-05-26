@@ -1,7 +1,7 @@
 import os
 from datetime import date
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 import numpy as np
 from pydantic import (
@@ -167,6 +167,70 @@ class ZoneRegionMatrixParams(BaseModel):
         return v
 
 
+class NoPorosityAdjustment(BaseModel):
+    """No adjustment of the Eclipse PORO for non-binary NTG."""
+
+    model_config = ConfigDict(title="No porosity adjustment")
+
+    method: SkipJsonSchema[Literal["none"]] = "none"
+
+
+class ConstantNonNetPorosity(BaseModel):
+    """Adjust Eclipse PORO using a constant non-net porosity value.
+
+    Total porosity is computed as
+    ``por_tot = ntg * PORO + (1 - ntg) * non_net_porosity``.
+    """
+
+    model_config = ConfigDict(title="Constant non-net porosity")
+
+    method: SkipJsonSchema[Literal["constant"]] = "constant"
+    non_net_porosity: float = Field(
+        default=0.05,
+        ge=0.0,
+        le=0.4,
+        description="Constant non-net (shale) porosity, applied as "
+        "`por_tot = ntg * PORO + (1 - ntg) * non_net_porosity`.",
+    )
+
+
+class PreAdjustedPorosityGrid(BaseModel):
+    """Replace Eclipse PORO with a grid parameter where the NTG-adjustment
+    has already been performed upstream (e.g. in the geomodel).
+    """
+
+    model_config = ConfigDict(title="Pre-adjusted porosity grid")
+
+    method: SkipJsonSchema[Literal["grid_file"]] = "grid_file"
+    rel_path: Path = Field(
+        default=Path("sim2seis/input/pem"),
+        description="Directory containing the pre-adjusted porosity grid file.",
+    )
+    file_name: Path = Field(
+        description="Grid parameter file with NTG-adjusted total porosity; "
+        "replaces the PORO read from the Eclipse INIT file.",
+    )
+
+    @model_validator(mode="after")
+    def check_grid_file_exists(self, info: ValidationInfo) -> Self:
+        pre_experiment = (
+            info.context.get("pre_experiment", False) if info.context else False
+        )
+        if pre_experiment:
+            return self
+        full_name = self.rel_path / self.file_name
+        if not full_name.exists():
+            raise FileNotFoundError(
+                f"pre-adjusted porosity grid file is missing: {full_name}"
+            )
+        return self
+
+
+PorosityAdjustment = (
+    NoPorosityAdjustment | ConstantNonNetPorosity | PreAdjustedPorosityGrid
+)
+
+
 class RockMatrixProperties(BaseModel):
     """Configuration for rock matrix properties.
 
@@ -239,6 +303,15 @@ class RockMatrixProperties(BaseModel):
         default=MineralMixModel.VOIGT_REUSS_HILL,
         description="Effective medium model selection: either "
         "`hashin-shtrikman-average` or `voigt-reuss-hill`",
+    )
+    porosity_adjustment: PorosityAdjustment = Field(
+        default_factory=NoPorosityAdjustment,
+        discriminator="method",
+        description="Adjustment of Eclipse PORO for non-binary NTG. Choose one "
+        "of: `none` (no adjustment), `constant` (apply "
+        "`por_tot = ntg * PORO + (1 - ntg) * non_net_porosity`), or "
+        "`grid_file` (replace PORO with a grid parameter where the "
+        "adjustment has already been performed).",
     )
 
     @field_validator("zone_regions", mode="before")

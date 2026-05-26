@@ -15,6 +15,7 @@ from .fipnum_pvtnum_utilities import (
 )
 from .import_config import get_global_params_and_dates, read_pem_config
 from .import_routines import (
+    apply_porosity_adjustment,
     import_fractions,
     read_phase_system,
     read_sim_grid_props,
@@ -54,6 +55,7 @@ __all__ = [
     "RockMatrixProperties",
     "MineralProperties",
     "Fluids",
+    "apply_porosity_adjustment",
     "bar_to_pa",
     "pa_to_bar",
     "calculate_diff_properties",
