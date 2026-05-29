@@ -1,5 +1,3 @@
-"""Helper for attaching a remote debugger (debugpy) from inside RokDoc."""
-
 from __future__ import annotations
 
 import contextlib
