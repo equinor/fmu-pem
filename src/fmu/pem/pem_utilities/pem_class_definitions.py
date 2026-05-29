@@ -94,7 +94,7 @@ class EffectiveMineralProperties(PropertiesSubgridMasked):
     density: MaskedArray | np.ndarray
 
     def __post_init__(self):
-        self.vs = np.sqrt(self.shear_modulus * self.density)
+        self.vs = np.sqrt(self.shear_modulus / self.density)
         self.vp = np.sqrt(
             (self.bulk_modulus + 4 / 3 * self.shear_modulus) / self.density
         )
