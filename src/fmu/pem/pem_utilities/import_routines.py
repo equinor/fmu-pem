@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import xtgeo
 
 from .pem_class_definitions import SimInitProperties, SimRstProperties
@@ -19,14 +20,33 @@ def read_init_properties(
     Returns:
         SimInitProperties: The loaded initial grid properties
     """
-    init_props = ["PORO", "DEPTH", "PVTNUM"] + [fipnum_param]
+    init_props = ["PORO", "DEPTH", "PVTNUM", "AQUIFERN"] + [fipnum_param]
     sim_init_props = xtgeo.gridproperties_from_file(
-        property_file, fformat="init", names=init_props, grid=sim_grid
+        property_file,
+        fformat="init",
+        names=init_props,
+        grid=sim_grid,
+        strict=(False, False),  # in case AQUIFERN
     )
+    # Aquifer number is used to identify aquifer input cells, which may have
+    # anomalous porosity values. Cells with negative numbers are added to inactive
+    # (masked) cells
+    if "AQUIFERN" in sim_init_props and np.any(sim_init_props["AQUIFERN"].values < 0):
+        for key in init_props:
+            # Don't change AQUIFERN
+            if key != "AQUIFERN":
+                sim_init_props[key].values = adjust_mask(
+                    property=sim_init_props[key].values,
+                    indicator=sim_init_props["AQUIFERN"].values,
+                    threshold=0,
+                    filter_below=True,
+                )
+    # Dictionary with lower-case names and the values as masked arrays
     props_dict = {
         sim_init_props[name].name.lower(): sim_init_props[name].values
-        for name in init_props
+        for name in sim_init_props.names
     }
+
     return SimInitProperties(**props_dict)
 
 
@@ -98,6 +118,17 @@ def read_sim_grid_props(
         strict=(False, False),
     )
 
+    # The mask of INIT properties may have been adjusted if there are cells indicated
+    # as aquifers. The UNRST properties must be adjusted accordingly
+    if init_props.aquifern is not None and np.any(init_props.aquifern < 0.0):
+        for key in rst_props:
+            rst_props[key.name].values = adjust_mask(
+                property=rst_props[key.name].values,
+                indicator=init_props.aquifern,
+                threshold=0,
+                filter_below=True,
+            )
+
     # Formation pressure has unit `bar` in eclipse, but in the PEM models, unit
     # `Pa` is expected. Perform unit conversion before class objects are populated
     for date in seis_dates:
@@ -148,3 +179,33 @@ def import_fractions(
                 f"{__file__}: failed to import volume fractions files {fraction_files}"
             ) from exc
     return [grid_prop.values for grid_prop in grid_props]
+
+
+def adjust_mask(
+    property: np.ma.MaskedArray,
+    indicator: np.ma.MaskedArray,
+    threshold: float = 0.0,
+    filter_below: bool = True,
+) -> np.ma.MaskedArray:
+    """Adjust mask by adding to masked cells those where the `indicator`
+    values are below (True) or above (False) the threshold.
+
+    Parameters
+    ----------
+    property : np.ma.MaskedArray
+        any grid property
+    indicator : np.ma.MaskedArray
+        a grid property used for flagging anomalous values
+    threshold : float, optional
+        threshold for accept/reject filter
+    filter_below: bool
+        keep values above(True) or below (False) the threshold
+
+    Returns
+    -------
+    np.ma.MaskedArray
+        grid property with modified mask
+    """
+    ind_mask = indicator < threshold if filter_below else indicator > threshold
+    property.mask = np.logical_or(property.mask, ind_mask)
+    return property
