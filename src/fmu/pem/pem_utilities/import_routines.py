@@ -8,8 +8,16 @@ from .enum_defs import PhaseSystem
 from .pem_class_definitions import SimInitProperties, SimRstProperties
 from .utils import bar_to_pa, restore_dir
 
-# Eclipse stores the phase indicator in INTEHEAD item 15 (1-indexed).
+# Eclipse stores the phase indicator in INTEHEAD item 15 (1-indexed) and the
+# simulator program identifier (IPROG) in item 95.
 _PHASE_INDICATOR_INDEX = 14
+_IPROG_INDEX = 94
+
+# IPROG values written by Eclipse 300 (regular and thermal). Eclipse 300 always
+# carries oil, water and gas internally, regardless of which phases are active
+# in the deck, so the per-run phase indicator in INTEHEAD item 15 is not
+# reliable for these runs. Eclipse 100 uses 100 and OPM Flow mirrors that.
+_ECLIPSE_300_IPROG = {300, 500}
 
 
 def read_init_properties(
@@ -62,7 +70,7 @@ def create_rst_list(
 ) -> list[SimRstProperties]:
     """Create list of SimRstProperties from raw restart properties
 
-    Eclipse only writes the phase saturations that are physically present
+    Eclipse and OPM Flow only writes the phase saturations that are physically present
     (e.g. only ``SWAT`` in a gas+water run). Any of ``SWAT``/``SGAS``/``SOIL``
     that is absent from ``rst_props`` is filled with a zero array shaped like
     the pressure field; ``reconcile_phase_saturations`` then derives the
@@ -97,11 +105,18 @@ def create_rst_list(
 
 
 def read_phase_system(unrst_file: Path) -> PhaseSystem:
-    """Read the Eclipse phase indicator from INTEHEAD item 15 of a UNRST file.
+    """Read the phase system in use from the first INTEHEAD record of a UNRST file.
 
     The UNRST file repeats the INTEHEAD record once per report step. The
     phase indicator is invariant within a run, so the first occurrence is
     used.
+
+    The simulator program identifier (INTEHEAD item 95, ``IPROG``) is
+    inspected first. Eclipse 300 (``IPROG`` 300 or 500) always carries
+    oil, water and gas internally regardless of the active phases in the
+    deck, so the phase indicator in item 15 is unreliable; the function
+    returns ``OIL | WATER | GAS`` for those runs. For Eclipse 100 and OPM
+    Flow (``IPROG`` 100) the phase indicator in item 15 is used.
 
     Args:
         unrst_file: Path to the UNRST file.
@@ -112,11 +127,14 @@ def read_phase_system(unrst_file: Path) -> PhaseSystem:
     Raises:
         ValueError: If no INTEHEAD record is found in the file, or if the
             phase indicator is zero or contains bits outside the documented
-            ``OIL | WATER | GAS`` mask.
+            ``OIL | WATER | GAS`` mask (Eclipse 100 / OPM Flow only).
     """
     valid_mask = int(PhaseSystem.OIL | PhaseSystem.WATER | PhaseSystem.GAS)
     for keyword, values in resfo.read(unrst_file):
         if keyword.strip() == "INTEHEAD":
+            iprog = int(values[_IPROG_INDEX])
+            if iprog in _ECLIPSE_300_IPROG:
+                return PhaseSystem(valid_mask)
             indicator = int(values[_PHASE_INDICATOR_INDEX])
             if indicator == 0 or indicator & ~valid_mask:
                 raise ValueError(

@@ -7,7 +7,8 @@ from typing import Literal
 
 
 class PhaseSystem(IntFlag):
-    """Eclipse phase system as encoded in INTEHEAD item 15 of the UNRST file.
+    """Eclipse 100 and OPM Flow phase system as encoded in INTEHEAD item 15 of the
+      UNRST file.
 
     The Eclipse convention treats item 15 as a bitmask:
     ``1 = oil``, ``2 = water``, ``4 = gas``. Combined values therefore
