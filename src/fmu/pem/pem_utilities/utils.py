@@ -1,4 +1,7 @@
+import logging
 import os
+import sys
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
@@ -312,3 +315,78 @@ def convert_pressures_list_to_pa(
     press_bar: list[PressureProperties],
 ) -> list[PressureProperties]:
     return [convert_single_pressure_to_pa(pres) for pres in press_bar]
+
+
+def _format_elapsed(seconds: float) -> str:
+    minutes, secs = divmod(seconds, 60)
+    return f"{int(minutes)} min {secs:5.2f} sec"
+
+
+_run_start_time: float | None = None
+
+
+class _ElapsedFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        level = "" if record.levelno == logging.INFO else f" {record.levelname}"
+        if _run_start_time is None:
+            return f"PEM{level}: {record.getMessage()}"
+        elapsed = time.monotonic() - _run_start_time
+        return f"PEM [{_format_elapsed(elapsed)}]{level}: {record.getMessage()}"
+
+
+_PEM_FORMATTER = _ElapsedFormatter()
+
+pem_logger = logging.getLogger("fmu.pem")
+pem_logger.setLevel(logging.WARNING)
+pem_logger.propagate = False
+
+_stderr_handler = logging.StreamHandler(sys.stderr)
+_stderr_handler.setFormatter(_PEM_FORMATTER)
+_stderr_handler.setLevel(logging.WARNING)
+pem_logger.addHandler(_stderr_handler)
+
+_stdout_handler: logging.Handler | None = None
+
+
+def start_pem_run_log(level: int = logging.INFO) -> None:
+    """Activate verbose PEM run logging.
+
+    Anchors the elapsed-time origin and attaches a stdout handler for
+    records below ``WARNING``. ``WARNING`` and above always reach stderr,
+    independent of this call. Repeated calls are no-ops; call
+    :func:`stop_pem_run_log` first to re-anchor.
+    """
+    global _run_start_time, _stdout_handler
+    if _run_start_time is not None:
+        return
+    _run_start_time = time.monotonic()
+
+    _stdout_handler = logging.StreamHandler(sys.stdout)
+    _stdout_handler.setFormatter(_PEM_FORMATTER)
+    _stdout_handler.addFilter(lambda r: r.levelno < logging.WARNING)
+
+    pem_logger.setLevel(level)
+    pem_logger.addHandler(_stdout_handler)
+
+
+def stop_pem_run_log() -> None:
+    """Deactivate verbose PEM run logging.
+
+    Detaches the stdout handler and resets the elapsed-time origin. The
+    stderr handler for ``WARNING`` and above remains attached.
+    """
+    global _run_start_time, _stdout_handler
+    if _stdout_handler is not None:
+        pem_logger.removeHandler(_stdout_handler)
+        _stdout_handler = None
+    pem_logger.setLevel(logging.WARNING)
+    _run_start_time = None
+
+
+def pem_log(message: str, level: int = logging.INFO) -> None:
+    """Emit ``message`` on the PEM logger at ``level`` (default ``INFO``).
+
+    ``INFO``/``DEBUG`` go to stdout only while :func:`start_pem_run_log` is
+    active. ``WARNING``/``ERROR``/``CRITICAL`` always go to stderr.
+    """
+    pem_logger.log(level, message)
