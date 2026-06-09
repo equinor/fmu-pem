@@ -1,4 +1,3 @@
-import warnings
 from dataclasses import asdict
 from pathlib import Path
 
@@ -13,7 +12,7 @@ from .pem_class_definitions import (
     PressureProperties,
     SaturatedRockProperties,
 )
-from .utils import _verify_export_inputs, restore_dir
+from .utils import _verify_export_inputs, pem_logger, restore_dir
 
 
 def save_results(
@@ -104,7 +103,7 @@ def save_results(
                 time_steps=difference_date_strs,
             )
     except KeyError:  # warn user that results are not saved
-        warnings.warn(
+        pem_logger.warning(
             f"{__file__}: no parameter for saving results to disk is found in the "
             f"config file"
         )

@@ -4,7 +4,6 @@ the volume fractions.
 """
 
 from pathlib import Path
-from warnings import warn
 
 import numpy as np
 from rock_physics_open.equinor_utilities.std_functions import (
@@ -28,6 +27,7 @@ from fmu.pem.pem_utilities.enum_defs import MineralMixModel
 from fmu.pem.pem_utilities.pem_config_validation import (
     MineralProperties,
 )
+from fmu.pem.pem_utilities.utils import pem_logger
 
 
 def effective_mineral_properties(
@@ -196,20 +196,16 @@ def normalize_mineral_fractions(
     # Demand values in the range [0.0, 1.0]
     for i, frac in enumerate(fracs):
         if np.any(frac < 0.0) or np.any(frac > 1.0):
-            warn(
-                f"fraction {names[i]} has values outside of range 0.0 to 1.0,"
-                f"clipped to range",
-                UserWarning,
+            pem_logger.warning(
+                "fraction %s has values outside of range 0.0 to 1.0, clipped to range",
+                names[i],
             )
             fracs[i] = np.ma.MaskedArray(np.ma.clip(frac, 0.0, 1.0))
 
     # Adjust values so that no cells exceed normalize_sum
     tot_fractions = sum(fracs)
     if np.ma.any(tot_fractions > normalize_sum):
-        warn(
-            "sum of fractions has values above limit, rescaled to range",
-            UserWarning,
-        )
+        pem_logger.warning("sum of fractions has values above limit, rescaled to range")
         scale_factor = np.ma.max(tot_fractions / normalize_sum)
         for i, frac in enumerate(fracs):
             fracs[i] /= scale_factor
