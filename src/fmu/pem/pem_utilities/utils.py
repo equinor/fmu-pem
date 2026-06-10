@@ -93,7 +93,10 @@ def filter_and_one_dim(
             - filtered arrays: 1D arrays containing the unmasked values from each arg
     """
     if not np.all([isinstance(arg, np.ma.MaskedArray) for arg in args]):
-        raise ValueError(f"{__file__}: all inputs should be numpy masked arrays")
+        raise ValueError(
+            f"{__file__}: all inputs should be numpy masked arrays"
+            f"Inputs are: {', '.join([type(m) for m in args])}"
+        )
 
     # Combine masks
     mask = args[0].mask
@@ -220,7 +223,10 @@ def get_shale_fraction(
             idx = fraction_names.index(shale_name)
             sh_list.append(vol_fractions[idx])
         except ValueError:
-            raise ValueError(f"unknown shale fraction: {shale_name}")
+            raise ValueError(
+                f"unknown shale fraction: {shale_name}\n"
+                f"known fraction names are: {', '.join(fraction_names)}"
+            )
 
     # Note that masked elements are set to 0 internally.
     return np.ma.sum(sh_list, axis=0)
@@ -270,7 +276,7 @@ def update_dict_list(base_list: list[dict], add_list: list[dict]) -> list[dict]:
 
 def _verify_update_inputs(base, add_list):
     if not isinstance(base, list) and isinstance(add_list, list):
-        raise TypeError(f"{__file__}: inputs are not lists")
+        raise TypeError("update dict from list: inputs are not lists")
     if not len(base) == len(add_list):
         raise ValueError(
             f"{__file__}: mismatch in list lengths: base list: {len(base)} vs. added "

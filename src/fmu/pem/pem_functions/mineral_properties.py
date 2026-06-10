@@ -225,5 +225,5 @@ def normalize_mineral_fractions(
     try:
         np.testing.assert_allclose(sum(fracs), 1.0, rtol=1.0e-6, atol=1.0e-6)
     except AssertionError as e:
-        raise ValueError(f"mineral fractions do not sum to 1: {e}") from e
+        raise ValueError(f"mineral fractions do not sum to 1: {e}.\n") from e
     return names, fracs

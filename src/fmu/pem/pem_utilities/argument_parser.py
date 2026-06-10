@@ -11,7 +11,7 @@ def _str2bool(value: object) -> bool:
     if text in {"0", "false", "f", "no", "n", "off"}:
         return False
     raise argparse.ArgumentTypeError(
-        f"Invalid boolean value: {value!r}. Expected true/false."
+        f"Argument parser: Invalid boolean value: {value!r}. Expected true/false."
     )
 
 

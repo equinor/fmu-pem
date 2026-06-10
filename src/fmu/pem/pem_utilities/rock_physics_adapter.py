@@ -153,7 +153,7 @@ def condensate_properties(
     if not HAS_PROPRIETARY_ROCK_PHYSICS:
         raise RuntimeError(
             "Condensate property calculation is not possible without the proprietary "
-            "rock physics package installed."
+            "rock physics package installed or an alternative implementation."
         )
 
     vp_c, rho_c, bulk_c = internal_condensate_properties(
