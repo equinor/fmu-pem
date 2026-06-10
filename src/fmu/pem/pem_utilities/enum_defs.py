@@ -6,6 +6,14 @@ from enum import Enum, IntFlag
 from typing import Literal
 
 
+class _OptionsMixin:
+    """Mixin providing a comma-separated list of valid values for error messages."""
+
+    @classmethod
+    def options(cls) -> str:
+        return ", ".join(m.value for m in cls)
+
+
 class PhaseSystem(IntFlag):
     """Eclipse 100 and OPM Flow phase system as encoded in INTEHEAD item 15 of the
       UNRST file.
@@ -37,50 +45,50 @@ class PhaseSystem(IntFlag):
         return bin(int(self)).count("1") >= 2
 
 
-class OverburdenPressureTypes(str, Enum):
+class OverburdenPressureTypes(_OptionsMixin, str, Enum):
     CONSTANT = "constant"
     TREND = "trend"
 
 
-class Lithology(str, Enum):
+class Lithology(_OptionsMixin, str, Enum):
     SILICICLASTICS = "siliciclastics"
     CARBONATE = "carbonate"
 
 
-class MineralMixModel(str, Enum):
+class MineralMixModel(_OptionsMixin, str, Enum):
     VOIGT_REUSS_HILL = "voigt-reuss-hill"
     HASHIN_SHTRIKMAN = "hashin-shtrikman-average"
 
 
-class FluidMixModel(str, Enum):
+class FluidMixModel(_OptionsMixin, str, Enum):
     WOOD = "wood"
     BRIE = "brie"
 
 
-class SaveTypes(str, Enum):
+class SaveTypes(_OptionsMixin, str, Enum):
     SAVE_TO_DISK = "save_results_to_disk"
     SAVE_INTERMEDIATE_RESULTS = "save_intermediate_results"
     SAVE_RESULTS_TO_CSV = "save_results_to_csv"
 
 
-class CO2Models(str, Enum):
+class CO2Models(_OptionsMixin, str, Enum):
     FLAG = "flag"
     SPAN_WAGNER = "span_wagner"
 
 
-class RegressionModelLithologies(str, Enum):
+class RegressionModelLithologies(_OptionsMixin, str, Enum):
     SANDSTONE = "sandstone"
     SHALE = "shale"
 
 
-class RPMType(str, Enum):
+class RPMType(_OptionsMixin, str, Enum):
     PATCHY_CEMENT = "patchy_cement"
     FRIABLE = "friable"
     T_MATRIX = "t_matrix"
     REGRESSION = "regression"
 
 
-class GasModels(str, Enum):
+class GasModels(_OptionsMixin, str, Enum):
     GLOBAL = "Global"
     LIGHT = "Light"
     HC2016 = "HC2016"
@@ -92,18 +100,18 @@ class GasModels(str, Enum):
 CoordinationNumberFunction = Literal["PorBased", "ConstVal"]
 
 
-class TemperatureMethod(str, Enum):
+class TemperatureMethod(_OptionsMixin, str, Enum):
     CONSTANT = "constant"
     FROMSIM = "from_sim"
 
 
-class DifferenceMethod(str, Enum):
+class DifferenceMethod(_OptionsMixin, str, Enum):
     DIFF = "diff"
     DIFFPERCENT = "diffpercent"
     RATIO = "ratio"
 
 
-class DifferenceAttribute(str, Enum):
+class DifferenceAttribute(_OptionsMixin, str, Enum):
     AI = "ai"
     VPVS = "vpvs"
     SI = "si"
@@ -127,17 +135,22 @@ class DifferenceAttribute(str, Enum):
     OVERBURDEN_PRESSURE = "overburden_pressure"
 
 
-class RegressionPressureModelTypes(str, Enum):
+class RegressionPressureModelTypes(_OptionsMixin, str, Enum):
     EXPONENTIAL = "exponential"
     POLYNOMIAL = "polynomial"
 
 
-class RegressionPressureParameterTypes(str, Enum):
+class PhysicsPressureModelTypes(_OptionsMixin, str, Enum):
+    FRIABLE = "friable"
+    PATCHY_CEMENT = "patchy_cement"
+
+
+class RegressionPressureParameterTypes(_OptionsMixin, str, Enum):
     VP_VS = "vp_vs"
     K_MU = "k_mu"
 
 
-class ParameterTypes(str, Enum):
+class ParameterTypes(_OptionsMixin, str, Enum):
     VP = "vp"
     VS = "vs"
     K = "k"
@@ -146,7 +159,7 @@ class ParameterTypes(str, Enum):
     POROSITY = "poro"
 
 
-class Sim2SeisRequiredParams(str, Enum):
+class Sim2SeisRequiredParams(_OptionsMixin, str, Enum):
     VP = "vp"
     VS = "vs"
     DENSITY = "density"
