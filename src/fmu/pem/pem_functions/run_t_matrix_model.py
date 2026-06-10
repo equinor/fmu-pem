@@ -17,6 +17,7 @@ from fmu.pem.pem_utilities import (
     filter_and_one_dim,
     reverse_filter_and_restore,
 )
+from fmu.pem.pem_utilities.utils import pem_logger
 
 from .run_patchy_cement_model import _verify_inputs
 
@@ -149,7 +150,7 @@ def run_t_matrix_model(
                 vsh,
             )
         if t_mat_params.t_mat_model_version == "PETEC":
-            vp, vs, rho, k, mu = run_t_matrix_forward_model_with_opt_params_petec(
+            vp, vs, rho, k, _mu = run_t_matrix_forward_model_with_opt_params_petec(
                 tmp_min_k,
                 tmp_min_mu,
                 tmp_min_rho,
@@ -164,7 +165,7 @@ def run_t_matrix_model(
                 str(petec_parameter_file),
             )
         else:
-            vp, vs, rho, k, mu = run_t_matrix_forward_model_with_opt_params_exp(
+            vp, vs, rho, k, _mu = run_t_matrix_forward_model_with_opt_params_exp(
                 tmp_fl_k,
                 tmp_fl_rho,
                 tmp_por,
@@ -176,6 +177,14 @@ def run_t_matrix_model(
                 t_mat_params.freq,
                 str(exp_parameter_file),
             )
+        # Give the user information of non-physical values in the saturated rock
+        if np.any(np.isnan(k)):
+            pem_logger.warning(
+                "non-physical values for saturated rock by T-Matrix model "
+                f"are found in {int(np.sum(np.isnan(k)))} cells. A combination of "
+                "low aspect ratio and high porosity values is the likely cause"
+            )
+
         if time_step > 0 and rock_matrix.pressure_sensitivity:
             vp, vs, rho, _, _ = carbonate_pressure_model(
                 vp,
@@ -192,6 +201,12 @@ def run_t_matrix_model(
                 pres_model_vs,
                 model_directory.absolute(),
                 False,
+            )
+        if np.sum(np.isnan(vp)) > np.sum(np.isnan(k)):
+            # Give information about added NaN cells from pressure sensitivity model
+            pem_logger.warning(
+                "pressure sensitivity model for T-Matrix added "
+                f"{np.sum(np.isnan(vp)) - np.sum(np.isnan(k))} non-physical cells"
             )
         vp, vs, rho = reverse_filter_and_restore(mask, vp, vs, rho)
         props = SaturatedRockProperties(vp=vp, vs=vs, density=rho)

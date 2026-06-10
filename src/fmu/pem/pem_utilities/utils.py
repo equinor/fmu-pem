@@ -94,8 +94,8 @@ def filter_and_one_dim(
     """
     if not np.all([isinstance(arg, np.ma.MaskedArray) for arg in args]):
         raise ValueError(
-            f"{__file__}: all inputs should be numpy masked arrays"
-            f"Inputs are: {', '.join([type(m) for m in args])}"
+            "all inputs should be numpy masked arrays; "
+            f"got: {', '.join(type(m).__name__ for m in args)}"
         )
 
     # Combine masks
@@ -275,7 +275,7 @@ def update_dict_list(base_list: list[dict], add_list: list[dict]) -> list[dict]:
 
 
 def _verify_update_inputs(base, add_list):
-    if not isinstance(base, list) and isinstance(add_list, list):
+    if not (isinstance(base, list) and isinstance(add_list, list)):
         raise TypeError("update dict from list: inputs are not lists")
     if not len(base) == len(add_list):
         raise ValueError(
@@ -371,7 +371,7 @@ def start_pem_run_log(level: int = logging.INFO) -> None:
     _stdout_handler.setFormatter(_PEM_FORMATTER)
     _stdout_handler.addFilter(lambda r: r.levelno < logging.WARNING)
 
-    pem_logger.setLevel(level)
+    pem_logger.setLevel(min(level, logging.WARNING))
     pem_logger.addHandler(_stdout_handler)
 
 
@@ -387,6 +387,7 @@ def stop_pem_run_log() -> None:
         _stdout_handler = None
     pem_logger.setLevel(logging.WARNING)
     _run_start_time = None
+    _logged_once.clear()
 
 
 def pem_log(message: str, level: int = logging.INFO) -> None:
@@ -395,4 +396,19 @@ def pem_log(message: str, level: int = logging.INFO) -> None:
     ``INFO``/``DEBUG`` go to stdout only while :func:`start_pem_run_log` is
     active. ``WARNING``/``ERROR``/``CRITICAL`` always go to stderr.
     """
+    pem_logger.log(level, message)
+
+
+_logged_once: set[str] = set()
+
+
+def pem_log_once(message: str, level: int = logging.INFO) -> None:
+    """Emit ``message`` at most once per run (deduplicated by message text).
+
+    The seen-set is cleared by :func:`stop_pem_run_log`, so a fresh run
+    starts with an empty history.
+    """
+    if message in _logged_once:
+        return
+    _logged_once.add(message)
     pem_logger.log(level, message)

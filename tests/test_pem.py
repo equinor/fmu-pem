@@ -43,6 +43,7 @@ def test_pem_fcn(data_dir, monkeypatch):
     pem_fcn(
         config=conf,
         run_dir=run_dir,
+        verbose=True,
     )
 
 

@@ -29,6 +29,8 @@ from fmu.pem.pem_utilities.pem_config_validation import (
 )
 from fmu.pem.pem_utilities.utils import pem_logger
 
+EPS = 1.0e-6
+
 
 def effective_mineral_properties(
     root_dir: Path,
@@ -202,10 +204,15 @@ def normalize_mineral_fractions(
             )
             fracs[i] = np.ma.MaskedArray(np.ma.clip(frac, 0.0, 1.0))
 
-    # Adjust values so that no cells exceed normalize_sum
+    # Adjust values so that no cells exceed normalize_sum. Issue a warning only if the
+    # sum exceeds the target sum by a tolerance
     tot_fractions = sum(fracs)
+    if np.ma.any(tot_fractions > normalize_sum + EPS):
+        pem_logger.warning(
+            "sum of fractions exceeds limit by maximum "
+            f"{np.max(tot_fractions - normalize_sum):.3f}, rescaled to range"
+        )
     if np.ma.any(tot_fractions > normalize_sum):
-        pem_logger.warning("sum of fractions has values above limit, rescaled to range")
         scale_factor = np.ma.max(tot_fractions / normalize_sum)
         for i, frac in enumerate(fracs):
             fracs[i] /= scale_factor
