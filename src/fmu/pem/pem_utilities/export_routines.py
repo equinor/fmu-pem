@@ -95,17 +95,18 @@ def save_results(
                     results_dir=full_output_path,
                     time_steps=seis_dates,
                 )
-            export_results_disk(
-                result_props=difference_props,
-                grid=sim_grid,
-                grid_name=grid_name,
-                results_dir=full_output_path,
-                time_steps=difference_date_strs,
-            )
+            if difference_props is not None:
+                export_results_disk(
+                    result_props=difference_props,
+                    grid=sim_grid,
+                    grid_name=grid_name,
+                    results_dir=full_output_path,
+                    time_steps=difference_date_strs,
+                )
     except KeyError:  # warn user that results are not saved
         pem_logger.warning(
             f"{__file__}: no parameter for saving results to disk is found in the "
-            f"config file"
+            "config file"
         )
 
     # 3. Save intermediate results only if specified in the config file

@@ -83,8 +83,8 @@ def estimate_sum_delta_time(
     """Calculate TWT (two-way-time) for seismic signal for each restart date
 
     Args:
-        constant_props: constant properties, here the delta Z property of the eclipse
-            grid is used
+        constant_props: constant properties, here the delta Z property of the
+            reservoir simulator grid is used
         sat_rock_props: effective properties for the saturated rock per restart date
         config: configuration parameters
 

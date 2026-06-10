@@ -27,18 +27,19 @@ def pem_fcn(
             # Import Eclipse simulation grid - INIT and RESTART
             sim_grid, constant_props, time_step_props, _phase_system = (
                 pem_utils.read_sim_grid_props(
-                    rel_dir_sim_files=config.eclipse_files.rel_path_simgrid,
-                    egrid_file=config.eclipse_files.egrid_file,
-                    init_property_file=config.eclipse_files.init_property_file,
-                    restart_property_file=config.eclipse_files.restart_property_file,
+                    rel_dir_sim_files=config.simulator_files.rel_path_simgrid,
+                    egrid_file=config.simulator_files.egrid_file,
+                    init_property_file=config.simulator_files.init_property_file,
+                    restart_property_file=config.simulator_files.restart_property_file,
                     seis_dates=config.global_params.mod_dates,
                     fipnum_name=config.alternative_fipnum_name,
                 )
             )
-            pem_log("simgrid, init and restart properties read")
+            pem_log("reservoir simulator grid, init and restart properties read")
 
             # Optionally adjust PORO for non-binary NTG (constant non-net porosity
-            # or a pre-adjusted grid parameter file).
+            # or a pre-adjusted grid parameter file). Log message is produced during
+            # adjustment
             pem_utils.apply_porosity_adjustment(
                 adjustment=config.rock_matrix.porosity_adjustment,
                 sim_init=constant_props,
@@ -59,7 +60,7 @@ def pem_fcn(
             constant_props.vsh_pem = vsh
             pem_log("mineral properties estimated")
 
-            # Fluid properties calculated for all time-steps
+            # Fluid properties are calculated for all time-steps
             fluid_properties, below_bp_grids = (
                 pem_fcns.effective_fluid_properties_zoned(
                     restart_props=time_step_props,
@@ -102,13 +103,17 @@ def pem_fcn(
 
             # Calculate difference properties. Possible properties are all that vary
             # with time
-            diff_props, diff_date_strs = pem_utils.calculate_diff_properties(
-                props=[time_step_props, eff_pres, sat_rock_props, sum_delta_time],
-                diff_dates=config.global_params.mod_diffdates,
-                seis_dates=config.global_params.mod_dates,
-                diff_calculation=config.diff_calculation,
-            )
-            pem_log("differential properties estimated")
+            if config.diff_calculation:
+                diff_props, diff_date_strs = pem_utils.calculate_diff_properties(
+                    props=[time_step_props, eff_pres, sat_rock_props, sum_delta_time],
+                    diff_dates=config.global_params.mod_diffdates,
+                    seis_dates=config.global_params.mod_dates,
+                    diff_calculation=config.diff_calculation,
+                )
+                pem_log("differential properties estimated")
+            else:
+                diff_props = None
+                diff_date_strs = None
 
             # As a precaution, update the grid mask for inactive cells, based on the
             # saturated rock properties
