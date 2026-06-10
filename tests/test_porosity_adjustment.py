@@ -222,7 +222,7 @@ def test_constant_non_net_adjustment_raises_when_ntg_absent(
     sim_init, sim_grid, tmp_path
 ):
     assert sim_init.ntg is None
-    with pytest.raises(ImportError, match="NTG is required"):
+    with pytest.raises(ImportError, match="NTG parameter is required"):
         apply_porosity_adjustment(
             adjustment=ConstantNonNetPorosity(non_net_porosity=0.05),
             sim_init=sim_init,

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from math import isclose
 from typing import TYPE_CHECKING
 
@@ -27,6 +26,7 @@ from fmu.pem.pem_utilities.rock_physics_adapter import (
     oil_properties,
     saturations_below_bubble_point,
 )
+from fmu.pem.pem_utilities.utils import pem_logger
 
 if TYPE_CHECKING:
     from fmu.pem.pem_utilities.pem_config_validation import PVTZone
@@ -80,7 +80,7 @@ def _adjust_bubble_point(
                 "file for each PVTNUM zone, e.g.: 'gas_z_factor: 0.97' "
                 "The gas Z-factor must deviate from 1.0."
             )
-        warnings.warn(
+        pem_logger.warning(
             f"Detected pressure below bubble point for oil in {np.sum(idx_below)} "
             f"cells, this is {frac_below:.3f} of total number of cells."
         )

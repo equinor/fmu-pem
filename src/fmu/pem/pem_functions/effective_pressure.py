@@ -92,7 +92,6 @@ def estimate_pressure(
     # Bulk density calculation needs to be zone-aware for patchy cement models
     fl_density = [fluid.density for fluid in fluid_props]
 
-    # Check if any zone uses patchy cement model and needs special handling
     bulk_density = []
     for fl_dens in fl_density:
         bulk_dens_grid = np.ma.masked_array(
@@ -113,6 +112,7 @@ def estimate_pressure(
             # Check if this zone uses patchy cement model
             is_patchy_cement = zone_region.model.model_name == RPMType.PATCHY_CEMENT
 
+            # Check if any zone uses patchy cement model and needs special handling
             if is_patchy_cement:
                 # Get cement fraction and density for patchy cement model
                 cement_fraction = zone_region.model.parameters.cement_fraction
@@ -137,7 +137,7 @@ def estimate_pressure(
             bulk_density.append(bulk_dens_grid)
 
     # Calculate overburden pressure per zone (time-independent)
-    # Initialize overburden pressure grid
+    # Initialize overburden pressure grid to NaN
     overburden_pressure_grid = np.ma.masked_array(
         np.full(sim_init.depth.shape, np.nan, dtype=float), mask=fipnum_mask
     )

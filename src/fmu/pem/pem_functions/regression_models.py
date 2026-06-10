@@ -34,6 +34,7 @@ from fmu.pem.pem_utilities.rpm_models import (
     PhysicsModelPressureSensitivity,
     VpVsRegressionParams,
 )
+from fmu.pem.pem_utilities.utils import pem_logger
 
 from .pressure_sensitivity import (
     apply_dry_rock_pressure_sensitivity_model,
@@ -223,6 +224,16 @@ def run_regression_models(
                     k1=k_sand, mu1=mu_sand, k2=k_shale, mu2=mu_shale, f1=(1.0 - tmp_vsh)
                 )
 
+        # Give the user a chance to interpret non-physical values
+        if np.any(k_dry > tmp_min_k):
+            pem_logger.warning(
+                "dry rock properties exceeding mineral properties for bulk modulus "
+                f"are detected for {int(np.sum(k_dry > tmp_min_k))} cells. It is "
+                "recommended to investigate that regression parameters are valid "
+                f"for a porosity range of {np.min(tmp_por):.2f} to "
+                f"{np.max(tmp_por):.2f}"
+            )
+
         # Perform pressure correction on dry rock properties
         if time_step > 0 and rock_matrix.pressure_sensitivity:
             # Prepare in-situ properties dictionary based on what we have
@@ -271,6 +282,17 @@ def run_regression_models(
                 cement_properties=cement_props,
             )
 
+            # Provide logging information that can identify pressure changes
+            # leading to non-physical dry rock properties
+            added_non_physical_dry_rock_cells = np.logical_xor(
+                depleted_props[ParameterTypes.K.value] > tmp_min_k, k_dry > tmp_min_k
+            )
+            if np.any(added_non_physical_dry_rock_cells):
+                pem_logger.warning(
+                    "pressure sensitivity modelling has increased the number of cells "
+                    "with dry rock bulk modulus exceeding mineral bulk modulus by "
+                    f"{int(np.sum(added_non_physical_dry_rock_cells))}"
+                )
             # Update dry properties with pressure-corrected values
             k_dry = depleted_props[ParameterTypes.K.value]
             mu = depleted_props[ParameterTypes.MU.value]
@@ -280,6 +302,14 @@ def run_regression_models(
         k_sat = gassmann(k_dry, tmp_por, tmp_fl_prop_k, tmp_min_k)
         rho_sat = rho_dry + tmp_por * tmp_fl_prop_rho
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
+
+        # Provide logging information about possible non-physical values from
+        # Gassmann fluid substitution
+        if np.any(np.isnan(k_sat)):
+            pem_logger.warning(
+                "Fluid substitution (Gassmann model) found non-physical values in "
+                f"{int(np.sum(np.isnan(k_sat)))} cells, the value is set to NaN"
+            )
 
         vp, vs, rho_sat, k_dry, mu, rho_dry = reverse_filter_and_restore(
             mask, vp, vs, rho_sat, k_dry, mu, rho_dry

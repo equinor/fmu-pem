@@ -166,7 +166,7 @@ class ZoneRegionMatrixParams(BaseModel):
         if v["model_name"] not in list(RPMType):
             raise ValueError(
                 f"unknown rock physics model: {v['model_name']}\n"
-                f"known rock physics models are: {', '.join(list(RPMType))}"
+                f"known rock physics models are: {RPMType.options()}"
             )
         return v
 

@@ -1,8 +1,9 @@
-import warnings
 from dataclasses import asdict
 
 import numpy as np
 import xtgeo
+
+from fmu.pem.pem_utilities.utils import pem_logger
 
 from .pem_class_definitions import SaturatedRockProperties
 
@@ -42,7 +43,7 @@ def update_inactive_grid_cells(
     init_mask = np.logical_not(init_mask)
 
     if not np.all(init_mask == grid.actnum_array.astype(bool)):
-        warnings.warn(
+        pem_logger.warning(
             f"There are undefined values in PEM results: "
             f"{np.sum(np.logical_xor(init_mask, grid.actnum_array.astype(bool)))} "
             f"cells are added to the model's inactive cells. \nPlease investigate the "
