@@ -9,6 +9,8 @@ import numpy as np
 
 from fmu.pem.pem_utilities.enum_defs import (
     ParameterTypes,
+    PhysicsPressureModelTypes,
+    RegressionPressureModelTypes,
     RegressionPressureParameterTypes,
 )
 from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
@@ -167,7 +169,8 @@ def _extract_input_properties(
             vp, vs = velocity(in_situ_dict[k_key], in_situ_dict[mu_key], rho)[0:2]
             return vp, vs
         raise PressureSensitivityInputError(
-            f"For VP_VS mode, need either ({vp_key}, {vs_key}) or ({k_key}, {mu_key})"
+            f"For VP_VS mode pressure regression model, either ({vp_key}, "
+            f"{vs_key}) or ({k_key}, {mu_key}) is needed"
         )
     # K_MU mode
     if has_moduli:
@@ -177,7 +180,8 @@ def _extract_input_properties(
         k, mu = moduli(in_situ_dict[vp_key], in_situ_dict[vs_key], rho)
         return k, mu
     raise PressureSensitivityInputError(
-        f"For K_MU mode, need either ({k_key}, {mu_key}) or ({vp_key}, {vs_key})"
+        f"For VP_VS mode pressure regression model, either ({vp_key}, "
+        f"{vs_key}) or ({k_key}, {mu_key}) is needed"
     )
 
 
@@ -348,7 +352,13 @@ def apply_dry_rock_pressure_sensitivity_model(
             mineral_properties,
             cement_properties,
         )
-    raise TypeError(f"Unsupported model type: {type(model)}")
+    raise TypeError(
+        f"Unsupported model type for pressure sensitivity: {type(model)}. \n"
+        f"Available options for regression based models are "
+        f"{RegressionPressureModelTypes.options()}."
+        f"Available options for physics based models are "
+        f"{PhysicsPressureModelTypes.options()}."
+    )
 
 
 def _apply_regression_model(
@@ -390,7 +400,7 @@ def _apply_physics_model(
     # Validate required inputs for physics models
     if mineral_properties is None:
         raise PressureSensitivityInputError(
-            "Physics-based models require mineral_properties"
+            "Physics-based pressure seisntivity models require mineral_properties"
         )
 
     required_keys = {

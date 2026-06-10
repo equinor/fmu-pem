@@ -55,7 +55,9 @@ class PetroElasticModel(ForwardModelStepPlugin):
             with restore_dir(args.model_dir):
                 _ = read_pem_config(args.config_file, pre_experiment=True)
         except Exception as e:
-            raise ForwardModelStepValidationError(f"pem validation failed:\n {str(e)}")
+            raise ForwardModelStepValidationError(
+                f"pem pre-experiment validation failed: {str(e)}"
+            )
 
     @staticmethod
     def documentation() -> ForwardModelStepDocumentation | None:

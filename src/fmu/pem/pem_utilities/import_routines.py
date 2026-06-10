@@ -157,7 +157,10 @@ def read_phase_system(unrst_file: Path) -> PhaseSystem:
                     f"of {unrst_file}; expected non-zero subset of 1|2|4."
                 )
             return PhaseSystem(indicator)
-    raise ValueError(f"No INTEHEAD record found in {unrst_file}")
+    raise ValueError(
+        f"No INTEHEAD record found in {unrst_file}. The INTEHEAD information "
+        "is used to indentify the reservoir simulator type and the phase system"
+    )
 
 
 def read_sim_grid_props(
@@ -255,20 +258,16 @@ def import_fractions(
         list: fraction properties
     """
     with restore_dir(root_dir / fraction_path):
-        try:
-            grid_props = [
-                xtgeo.gridproperty_from_file(
-                    file,
-                    name=name,  # type: ignore
-                    grid=grd,  # type: ignore
+        grid_props: list[xtgeo.GridProperty] = []
+        for name, file in zip(fraction_names, fraction_files, strict=True):
+            try:
+                grid_props.append(
+                    xtgeo.gridproperty_from_file(file, name=name, grid=grd)
                 )
-                for name in fraction_names
-                for file in fraction_files
-            ]
-        except ValueError as exc:
-            raise ImportError(
-                f"{__file__}: failed to import volume fractions files {fraction_files}"
-            ) from exc
+            except ValueError as exc:
+                raise ImportError(
+                    f"failed to import volume fraction {name!r} from {file}"
+                ) from exc
     return [grid_prop.values for grid_prop in grid_props]
 
 
@@ -296,8 +295,8 @@ def apply_porosity_adjustment(
     if isinstance(adjustment, ConstantNonNetPorosity):
         if sim_init.ntg is None:
             raise ImportError(
-                "NTG is required for the constant non-net porosity adjustment "
-                "but is not present in the Eclipse INIT file."
+                "NTG parameter is required for the constant non-net porosity "
+                "adjustment but it is not present in the Eclipse INIT file."
             )
         ntg = np.ma.masked_array(sim_init.ntg.data, mask=sim_init.poro.mask)
         _verify_ntg_is_non_binary(ntg)

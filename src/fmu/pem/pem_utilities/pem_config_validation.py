@@ -75,7 +75,8 @@ class EclipseFiles(BaseModel):
             return self
         if not self.rel_path_simgrid.exists():
             raise FileNotFoundError(
-                f"simulation grid directory is missing: {self.rel_path_simgrid}"
+                "reservoir simulation grid directory is missing: "
+                f"{self.rel_path_simgrid}"
             )
         for sim_file in [
             self.egrid_file,
@@ -85,7 +86,7 @@ class EclipseFiles(BaseModel):
             full_name = self.rel_path_simgrid / sim_file
             if not full_name.exists():
                 raise FileNotFoundError(
-                    f"Reservoir simulation file is missing: {full_name}"
+                    f"reservoir simulation file is missing: {full_name}"
                 )
         return self
 
@@ -114,13 +115,13 @@ class FractionFiles(BaseModel):
             return self
         if not self.rel_path_fractions.exists():
             raise FileNotFoundError(
-                f"fractions directory is missing: {self.rel_path_fractions}"
+                f"volume fractions directory is missing: {self.rel_path_fractions}"
             )
         for frac_prop in self.fractions_prop_file_names:
             full_fraction_prop = self.rel_path_fractions / frac_prop
             if not full_fraction_prop.exists():
                 raise FileNotFoundError(
-                    f"fraction prop file is missing: {full_fraction_prop}"
+                    f"volume fraction property file is missing: {full_fraction_prop}"
                 )
         return self
 
@@ -163,7 +164,10 @@ class ZoneRegionMatrixParams(BaseModel):
     @classmethod
     def model_check(cls, v: dict, info: ValidationInfo) -> dict:
         if v["model_name"] not in list(RPMType):
-            raise ValueError(f"unknown model: {v['model_name']}")
+            raise ValueError(
+                f"unknown rock physics model: {v['model_name']}\n"
+                f"known rock physics models are: {', '.join(list(RPMType))}"
+            )
         return v
 
 
@@ -221,7 +225,7 @@ class PreAdjustedPorosityGrid(BaseModel):
         full_name = self.rel_path / self.file_name
         if not full_name.exists():
             raise FileNotFoundError(
-                f"pre-adjusted porosity grid file is missing: {full_name}"
+                f"pre-adjusted porosity parameter file is missing: {full_name}"
             )
         return self
 
@@ -349,13 +353,16 @@ class RockMatrixProperties(BaseModel):
                 tmp_max = max(num_array)
                 tmp_num_array = list(range(1, tmp_max + 1))
         if detect_overlaps(fipnum_strings, tmp_num_array):
-            raise ValueError(f"Overlaps in group definitions: {fipnum_strings}")
+            raise ValueError(f"Overlaps in FIPNUM group definitions: {fipnum_strings}")
         return v
 
     @field_validator("cement", mode="before")
     def cement_check(cls, v: str, info: ValidationInfo) -> str:
         if v not in info.data["minerals"]:
-            raise ValueError(f'{__file__}: cement mineral "{v}" not listed in minerals')
+            raise ValueError(
+                f'{__file__}: cement mineral "{v}" not listed in minerals: '
+                f"{', '.join(info.data['minerals'])}"
+            )
         return v
 
     @field_validator("shale_fractions", mode="before")
@@ -365,7 +372,7 @@ class RockMatrixProperties(BaseModel):
             if frac not in info.data["fraction_names"]:
                 raise ValueError(
                     f'{__file__}: shale fraction "{frac}" not listed in volume '
-                    f"fraction names"
+                    f"fraction names: {', '.join(info.data['fraction_names'])}"
                 )
         return v
 
@@ -375,7 +382,7 @@ class RockMatrixProperties(BaseModel):
         if v not in info.data["minerals"]:
             raise ValueError(
                 f'{__file__}: shale fraction mineral "{v}" not listed in fraction '
-                f"minerals"
+                f"minerals: {', '.join(info.data['minerals'])}"
             )
         return v
 
@@ -393,7 +400,10 @@ class RockMatrixProperties(BaseModel):
                     fipnum_group.pressure_sensitivity_model, NoPressureSensitivityModel
                 )
             ):
-                raise ValueError("a model is required when pressure sensitivity is set")
+                raise ValueError(
+                    "a pressure sensitivity model is required when "
+                    "pressure sensitivity is set"
+                )
         return self
 
 
@@ -471,7 +481,7 @@ class Brine(BaseModel):
 
         raise ValueError(
             "sum of chloride percentages "
-            f"({perc_sum}%) differs from 100% by more than 10% "
+            f"({perc_sum}%) differs from 100% by more than 0.1% "
             "in brine parameters"
         )
 
@@ -588,7 +598,7 @@ class PVTZone(BaseModel):
     def check_fluid_type(self) -> Self:
         if self.calculate_condensate and not HAS_PROPRIETARY_ROCK_PHYSICS:
             raise NotImplementedError(
-                "Missing model for condensate, proprietary model required"
+                "missing model for condensate, proprietary model required"
             )
         return self
 
@@ -809,7 +819,10 @@ class PemConfig(BaseModel):
                 os.makedirs(path, exist_ok=True)
             else:
                 if not Path(path).exists():
-                    raise ValueError(f"Directory {path} does not exist")
+                    raise ValueError(
+                        f"PEM paths: Directory {path} does not exist. "
+                        "Please create it before attempting to re-run."
+                    )
         return v
 
     @field_validator("diff_calculation", mode="before")
