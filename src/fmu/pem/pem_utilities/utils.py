@@ -94,8 +94,8 @@ def filter_and_one_dim(
     """
     if not np.all([isinstance(arg, np.ma.MaskedArray) for arg in args]):
         raise ValueError(
-            f"{__file__}: all inputs should be numpy masked arrays"
-            f"Inputs are: {', '.join([type(m) for m in args])}"
+            "all inputs should be numpy masked arrays; "
+            f"got: {', '.join(type(m).__name__ for m in args)}"
         )
 
     # Combine masks
@@ -387,6 +387,7 @@ def stop_pem_run_log() -> None:
         _stdout_handler = None
     pem_logger.setLevel(logging.WARNING)
     _run_start_time = None
+    _logged_once.clear()
 
 
 def pem_log(message: str, level: int = logging.INFO) -> None:
@@ -395,4 +396,19 @@ def pem_log(message: str, level: int = logging.INFO) -> None:
     ``INFO``/``DEBUG`` go to stdout only while :func:`start_pem_run_log` is
     active. ``WARNING``/``ERROR``/``CRITICAL`` always go to stderr.
     """
+    pem_logger.log(level, message)
+
+
+_logged_once: set[str] = set()
+
+
+def pem_log_once(message: str, level: int = logging.INFO) -> None:
+    """Emit ``message`` at most once per run (deduplicated by message text).
+
+    The seen-set is cleared by :func:`stop_pem_run_log`, so a fresh run
+    starts with an empty history.
+    """
+    if message in _logged_once:
+        return
+    _logged_once.add(message)
     pem_logger.log(level, message)

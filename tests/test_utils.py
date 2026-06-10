@@ -124,7 +124,15 @@ def test_verify_mineral_inputs():
         )
 
 
-def test_normalize_mineral_fractions():
+def test_normalize_mineral_fractions(caplog, monkeypatch):
+    from fmu.pem.pem_utilities.utils import pem_logger
+
+    monkeypatch.setattr(pem_logger, "propagate", True)
+    caplog.set_level("WARNING", logger="fmu.pem")
+
+    def _warned(substring: str) -> bool:
+        return any(substring in r.getMessage() for r in caplog.records)
+
     # Basic case - fractions sum to less than 1
     names = ["shale"]
     fracs = [np.ma.array([0.63])]
@@ -138,23 +146,25 @@ def test_normalize_mineral_fractions():
     assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
 
     # Test clipping of negative values
+    caplog.clear()
     names = ["shale"]
     fracs = [np.ma.array([-0.1])]
-    with pytest.warns(UserWarning, match="fraction shale has values outside of range"):
-        result_names, result_fracs = normalize_mineral_fractions(
-            names, fracs, "quartz", por, False
-        )
+    result_names, result_fracs = normalize_mineral_fractions(
+        names, fracs, "quartz", por, False
+    )
+    assert _warned("fraction shale has values outside of range")
     assert_array_almost_equal(result_fracs[0], 0.0)
     assert_array_almost_equal(result_fracs[1], 1.0)
     assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
 
     # Test clipping of values > 1
+    caplog.clear()
     names = ["shale"]
     fracs = [np.ma.array([1.2])]
-    with pytest.warns(UserWarning, match="fraction shale has values outside of range"):
-        result_names, result_fracs = normalize_mineral_fractions(
-            names, fracs, "quartz", por, True
-        )
+    result_names, result_fracs = normalize_mineral_fractions(
+        names, fracs, "quartz", por, True
+    )
+    assert _warned("fraction shale has values outside of range")
     assert_array_almost_equal(result_fracs[0], 1.0)
     # No complement fraction should be added when the main fraction is 1.0
     assert len(result_fracs) == 1
@@ -162,12 +172,13 @@ def test_normalize_mineral_fractions():
     assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
 
     # Test scaling when sum > 1
+    caplog.clear()
     names = ["shale", "calcite"]
     fracs = [np.ma.array([0.7]), np.ma.array([0.6])]
-    with pytest.warns(UserWarning, match="sum of fractions has values above limit"):
-        result_names, result_fracs = normalize_mineral_fractions(
-            names, fracs, "quartz", por, True
-        )
+    result_names, result_fracs = normalize_mineral_fractions(
+        names, fracs, "quartz", por, True
+    )
+    assert _warned("sum of fractions exceeds limit by maximum")
     assert_array_almost_equal(np.ma.sum(result_fracs), 1.0)
     assert_array_almost_equal(result_fracs[0] / result_fracs[1], 0.7 / 0.6)
 

@@ -12,7 +12,7 @@ from .pem_config_validation import (
     PorosityAdjustment,
     PreAdjustedPorosityGrid,
 )
-from .utils import bar_to_pa, restore_dir
+from .utils import bar_to_pa, pem_log, pem_log_once, restore_dir
 
 # Eclipse stores the phase indicator in INTEHEAD item 15 (1-indexed) and the
 # simulator program identifier (IPROG) in item 95.
@@ -62,6 +62,10 @@ def read_init_properties(
                     threshold=0,
                     filter_below=True,
                 )
+    else:
+        pem_log(
+            "no AQUIFERN parameter in INIT file, no cells will be masked as aquifer"
+        )
     # Dictionary with lower-case names and the values as masked arrays
     props_dict = {
         sim_init_props[name].name.lower(): sim_init_props[name].values
@@ -159,7 +163,7 @@ def read_phase_system(unrst_file: Path) -> PhaseSystem:
             return PhaseSystem(indicator)
     raise ValueError(
         f"No INTEHEAD record found in {unrst_file}. The INTEHEAD information "
-        "is used to indentify the reservoir simulator type and the phase system"
+        "is used to identify the reservoir simulator type and the phase system"
     )
 
 
@@ -193,6 +197,7 @@ def read_sim_grid_props(
     )
 
     phase_system = read_phase_system(rel_dir_sim_files / restart_property_file)
+    pem_log(f"phase system detected from UNRST: {phase_system.name}")
 
     # TEMP will only be available for compositional reservoir simulators
     rst_props_names = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
@@ -221,7 +226,7 @@ def read_sim_grid_props(
             )
 
     # Formation pressure has unit `bar` in standard reservoir simulators, but in the
-    # PEM models, unit # `Pa` is expected. Perform unit conversion before class
+    # PEM models, unit `Pa` is expected. Perform unit conversion before class
     # objects are populated
     for date in seis_dates:
         rst_props["PRESSURE" + "_" + date].values = bar_to_pa(
@@ -293,11 +298,13 @@ def apply_porosity_adjustment(
     if isinstance(adjustment, NoPorosityAdjustment):
         return
 
+    initial_average_porosity = np.ma.mean(sim_init.poro)
+
     if isinstance(adjustment, ConstantNonNetPorosity):
         if sim_init.ntg is None:
             raise ImportError(
                 "NTG parameter is required for the constant non-net porosity "
-                "adjustment but it is not present in the Eclipse INIT file."
+                "adjustment but it is not present in the reservoir simulator INIT file."
             )
         ntg = np.ma.masked_array(sim_init.ntg.data, mask=sim_init.poro.mask)
         _verify_ntg_is_non_binary(ntg)
@@ -323,6 +330,11 @@ def apply_porosity_adjustment(
         )
         sim_init.poro = np.ma.masked_array(
             new_poro.values.data, mask=sim_init.poro.mask
+        )
+        pem_log(
+            "porosity adjustment has modified average porosity from "
+            f"{float(initial_average_porosity):.3f} to "
+            f"{float(np.ma.mean(sim_init.poro)):.3f}"
         )
         return
 
@@ -354,7 +366,14 @@ def adjust_mask(
     np.ma.MaskedArray
         grid property with modified mask
     """
+    orig_mask = property.mask
     ind_mask = indicator < threshold if filter_below else indicator > threshold
+    added_mask = np.ma.logical_xor(orig_mask, ind_mask)
+    if np.any(added_mask):
+        pem_log_once(
+            f"adjust_mask: {int(np.sum(added_mask))} aquifer cells "
+            "added to property mask"
+        )
     property.mask = np.logical_or(property.mask, ind_mask)
     return property
 

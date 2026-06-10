@@ -20,6 +20,7 @@ from fmu.pem.pem_utilities import (
 from fmu.pem.pem_utilities.enum_defs import (
     ParameterTypes,
 )
+from fmu.pem.pem_utilities.utils import pem_logger
 
 from .pressure_sensitivity import apply_dry_rock_pressure_sensitivity_model
 
@@ -131,11 +132,28 @@ def run_friable(
             k_dry = depl_props[ParameterTypes.K.value]
             mu = depl_props[ParameterTypes.MU.value]
 
+            # Give the user a chance to interpret non-physical values
+            if np.any(k_dry > tmp_min_k):
+                pem_logger.warning(
+                    "dry rock properties exceeding mineral properties for bulk modulus "
+                    f"are detected for {int(np.sum(k_dry > tmp_min_k))} cells. It is "
+                    "recommended to investigate that the pressure sensitivity model "
+                    f"is valid for a depletion of {np.max(init_press - tmp_pres):.2f}"
+                )
+
         # Saturate rock
         k_sat = gassmann(k_dry, tmp_por, tmp_fl_prop_k, tmp_min_k)
         rho_dry = (1.0 - tmp_por) * tmp_min_rho
         rho_sat = rho_dry + tmp_por * tmp_fl_prop_rho
         vp, vs = velocity(k_sat, mu, rho_sat)[0:2]
+
+        # Provide logging information about possible non-physical values from
+        # Gassmann fluid substitution
+        if np.any(np.isnan(k_sat)):
+            pem_logger.warning(
+                "Fluid substitution (Gassmann model) found non-physical values in "
+                f"{int(np.sum(np.isnan(k_sat)))} cells, the value is set to NaN"
+            )
 
         # Restore original size and shape
         vp, vs, rho_sat, k_dry_out, mu_out, rho_dry_out = reverse_filter_and_restore(

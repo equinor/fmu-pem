@@ -293,14 +293,26 @@ def test_above_bubble_point_succeeds(sim_props_high_pressure, pvtnum_grid):
     assert np.all(res.bulk_modulus > 0.0)
 
 
-def test_below_bubble_point_with_z_factor(sim_props_low_pressure, pvtnum_grid):
+@pytest.mark.filterwarnings(
+    "ignore:divide by zero encountered in power:RuntimeWarning",
+    "ignore:divide by zero encountered in reciprocal:RuntimeWarning",
+)
+def test_below_bubble_point_with_z_factor(
+    sim_props_low_pressure, pvtnum_grid, caplog, monkeypatch
+):
     """Test that setting gas_z_factor != 1.0 allows operation below bubble point"""
+    from fmu.pem.pem_utilities.utils import pem_logger
+
+    monkeypatch.setattr(pem_logger, "propagate", True)
+    caplog.set_level("WARNING", logger="fmu.pem")
+
     fluids_with_z = cast(Fluids, StubFluids(gas_z_factor=0.95))
-    # Should not raise an error, and should issue a warning instead
-    with pytest.warns(UserWarning, match="Detected pressure below bubble point"):
-        res, bp = effective_fluid_properties_zoned(
-            sim_props_low_pressure, fluids_with_z, pvtnum_grid
-        )
+    res, bp = effective_fluid_properties_zoned(
+        sim_props_low_pressure, fluids_with_z, pvtnum_grid
+    )
+    assert any(
+        "Detected pressure below bubble point" in r.getMessage() for r in caplog.records
+    )
     assert isinstance(res[0], EffectiveFluidProperties)
     assert res[0].density.shape == (3,)
     assert np.all(res[0].bulk_modulus > 0.0)

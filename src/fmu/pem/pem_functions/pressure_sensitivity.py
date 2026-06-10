@@ -180,7 +180,7 @@ def _extract_input_properties(
         k, mu = moduli(in_situ_dict[vp_key], in_situ_dict[vs_key], rho)
         return k, mu
     raise PressureSensitivityInputError(
-        f"For VP_VS mode pressure regression model, either ({vp_key}, "
+        f"For K_MU mode pressure regression model, either ({vp_key}, "
         f"{vs_key}) or ({k_key}, {mu_key}) is needed"
     )
 
@@ -354,8 +354,8 @@ def apply_dry_rock_pressure_sensitivity_model(
         )
     raise TypeError(
         f"Unsupported model type for pressure sensitivity: {type(model)}. \n"
-        f"Available options for regression based models are "
-        f"{RegressionPressureModelTypes.options()}."
+        "Available options for regression based models are "
+        f"{RegressionPressureModelTypes.options()}. "
         f"Available options for physics based models are "
         f"{PhysicsPressureModelTypes.options()}."
     )
@@ -400,7 +400,7 @@ def _apply_physics_model(
     # Validate required inputs for physics models
     if mineral_properties is None:
         raise PressureSensitivityInputError(
-            "Physics-based pressure seisntivity models require mineral_properties"
+            "Physics-based pressure sensitivity models require mineral_properties"
         )
 
     required_keys = {
