@@ -48,7 +48,7 @@ from .rpm_models import (
 REGEX_FIPNUM_PVTNUM = r"^(?:\*|(?:\d+(?:-\d+)?)(?:,(?:\d+(?:-\d+)?))*)$"
 
 
-class EclipseFiles(BaseModel):
+class ReservoirSimulatorFiles(BaseModel):
     rel_path_simgrid: Path = Field(
         default=Path("sim2seis/input/pem"),
         description="Relative path of the simulation grid",
@@ -67,7 +67,7 @@ class EclipseFiles(BaseModel):
     )
 
     @model_validator(mode="after")
-    def check_eclipse_files_exist(self, info: ValidationInfo) -> Self:
+    def check_simulator_files_exist(self, info: ValidationInfo) -> Self:
         pre_experiment = (
             info.context.get("pre_experiment", False) if info.context else False
         )
@@ -566,7 +566,7 @@ class PVTZone(BaseModel):
     )
     oil: Oil = Field(
         description="Oil model parameters. Note that GOR (gas-oil ratio) is read from"
-        " eclipse restart file"
+        " reservoir simulator restart file"
     )
     # Note that CO2 does not require a separate definition here, as it's properties only
     # depend on temperature and pressure
@@ -746,7 +746,7 @@ class PemPaths(BaseModel):
     )
     rel_path_simgrid: SkipJsonSchema[Path] = Field(
         default=Path("sim2seis/input/pem"),
-        description="Directory for eclipse simulation grid",
+        description="Directory for reservoir simulator simulation grid",
     )
     rel_path_geogrid: SkipJsonSchema[Path] = Field(
         default=Path("sim2seis/input/pem"),
@@ -775,7 +775,7 @@ class PemConfig(BaseModel):
         description="Default path settings exist, it is possible to override them, "
         "mostly relevant for input paths",
     )
-    eclipse_files: EclipseFiles
+    simulator_files: ReservoirSimulatorFiles
     rock_matrix: RockMatrixProperties = Field(
         description="Settings related to effective mineral properties and rock "
         "physics model",

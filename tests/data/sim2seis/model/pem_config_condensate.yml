@@ -8,7 +8,7 @@ paths:
 #  rel_path_simgrid: sim2seis/input/pem
 #  rel_path_geogrid: share/results/grids
 
-eclipse_files:
+simulator_files:
   # Import Eclipse simulation grid - INIT and RESTART
   egrid_file: ECLIPSE.EGRID
   init_property_file: ECLIPSE.INIT

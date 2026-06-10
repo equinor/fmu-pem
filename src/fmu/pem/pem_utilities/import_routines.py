@@ -108,7 +108,7 @@ def create_rst_list(
         }
         if "pressure" not in kwargs:
             raise ValueError(
-                f"eclipse simulator restart file is missing PRESSURE for date {date}"
+                f"reservoir simulator restart file is missing PRESSURE for date {date}"
             )
         # Fill any missing phase saturation with zeros sized like pressure.
         pressure = kwargs["pressure"]
@@ -181,8 +181,8 @@ def read_sim_grid_props(
         seis_dates: list of dates for which to read restart properties
 
     Returns:
-        sim_grid: grid definition for eclipse input
-        init_props: object with initial properties of simulation grid
+        sim_grid: grid definition for reservoir simulator input
+        init_props: object with initial properties of simulator grid
         rst_list: list with time-dependent simulation properties
         phase_system: phases present in the simulation (from INTEHEAD item 15)
     """
@@ -194,7 +194,7 @@ def read_sim_grid_props(
 
     phase_system = read_phase_system(rel_dir_sim_files / restart_property_file)
 
-    # TEMP will only be available for eclipse-300
+    # TEMP will only be available for compositional reservoir simulators
     rst_props_names = ["SWAT", "SGAS", "SOIL", "RS", "RV", "PRESSURE", "SALT", "TEMP"]
 
     # Restart properties - set strict to False, False in case RV is not included in
@@ -220,8 +220,9 @@ def read_sim_grid_props(
                 filter_below=True,
             )
 
-    # Formation pressure has unit `bar` in eclipse, but in the PEM models, unit
-    # `Pa` is expected. Perform unit conversion before class objects are populated
+    # Formation pressure has unit `bar` in standard reservoir simulators, but in the
+    # PEM models, unit # `Pa` is expected. Perform unit conversion before class
+    # objects are populated
     for date in seis_dates:
         rst_props["PRESSURE" + "_" + date].values = bar_to_pa(
             rst_props["PRESSURE" + "_" + date].values
@@ -230,7 +231,7 @@ def read_sim_grid_props(
     try:
         rst_list = create_rst_list(rst_props, seis_dates, rst_props_names)
     except (AttributeError, TypeError, KeyError) as e:
-        raise ValueError(f"eclipse simulator restart file is missing parameters: {e}")
+        raise ValueError(f"reservoir simulator restart file is missing parameters: {e}")
 
     for rst in rst_list:
         rst.reconcile_phase_saturations(phase_system)
