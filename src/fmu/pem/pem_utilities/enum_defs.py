@@ -39,20 +39,10 @@ class PhaseSystem(IntFlag):
     WATER = 2
     GAS = 4
 
-    @property
-    def is_multiphase(self) -> bool:
-        """True if at least two phases are present."""
-        return bin(int(self)).count("1") >= 2
-
 
 class OverburdenPressureTypes(_OptionsMixin, str, Enum):
     CONSTANT = "constant"
     TREND = "trend"
-
-
-class Lithology(_OptionsMixin, str, Enum):
-    SILICICLASTICS = "siliciclastics"
-    CARBONATE = "carbonate"
 
 
 class MineralMixModel(_OptionsMixin, str, Enum):
@@ -65,20 +55,9 @@ class FluidMixModel(_OptionsMixin, str, Enum):
     BRIE = "brie"
 
 
-class SaveTypes(_OptionsMixin, str, Enum):
-    SAVE_TO_DISK = "save_results_to_disk"
-    SAVE_INTERMEDIATE_RESULTS = "save_intermediate_results"
-    SAVE_RESULTS_TO_CSV = "save_results_to_csv"
-
-
 class CO2Models(_OptionsMixin, str, Enum):
     FLAG = "flag"
     SPAN_WAGNER = "span_wagner"
-
-
-class RegressionModelLithologies(_OptionsMixin, str, Enum):
-    SANDSTONE = "sandstone"
-    SHALE = "shale"
 
 
 class RPMType(_OptionsMixin, str, Enum):
