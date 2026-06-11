@@ -2,9 +2,6 @@
 # File: src/fmu/pem/pem_functions/pressure_sensitivity.py
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Protocol, runtime_checkable
-
 import numpy as np
 
 from fmu.pem.pem_utilities.enum_defs import (
@@ -26,70 +23,6 @@ _FEATURE_NAME_MAP = {
     ParameterTypes.K.value: "K",
     ParameterTypes.MU.value: "MU",
 }
-
-
-@runtime_checkable
-class RegressionPressureModel(Protocol):
-    """Protocol for regression-based pressure sensitivity models."""
-
-    mode: RegressionPressureParameterTypes
-
-    def predict_elastic_properties(
-        self,
-        prop1: np.ndarray,
-        prop2: np.ndarray,
-        in_situ_press: np.ndarray,
-        depl_press: np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray]: ...
-
-
-@runtime_checkable
-class PhysicsPressureModel(Protocol):
-    """Protocol for physics-based pressure sensitivity models."""
-
-    def predict_elastic_properties(
-        self,
-        k_dry: np.ndarray,
-        mu_dry: np.ndarray,
-        poro: np.ndarray,
-        min_prop: MineralProperties,
-        in_situ_press: np.ndarray,
-        depl_press: np.ndarray,
-        cem_prop: MineralProperties | None = None,
-    ) -> tuple[np.ndarray, np.ndarray]: ...
-
-
-def _validate_array_shapes(
-    *arrays: np.ndarray,
-    names: list[str] | None = None,
-) -> None:
-    """
-    Validate that all arrays have the same first dimension.
-
-    Parameters
-    ----------
-    *arrays : np.ndarray
-        Arrays to validate.
-    names : list[str] | None
-        Names for error messages. If None, uses generic labels.
-
-    Raises
-    ------
-    PressureSensitivityInputError
-        If array shapes are inconsistent.
-    """
-    if not arrays:
-        return
-
-    expected_shape = arrays[0].shape[0]
-    names = names or [f"array_{i}" for i in range(len(arrays))]
-
-    for arr, name in zip(arrays, names):
-        if arr.shape[0] != expected_shape:
-            raise PressureSensitivityInputError(
-                f"Shape mismatch for '{name}': expected {expected_shape}, "
-                f"got {arr.shape[0]}"
-            )
 
 
 def _validate_required_keys(
@@ -230,66 +163,6 @@ def _compute_all_elastic_properties(
 
 class PressureSensitivityInputError(ValueError):
     """Raised when required pressure sensitivity inputs are missing or inconsistent."""
-
-
-def _validate_required(
-    provided: dict[str, np.ndarray],
-    required: Iterable[str],
-    dict_name: str,
-) -> None:
-    """
-    Validate that all required keys exist in a provided dictionary.
-
-    Parameters
-    ----------
-    provided : dict[str, np.ndarray]
-        Dictionary containing arrays for rock properties.
-    required : Iterable[str]
-        Keys that must be present.
-    dict_name : str
-        Name used in error messages.
-
-    Raises
-    ------
-    PressureSensitivityInputError
-        If any required key is missing.
-    """
-    missing = [k for k in required if k not in provided]
-    if missing:
-        raise PressureSensitivityInputError(
-            f"Missing keys {missing} in {dict_name}; required={list(required)}"
-        )
-
-
-def _as_enum_mode(
-    mode: RegressionPressureParameterTypes | str,
-) -> RegressionPressureParameterTypes:
-    """
-    Normalize mode argument to RegressionPressureParameterTypes enum.
-
-    Parameters
-    ----------
-    mode : RegressionPressureParameterTypes | str
-        Mode specification ('vp_vs' or 'k_mu').
-
-    Returns
-    -------
-    RegressionPressureParameterTypes
-        Normalized enum value.
-
-    Raises
-    ------
-    ValueError
-        If unsupported mode supplied.
-    """
-    if isinstance(mode, RegressionPressureParameterTypes):
-        return mode
-    try:
-        return RegressionPressureParameterTypes(mode)
-    except ValueError as exc:
-        raise ValueError(
-            f"Unsupported mode '{mode}'. Expected 'vp_vs' or 'k_mu'."
-        ) from exc
 
 
 def apply_dry_rock_pressure_sensitivity_model(

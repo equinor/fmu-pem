@@ -24,7 +24,7 @@ def pem_fcn(
     try:
         pem_log("process started")
         with pem_utils.restore_dir(run_dir):
-            # Import Eclipse simulation grid - INIT and RESTART
+            # Import reservoir simulation grid - INIT and RESTART
             sim_grid, constant_props, time_step_props, _phase_system = (
                 pem_utils.read_sim_grid_props(
                     rel_dir_sim_files=config.simulator_files.rel_path_simgrid,

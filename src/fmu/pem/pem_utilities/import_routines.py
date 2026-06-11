@@ -374,7 +374,7 @@ def adjust_mask(
     """
     orig_mask = property.mask
     ind_mask = indicator < threshold if filter_below else indicator > threshold
-    added_mask = np.ma.logical_xor(orig_mask, ind_mask)
+    added_mask = ind_mask & ~orig_mask
     if np.any(added_mask):
         pem_log_once(
             f"adjust_mask: {int(np.sum(added_mask))} aquifer cells "

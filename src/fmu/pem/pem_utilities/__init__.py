@@ -47,7 +47,6 @@ from .utils import (
     reverse_filter_and_restore,
     set_mask,
     to_masked_array,
-    update_dict_list,
 )
 
 __all__ = [
@@ -80,7 +79,6 @@ __all__ = [
     "to_masked_array",
     "get_masked_array_mask",
     "set_mask",
-    "update_dict_list",
     "update_inactive_grid_cells",
     "validate_zone_coverage",
     "DryRockProperties",

@@ -26,8 +26,8 @@ def save_results(
     pem_output_path: Path,
     eff_pres_props: list[PressureProperties],
     sat_rock_props: list[SaturatedRockProperties],
-    difference_props: list[dict],
-    difference_date_strs: list[str],
+    difference_props: list[dict] | None,
+    difference_date_strs: list[str] | None,
     matrix_props: EffectiveMineralProperties,
     fluid_props: list[EffectiveFluidProperties],
     bubble_point_grids: list[dict[str, np.ma.MaskedArray]],
@@ -95,7 +95,7 @@ def save_results(
                     results_dir=full_output_path,
                     time_steps=seis_dates,
                 )
-            if difference_props is not None:
+            if not (difference_props is None and difference_date_strs is None):
                 export_results_disk(
                     result_props=difference_props,
                     grid=sim_grid,
