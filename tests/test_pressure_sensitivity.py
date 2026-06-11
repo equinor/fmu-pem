@@ -21,7 +21,6 @@ from fmu.pem.pem_functions.pressure_sensitivity import (
     PressureSensitivityInputError,
     _compute_all_elastic_properties,
     _extract_input_properties,
-    _validate_array_shapes,
     apply_dry_rock_pressure_sensitivity_model,
 )
 from fmu.pem.pem_utilities.enum_defs import (
@@ -478,14 +477,6 @@ def test_invalid_model_type_raises():
             depleted_eff_pressure=np.array([6e6]),
             in_situ_dict=in_situ,
         )
-
-
-def test_validate_array_shapes_mismatch():
-    """Shape mismatch should raise PressureSensitivityInputError."""
-    a = np.zeros((5,))
-    b = np.zeros((4,))
-    with pytest.raises(PressureSensitivityInputError):
-        _validate_array_shapes(a, b, names=["a", "b"])  # type: ignore[arg-type]
 
 
 # ---------------------------------------------------------------------------

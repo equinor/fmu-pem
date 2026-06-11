@@ -258,37 +258,6 @@ def estimate_cement(
     )
 
 
-def update_dict_list(base_list: list[dict], add_list: list[dict]) -> list[dict]:
-    """Update/add new key/value pairs to dicts in list
-
-    Args:
-        base_list: original list of dicts
-        add_list: list of dicts to be added
-
-    Returns:
-        combined list of dicts
-    """
-    _verify_update_inputs(base_list, add_list)
-    for i, item in enumerate(add_list):
-        base_list[i].update(item)
-    return base_list
-
-
-def _verify_update_inputs(base, add_list):
-    if not (isinstance(base, list) and isinstance(add_list, list)):
-        raise TypeError("update dict from list: inputs are not lists")
-    if not len(base) == len(add_list):
-        raise ValueError(
-            f"{__file__}: mismatch in list lengths: base list: {len(base)} vs. added "
-            f"list: {len(add_list)}"
-        )
-    if not (
-        all(isinstance(item, dict) for item in base)
-        and all(isinstance(item, dict) for item in add_list)
-    ):
-        raise TypeError(f"{__file__}: all items in input lists are not dict")
-
-
 def bar_to_pa(
     pres_bar: float | np.ndarray | np.ma.MaskedArray,
 ) -> float | np.ndarray | np.ma.MaskedArray:
@@ -379,9 +348,14 @@ def stop_pem_run_log() -> None:
     """Deactivate verbose PEM run logging.
 
     Detaches the stdout handler and resets the elapsed-time origin. The
-    stderr handler for ``WARNING`` and above remains attached.
+    stderr handler for ``WARNING`` and above remains attached. No-op when
+    :func:`start_pem_run_log` was never called, so an embedding
+    application's logger configuration is preserved.
     """
+
     global _run_start_time, _stdout_handler
+    if _run_start_time is None:
+        return
     if _stdout_handler is not None:
         pem_logger.removeHandler(_stdout_handler)
         _stdout_handler = None
