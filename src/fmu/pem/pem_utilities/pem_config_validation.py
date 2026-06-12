@@ -127,6 +127,7 @@ class FractionFiles(BaseModel):
 
 class ZoneRegionMatrixParams(BaseModel):
     fipnum: str = Field(
+        default="*",
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
         "integer, where each FIPNUM integer represents a combination of zone and "
         "segment. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM integers "
@@ -401,6 +402,7 @@ class RockMatrixProperties(BaseModel):
 class OverburdenPressureTrend(BaseModel):
     type: SkipJsonSchema[OverburdenPressureTypes] = OverburdenPressureTypes.TREND
     fipnum: str = Field(
+        default="*",
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
         "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
         "integers where a given overburden pressure should be used. Explicit "
@@ -416,6 +418,7 @@ class OverburdenPressureTrend(BaseModel):
 class OverburdenPressureConstant(BaseModel):
     type: SkipJsonSchema[OverburdenPressureTypes] = OverburdenPressureTypes.CONSTANT
     fipnum: str = Field(
+        default="*",
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
         "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
         "integers where a given overburden pressure should be used. Explicit "
@@ -539,6 +542,7 @@ class SalinityFromSim(BaseModel):
 
 class PVTZone(BaseModel):
     pvtnum: str = Field(
+        default="*",
         description="Each grid cell in a reservoir model is assigned a PVTNUM "
         "integer. `fmu-pem` reuses PVTNUM by letting you define the PVTNUM "
         "integers where a given fluid definition should be used. Explicit "
