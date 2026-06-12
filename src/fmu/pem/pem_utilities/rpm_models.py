@@ -74,12 +74,18 @@ class FriableParams(BaseModel):
         ge=0.3, le=0.5, default=0.4, description="Critical porosity"
     )
     coordination_number_function: CoordinationNumberFunction = Field(
-        default="PorBased", description="Coordination number function"
+        default="PorBased",
+        description="Coordination number signifies the average number "
+        "of grain contacts per grain. It is assumed to be related to porosity, "
+        "and high porosity will give fewer contacts. Porosity based "
+        "coordination number function shold be selected as default for friable "
+        "model and the friable part of patchy cement model",
     )
     coord_num: float = Field(
         default=9.0,
         description="Coordination number value."
-        " This is normally only used in patchy cement model",
+        " The constant cement part of the patchy cement model requires a fixed "
+        "coordination number value, and the default values for this is 9.",
     )
     shear_reduction: float = Field(
         default=1.0, ge=0, le=1, description="Shear reduction factor"
