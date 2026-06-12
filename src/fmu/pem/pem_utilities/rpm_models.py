@@ -78,7 +78,7 @@ class FriableParams(BaseModel):
         description="Coordination number signifies the average number "
         "of grain contacts per grain. It is assumed to be related to porosity, "
         "and high porosity will give fewer contacts. Porosity based "
-        "coordination number function shold be selected as default for friable "
+        "coordination number function should be selected as default for friable "
         "model and the friable part of patchy cement model",
     )
     coord_num: float = Field(
@@ -92,8 +92,8 @@ class FriableParams(BaseModel):
     )
     model_max_pressure: float = Field(
         default=40,  # MPa
-        description="Maximum pressure value for the friable sandstone model used as"
-        " pressure sensitive model",
+        description="Maximum pressure value for the friable or patchy cement sandstone"
+        " model used as pressure sensitive model. Unit MPa",
     )
 
     def to_dict(self) -> dict[str, Any]:
@@ -290,6 +290,12 @@ class ExpParams(BaseModel):
     a_factor: float = Field(description="Exponential coefficient A")
     b_factor: float = Field(description="Exponential coefficient B")
 
+    model_max_pressure: float = Field(
+        default=40,  # MPa
+        description="Maximum pressure value for the exponential pressure"
+        " sensitive regression model. Unit MPa",
+    )
+
     def to_dict(self) -> dict[str, Any]:
         """Convert exponential parameters to dictionary."""
         return {
@@ -297,12 +303,6 @@ class ExpParams(BaseModel):
             "b_factor": self.b_factor,
             "model_max_pressure": self.model_max_pressure,
         }
-
-    model_max_pressure: float = Field(
-        default=40,  # MPa
-        description="Maximum pressure value for the exponential pressure"
-        " sensitive model",
-    )
 
 
 class PolyParams(BaseModel):
@@ -312,18 +312,18 @@ class PolyParams(BaseModel):
 
     weights: list[float] = Field(description="Polynomial coefficients")
 
+    model_max_pressure: float = Field(
+        default=40,  # MPa
+        description="Maximum pressure value for the polynomial pressure"
+        " sensitive regression model. Unit MPa",
+    )
+
     def to_dict(self) -> dict[str, Any]:
         """Convert polynomial parameters to dictionary."""
         return {
             "weights": self.weights,
             "model_max_pressure": self.model_max_pressure,
         }
-
-    model_max_pressure: float = Field(
-        default=40,  # MPa
-        description="Maximum pressure value for the polynomial pressure"
-        " sensitive model",
-    )
 
 
 class RegressionPressureSensitivity(BaseModel):

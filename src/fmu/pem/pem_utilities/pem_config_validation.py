@@ -135,7 +135,7 @@ class ZoneRegionMatrixParams(BaseModel):
         "`1-10,15` matches the FIPNUMs "
         "`1, 2, ..., 10, 15`. By doing it this way you can have different "
         "rock physics models for e.g. individual zones and segments. "
-        "Leaving this field empty means that all zones and segments are"
+        "Leaving this field empty or '*' means that all zones and segments are"
         "treated as one",
         pattern=REGEX_FIPNUM_PVTNUM,
     )
@@ -407,7 +407,7 @@ class OverburdenPressureTrend(BaseModel):
         "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
         "integers where a given overburden pressure should be used. Explicit "
         "definitions like `1-10,15` matches the PVTNUMs `1, 2, ..., 10, 15`. "
-        "Leaving this field empty means that all zones and segments are"
+        "Leaving this field empty or '*' means that all zones and segments are"
         "treated as one",
         pattern=REGEX_FIPNUM_PVTNUM,
     )
@@ -423,7 +423,7 @@ class OverburdenPressureConstant(BaseModel):
         "integer. `fmu-pem` reuses FIPNUM by letting you define the FIPNUM "
         "integers where a given overburden pressure should be used. Explicit "
         "definitions like `1-10,15` matches the FIPNUMs `1, 2, ..., 10, 15`. "
-        "Leaving this field empty means that all zones and segments are"
+        "Leaving this field empty or '*' means that all zones and segments are"
         "treated as one",
         pattern=REGEX_FIPNUM_PVTNUM,
     )
@@ -547,7 +547,8 @@ class PVTZone(BaseModel):
         "integer. `fmu-pem` reuses PVTNUM by letting you define the PVTNUM "
         "integers where a given fluid definition should be used. Explicit "
         "definitions like `1-10,15` matches the PVTNUMs `1, 2, ..., 10, 15`. "
-        "Leaving this field empty means that all PVTNUM zones are treated as one",
+        "Leaving this field empty or '*' means that all PVTNUM zones are treated "
+        "as one",
         pattern=REGEX_FIPNUM_PVTNUM,
     )
     brine: Brine = Field(
