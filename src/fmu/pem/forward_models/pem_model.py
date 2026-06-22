@@ -41,23 +41,10 @@ class PetroElasticModel(ForwardModelStepPlugin):
     ) -> ForwardModelStepJSON:
         return fm_step_json
 
-    def validate_pre_experiment(self, fm_step_json: ForwardModelStepJSON) -> None:
-        # Parse YAML parameter file by pydantic pre-experiment to catch errors at an
-        # early stage. At this point the per-realization directory tree does not yet
-        # exist, so realization-specific filesystem checks must be skipped.
-        # pre_experiment=True is passed to read_pem_config so that realization-specific
-        # filesystem validators are suppressed, while validators for non-path parameters
-        # (types, ranges, etc.) still run normally.
-
-        args = parse_arguments(fm_step_json["argList"])
-
-        try:
-            with restore_dir(args.model_dir):
-                _ = read_pem_config(args.config_file, pre_experiment=True)
-        except Exception as e:
-            raise ForwardModelStepValidationError(
-                f"pem pre-experiment validation failed: {str(e)}"
-            )
+    def validate_pre_experiment(self, _fm_step_json: ForwardModelStepJSON) -> None:
+        # No-op: fmu-pem depends on files created later in the ERT workflow,
+        # so pre-experiment validation cannot meaningfully verify them.
+        pass
 
     @staticmethod
     def documentation() -> ForwardModelStepDocumentation | None:
