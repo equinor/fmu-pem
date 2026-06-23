@@ -8,4 +8,4 @@ In all cases, there is a number of required call arguments that must be provided
 > cd /project/fmu/tutorial/drogon/resmod/ff/users/hfle/dev
 > # Call PEM, `--help` will show all call arguments
 > pem --help
-> pem -c ./sim2seis/model -f new_pem_config.yml -g fmuconfig/output -o global_variables.yml --mod-date-prefix HIST --verbose true
+> pem -f ./sim2seis/model/new_pem_config.yml -g fmuconfig/output/global_variables.yml -m HIST -v true
