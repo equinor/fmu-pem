@@ -55,9 +55,9 @@ def parse_arguments(
     # Split config and global path into directory and file name, as this is
     # required in the PEM
     args = parser.parse_args(arguments)
-    args.config_dir = args.config_file.parent
-    args.config_file = args.config_file.name
-    args.global_dir = args.global_file.parent
-    args.global_file = args.global_file.name
+    args.config_dir = Path(args.config_file.parent)
+    args.config_file = Path(args.config_file.name)
+    args.global_dir = Path(args.global_file.parent)
+    args.global_file = Path(args.global_file.name)
 
     return args
