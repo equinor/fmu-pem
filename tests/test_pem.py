@@ -72,6 +72,7 @@ def test_pem_fcn_multi(data_dir, monkeypatch):
 
 
 def test_pem_main(data_dir, monkeypatch):
+    config_dir = data_dir / "sim2seis" / "model"
     monkeypatch.chdir(data_dir)
     config_file = (
         "pem_config_condensate_multi.yml"
@@ -80,14 +81,10 @@ def test_pem_main(data_dir, monkeypatch):
     )
     pem(
         args_list=[
-            "--config-dir",
-            str((data_dir / "sim2seis" / "model").resolve()),
             "--config-file",
-            config_file,
-            "--global-dir",
-            "fmuconfig/output",
+            str(config_dir / config_file),
             "--global-file",
-            "global_variables.yml",
+            "fmuconfig/output/global_variables.yml",
             "--mod-date-prefix",
             "HIST",
         ]
