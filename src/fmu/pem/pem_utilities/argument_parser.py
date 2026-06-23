@@ -23,55 +23,25 @@ def parse_arguments(
     """
     parser = argparse.ArgumentParser(__file__)
     parser.add_argument(
-        "-c",
-        "--config-dir",
-        type=Path,
-        required=True,
-        help=(
-            "Path to config directory (required), normally the 'sim2seis/model' "
-            "directory under the FMU top direectory."
-        ),
-    )
-    parser.add_argument(
         "-f",
         "--config-file",
         type=Path,
         required=True,
-        help="Configuration yaml file name",
+        help="Configuration yaml path name",
     )
     parser.add_argument(
         "-g",
-        "--global-dir",
-        type=Path,
-        required=True,
-        help=(
-            "Path to global config directory (required) relative to the FMU top "
-            "directory"
-        ),
-    )
-    parser.add_argument(
-        "-o",
         "--global-file",
         type=Path,
         required=True,
-        help="Global configuration yaml file name (required)",
+        help="Global configuration yaml path name",
     )
     parser.add_argument(
-        "-q",
+        "-m",
         "--mod-date-prefix",
         type=str,
         required=True,
         help="Global seismic section: Prefix for seismic dates for modelled data",
-    )
-    parser.add_argument(
-        "-m",
-        "--model-dir",
-        type=Path,
-        required=False,
-        help=(
-            "Only required for ERT runs: pointer to the project area's "
-            "`sim2seis/model` folder"
-        ),
     )
     parser.add_argument(
         "-v",
@@ -81,4 +51,13 @@ def parse_arguments(
         default=False,
         help="Select verbose or minimal output",
     )
-    return parser.parse_args(arguments)
+
+    # Split config and global path into directory and file name, as this is
+    # required in the PEM
+    args = parser.parse_args(arguments)
+    args.config_dir = args.config_file.parent
+    args.config_file = args.config_file.name
+    args.global_dir = args.global_file.parent
+    args.global_file = args.global_file.name
+
+    return args
