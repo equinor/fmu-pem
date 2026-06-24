@@ -63,11 +63,9 @@ def get_global_params_and_dates(
     global_config_par = yaml_load(
         str(global_config_dir / global_conf_file),
     )
-    grid_model_name = find_key_first(global_config_par["global"], "ECLGRIDNAME_PEM")
+    grid_model_name = find_key_first(global_config_par["global"], "SIMGRIDNAME")
     if grid_model_name is None:
-        raise ValueError(
-            f"{__file__}: no value for ECLGRIDNAME_PEM in global config file"
-        )
+        raise ValueError(f"{__file__}: no value for SIMGRIDNAME in global config file")
     # Find the correct seismic dates references
     dates_config = global_config_par["global"]["dates"]
     return_dict = {

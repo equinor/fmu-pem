@@ -85,18 +85,17 @@ def save_results(
 
     # 2. Save results to disk according to config file
 
-    # create list of dict from list of pressure and saturated rock objects
-    eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
-    sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]
-
     try:
         if save_to_disk:
+            # create list of dict from list of pressure and saturated rock objects
+            eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
+            sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]
             for props in [eff_pres_dict_list, sat_prop_dict_list]:
                 prop_dict = list(props)
                 export_results_disk(
                     result_props=prop_dict,
                     grid=sim_grid,
-                    grid_name=sim_grid.name,
+                    grid_name=grid_name,
                     results_dir=full_output_path,
                     time_steps=seis_dates,
                 )
