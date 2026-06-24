@@ -20,6 +20,7 @@ diff_calculation:
   VS: [diffpercent]
   SWAT: [diff]
   SGAS: [diff]
+  PRESSURE: [diff]
 ```
 
 For convenience, it is possible to calculate differences of input parameter, as well, as in the example above for
