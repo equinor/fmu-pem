@@ -107,7 +107,7 @@ def save_results(
                     results_dir=full_output_path,
                     time_steps=difference_date_strs,
                 )
-    except KeyError:  # warn user that results are not saved
+    except ValueError:  # warn user that results are not saved
         pem_logger.warning(
             f"{__file__}: no parameter for saving results to disk is found in the "
             "config file"

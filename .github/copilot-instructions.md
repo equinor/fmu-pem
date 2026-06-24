@@ -132,6 +132,9 @@ are validated via `read_pem_config` in `import_config.py`.
 - Every commit must pass all pre-commit hooks before being pushed.
 - PR descriptions must include a **Problem**, **Solution**, and per-commit
   **Changes** section.
+- PR summaries must always be delivered as raw Markdown inside a fenced
+  ` ```markdown ` code block, so the text can be copy-pasted unrendered
+  into the GitHub PR description.
 
 ---
 

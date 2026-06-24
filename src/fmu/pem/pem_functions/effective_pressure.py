@@ -201,8 +201,8 @@ def estimate_effective_pressure(
         reference_overburden_pressure: constant or one-layer array with reference
         biot_coeff: Biot coefficient, in the range [0.0, 1.0] [unitless]
     Returns:
-        PressureProperties object with (formation) pressure [bar], effective
-        pressure [bar], overburden_pressure [bar]
+        PressureProperties object with (formation) pressure [Pa], effective
+        pressure [Pa], overburden_pressure [Pa]
 
     Raises:
         ValueError: If reference overburden pressure is not of type float or numpy
