@@ -109,7 +109,6 @@ class DifferenceAttribute(_OptionsMixin, str, Enum):
     TWTPP = "twtpp"
     TWTSS = "twtss"
     TWTPS = "twtps"
-    FORMATION_PRESSURE = "formation_pressure"
     EFFECTIVE_PRESSURE = "effective_pressure"
     OVERBURDEN_PRESSURE = "overburden_pressure"
 
