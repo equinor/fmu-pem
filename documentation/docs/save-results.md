@@ -3,7 +3,7 @@
 The default is to save results to disk, mostly in `.roff` format. For historical reasons, the main
 results from `fmu-pem` are saved in `.grdecl` format for use in `fmu-sim2seis`. For QC purposes, intermediate
 results, which are effective properties for minerals and fluids, can also be saved. All `.roff` files are saved to `share/results/grids`. The `.grdecl` files are saved to
-`sim2seis/output/pem`. The prefix in the `.roff` file names are taken from the `SIMGRIDNAME` in the global configuration file.
+`sim2seis/output/pem`. The prefix in the `.roff` file names is taken from the `SIMGRIDNAME` in the global configuration file.
 
 ```yaml
 # Settings for saving results

@@ -203,7 +203,8 @@ class PressureProperties(PropertiesSubgridMasked):
     """
     All attributes shall have unit Pa
 
-    `pressure` without any prefix is the same as formation pressure
+    `pressure` without any prefix is the same as formation pressure, the name is set
+    to match default name in reservoir simulator parameters
     """
 
     pressure: MaskedArray
