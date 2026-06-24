@@ -45,7 +45,7 @@ def setup_pressure():
     return [
         PressureProperties(
             overburden_pressure=overburden_pressure,
-            formation_pressure=formation_pressure - i * 100,
+            pressure=formation_pressure - i * 100,
             effective_pressure=(overburden_pressure - formation_pressure),
         )
         for i in range(2)
@@ -557,7 +557,7 @@ def test_effective_media_regression_values_bug_79(
         pressure_props = [
             PressureProperties(
                 overburden_pressure=np.ma.array([2000], mask=[False]),
-                formation_pressure=np.ma.array([1500], mask=[False]),
+                pressure=np.ma.array([1500], mask=[False]),
                 effective_pressure=np.ma.array([500], mask=[False]),
             )
         ]

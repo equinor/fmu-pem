@@ -51,7 +51,7 @@ def valid_pressure():
     formation_pressure = np.ma.array([1500, 1600], mask=[False, False])
     return PressureProperties(
         overburden_pressure=overburden_pressure,
-        formation_pressure=formation_pressure,
+        pressure=formation_pressure,
         effective_pressure=(overburden_pressure - formation_pressure),
     )
 
@@ -92,7 +92,7 @@ def pressure_list():
     return [
         PressureProperties(
             overburden_pressure=overburden_pressure,
-            formation_pressure=formation_pressure - i * 100,
+            pressure=formation_pressure - i * 100,
             effective_pressure=(overburden_pressure - formation_pressure),
         )
         for i in range(2)

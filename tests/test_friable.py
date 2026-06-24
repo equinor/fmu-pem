@@ -44,7 +44,7 @@ def valid_porosity():
 def valid_pressure():
     return PressureProperties(
         effective_pressure=np.ma.array([100, 150, 200], mask=[False, False, False]),
-        formation_pressure=np.ma.array([50, 75, 100], mask=[False, False, False]),
+        pressure=np.ma.array([50, 75, 100], mask=[False, False, False]),
         overburden_pressure=np.ma.array([200, 250, 300], mask=[False, False, False]),
     )
 
@@ -86,14 +86,14 @@ def valid_pressure_list():
     return [
         PressureProperties(
             effective_pressure=np.ma.array([100, 150, 200], mask=[False, False, False]),
-            formation_pressure=np.ma.array([55, 80, 105], mask=[False, False, False]),
+            pressure=np.ma.array([55, 80, 105], mask=[False, False, False]),
             overburden_pressure=np.ma.array(
                 [210, 260, 310], mask=[False, False, False]
             ),
         ),
         PressureProperties(
             effective_pressure=np.ma.array([110, 160, 210], mask=[False, False, False]),
-            formation_pressure=np.ma.array([60, 85, 110], mask=[False, False, False]),
+            pressure=np.ma.array([60, 85, 110], mask=[False, False, False]),
             overburden_pressure=np.ma.array(
                 [220, 270, 320], mask=[False, False, False]
             ),
