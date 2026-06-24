@@ -193,30 +193,29 @@ def estimate_effective_pressure(
     biot_coeff: float = 1.0,
 ) -> PressureProperties:
     """Estimate effective pressure from reference overburden pressure, formation
-        pressure, depth and bulk density
+    pressure, depth and bulk density
 
-        Args:
-            formation_pressure: formation pressure [Pa]
-            bulk_density: bulk density [kg/m3]
-            reference_overburden_pressure: constant or one-layer array with reference
-            biot_coeff: Biot coefficient, in the range [0.0, 1.0] [unitless]
-    .mineral
-        Returns:
-            PressureProperties object with formation pressure [bar], effective pressure
-            [bar], overburden_pressure [bar]
+    Args:
+        formation_pressure: formation pressure [Pa]
+        bulk_density: bulk density [kg/m3]
+        reference_overburden_pressure: constant or one-layer array with reference
+        biot_coeff: Biot coefficient, in the range [0.0, 1.0] [unitless]
+    Returns:
+        PressureProperties object with (formation) pressure [bar], effective
+        pressure [bar], overburden_pressure [bar]
 
-        Raises:
-            ValueError: If reference overburden pressure is not of type float or numpy
-            masked array, or if reference overburden pressure is not of the same
-            dimension as comparable grids, or if reference overburden pressure does
-            not have the same shape as comparable grids.
+    Raises:
+        ValueError: If reference overburden pressure is not of type float or numpy
+        masked array, or if reference overburden pressure is not of the same
+        dimension as comparable grids, or if reference overburden pressure does
+        not have the same shape as comparable grids.
     """
     reference_overburden_pressure = _verify_ovb_press(
         reference_overburden_pressure, bulk_density
     )
     effective_pressure = reference_overburden_pressure - biot_coeff * formation_pressure
     return PressureProperties(
-        formation_pressure=formation_pressure,
+        pressure=formation_pressure,
         effective_pressure=effective_pressure,
         overburden_pressure=reference_overburden_pressure,
     )

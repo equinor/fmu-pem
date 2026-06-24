@@ -281,7 +281,7 @@ def convert_single_pressure_to_pa(
 ) -> PressureProperties:
     return PressureProperties(
         effective_pressure=bar_to_pa(single_press_bar.effective_pressure),
-        formation_pressure=bar_to_pa(single_press_bar.formation_pressure),
+        pressure=bar_to_pa(single_press_bar.pressure),
         overburden_pressure=bar_to_pa(single_press_bar.overburden_pressure),
     )
 
