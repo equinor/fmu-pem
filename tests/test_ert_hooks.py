@@ -29,9 +29,9 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
         check=True,
     )
 
-    grid = xtgeo.grid_from_file(share_output_path / "eclipsegrid_pem.roff")
+    grid = xtgeo.grid_from_file(share_output_path / "simgrid.roff")
     actnum = xtgeo.gridproperty_from_file(
-        pem_output_path / "eclipsegrid_pem.grdecl",
+        pem_output_path / "simgrid.grdecl",
         name="ACTNUM",
         grid=grid,
     ).values
@@ -44,55 +44,55 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
 
     if HAS_PROPRIETARY_ROCK_PHYSICS:
         truth_values = {
-            "eclipse--effective_pressure--20180101.roff": 360008292337.79907,
-            "eclipse--formation_pressure--20180101.roff": 2204158466687.0117,
-            "eclipse--overburden_pressure--20180101.roff": 2564166759072.876,
-            "eclipse--density--20180101.roff": 169814178.1279297,
-            "eclipse--vp--20180101.roff": 275354659.3679199,
-            "eclipse--vs--20180101.roff": 163355426.4251709,
+            "simgrid--effective_pressure--20180101.roff": 360008292337.79907,
+            "simgrid--pressure--20180101.roff": 2204158466687.0117,
+            "simgrid--overburden_pressure--20180101.roff": 2564166759072.876,
+            "simgrid--density--20180101.roff": 169814178.1279297,
+            "simgrid--vp--20180101.roff": 275354659.3679199,
+            "simgrid--vs--20180101.roff": 163355426.4251709,
             "pem--20180101.grdecl_vp": 275354659.318,
             "pem--20180101.grdecl_vs": 163355426.415,
             "pem--20180101.grdecl_dens": 169814178.144,
-            "eclipsegrid_pem--sidiff--20180701_20180101.roff": 3304694686.2208695,
-            "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": 60577.2778733396,
-            "eclipsegrid_pem--siratio--20180701_20180101.roff": 72080.7727842927,
-            "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4968.3944744072505,
+            "simgrid--sidiff--20180701_20180101.roff": 3304694686.2208695,
+            "simgrid--sidiffpercent--20180701_20180101.roff": 60577.2778733396,
+            "simgrid--siratio--20180701_20180101.roff": 72080.7727842927,
+            "simgrid--twtppdiff--20180701_20180101.roff": -4968.3944744072505,
         }
     else:
         truth_values = {
-            "eclipse--effective_pressure--20180101.roff": 360008292348.5,
-            "eclipse--formation_pressure--20180101.roff": 2204158466512.0,
-            "eclipse--overburden_pressure--20180101.roff": 2564166759012.0,
-            "eclipse--density--20180101.roff": 169819421.64660645,
-            "eclipse--vp--20180101.roff": 275423306.38964844,
-            "eclipse--vs--20180101.roff": 163353050.142,
+            "simgrid--effective_pressure--20180101.roff": 360008292348.5,
+            "simgrid--pressure--20180101.roff": 2204158466512.0,
+            "simgrid--overburden_pressure--20180101.roff": 2564166759012.0,
+            "simgrid--density--20180101.roff": 169819421.64660645,
+            "simgrid--vp--20180101.roff": 275423306.38964844,
+            "simgrid--vs--20180101.roff": 163353050.142,
             "pem--20180101.grdecl_vp": 275423306.45299995,
             "pem--20180101.grdecl_vs": 163353050.142,
             "pem--20180101.grdecl_dens": 169819421.64,
-            "eclipsegrid_pem--sidiff--20180701_20180101.roff": 3305689888.80869,
-            "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": 60598.37976185710,
-            "eclipsegrid_pem--siratio--20180701_20180101.roff": 72080.9837949872,
-            "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": -4957.894073498945,
+            "simgrid--sidiff--20180701_20180101.roff": 3305689888.80869,
+            "simgrid--sidiffpercent--20180701_20180101.roff": 60598.37976185710,
+            "simgrid--siratio--20180701_20180101.roff": 72080.9837949872,
+            "simgrid--twtppdiff--20180701_20180101.roff": -4957.894073498945,
         }
 
     estimated_values = {
-        "eclipse--effective_pressure--20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipse--effective_pressure--20180101.roff", grid=grid
+        "simgrid--effective_pressure--20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--effective_pressure--20180101.roff", grid=grid
         ).values.sum(),
-        "eclipse--formation_pressure--20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipse--formation_pressure--20180101.roff", grid=grid
+        "simgrid--pressure--20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--pressure--20180101.roff", grid=grid
         ).values.sum(),
-        "eclipse--overburden_pressure--20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipse--overburden_pressure--20180101.roff", grid=grid
+        "simgrid--overburden_pressure--20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--overburden_pressure--20180101.roff", grid=grid
         ).values.sum(),
-        "eclipse--density--20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipse--density--20180101.roff", grid=grid
+        "simgrid--density--20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--density--20180101.roff", grid=grid
         ).values.sum(),
-        "eclipse--vp--20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipse--vp--20180101.roff", grid=grid
+        "simgrid--vp--20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--vp--20180101.roff", grid=grid
         ).values.sum(),
-        "eclipse--vs--20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipse--vs--20180101.roff", grid=grid
+        "simgrid--vs--20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--vs--20180101.roff", grid=grid
         ).values.sum(),
         "pem--20180101.grdecl_vp": xtgeo.gridproperty_from_file(
             pem_output_path / "pem--20180101.grdecl", name="VP", grid=grid
@@ -103,21 +103,20 @@ def test_pem_through_ert(testdata, monkeypatch, data_dir):
         "pem--20180101.grdecl_dens": xtgeo.gridproperty_from_file(
             pem_output_path / "pem--20180101.grdecl", name="DENSITY", grid=grid
         ).values.sum(),
-        "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path
-            / "eclipsegrid_pem--sidiffpercent--20180701_20180101.roff",
+        "simgrid--sidiffpercent--20180701_20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--sidiffpercent--20180701_20180101.roff",
             grid=grid,
         ).values.sum(),
-        "eclipsegrid_pem--sidiff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipsegrid_pem--sidiff--20180701_20180101.roff",
+        "simgrid--sidiff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--sidiff--20180701_20180101.roff",
             grid=grid,
         ).values.sum(),
-        "eclipsegrid_pem--siratio--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipsegrid_pem--siratio--20180701_20180101.roff",
+        "simgrid--siratio--20180701_20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--siratio--20180701_20180101.roff",
             grid=grid,
         ).values.sum(),
-        "eclipsegrid_pem--twtppdiff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
-            share_output_path / "eclipsegrid_pem--twtppdiff--20180701_20180101.roff",
+        "simgrid--twtppdiff--20180701_20180101.roff": xtgeo.gridproperty_from_file(
+            share_output_path / "simgrid--twtppdiff--20180701_20180101.roff",
             grid=grid,
         ).values.sum(),
     }
