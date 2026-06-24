@@ -8,7 +8,7 @@ parameter names.
 ## Directory and file names for result files
 
 The directory name for the result files from the reservoir simulator is fixed within the FMU directory structure. The
-file names are also fixed, but they are links/pointers to the actual results from `eclipse`.
+file names are also fixed, but they are links/pointers to the actual results from the reservoir simulator.
 The directory and file names used by `pem` are shown below:
 
 ```yaml
@@ -30,7 +30,7 @@ There are only two static results from the reservoir simulator model which are u
 Earlier, **NTG** was also used, but we now advise using volume fractions from the geomodel. Static results are
 found in the **.INIT** file of the reservoir simulator.
 
-#### Volume fraction files
+### Volume fraction files
 
 As mentioned above, `pem` is not based on using the **NTG** parameter from the reservoir simulator, as it is often
 a binary parameter, and does not reflect variations in shale fraction in the Geomodel. Additionally, to capture
@@ -49,7 +49,7 @@ the same grid resolution as the reservoir simulator grid, and in the **.roff** f
   complement: quartz  # if not all fractions add up to 1.0
 ```
 
-#### Volume fractions to mineral fractions
+### Volume fractions to mineral fractions
 
 It is important to know the definition of volume fractions. The standard definition in petrophysics is that volume
 fractions and effective porosity comprise the bulk volume. This definition is the default value in `pem`.
