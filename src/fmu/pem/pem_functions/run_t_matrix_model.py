@@ -100,11 +100,11 @@ def run_t_matrix_model(
         )
     # Pressures for initial conditions
     pres_ovb = pressure[0].overburden_pressure
-    pres_form = pressure[0].formation_pressure
+    pres_form = pressure[0].pressure
 
     for time_step, fl_prop in enumerate(fluid_properties):
         if time_step > 0:
-            pres_depl = pressure[time_step].formation_pressure
+            pres_depl = pressure[time_step].pressure
             (
                 mask,
                 tmp_min_k,

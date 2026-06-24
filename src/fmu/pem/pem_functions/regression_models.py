@@ -152,11 +152,11 @@ def run_regression_models(
 
     # Initial pressure conditions
     pres_ovb = pressure[0].overburden_pressure
-    pres_form = pressure[0].formation_pressure
+    pres_form = pressure[0].pressure
     for time_step, fl_prop in enumerate(fluid_properties):
         # Prepare data using filter_and_one_dim
         if time_step > 0 and rock_matrix.pressure_sensitivity:
-            pres_depl = pressure[time_step].formation_pressure
+            pres_depl = pressure[time_step].pressure
             (
                 mask,
                 tmp_min_k,

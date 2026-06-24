@@ -202,9 +202,11 @@ class EffectiveFluidProperties(PropertiesSubgridMasked):
 class PressureProperties(PropertiesSubgridMasked):
     """
     All attributes shall have unit Pa
+
+    `pressure` without any prefix is the same as formation pressure
     """
 
-    formation_pressure: MaskedArray
+    pressure: MaskedArray
     effective_pressure: MaskedArray
     overburden_pressure: MaskedArray
 
