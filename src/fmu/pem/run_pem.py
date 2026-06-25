@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fmu.pem import pem_functions as pem_fcns
 from fmu.pem import pem_utilities as pem_utils
+from fmu.pem.pem_utilities.pem_config_validation import ConstantNonNetPorosity
 from fmu.pem.pem_utilities.utils import (
     pem_log,
     start_pem_run_log,
@@ -46,6 +47,16 @@ def pem_fcn(
                 sim_grid=sim_grid,
                 root_dir=run_dir,
             )
+
+            # It is only in the cases that porosity is adjusted by the NTG property
+            # that it is interesting to export it for QC purposes, otherwise it is
+            # estimated in the reservoir simulator or geomodel
+            if isinstance(
+                config.rock_matrix.porosity_adjustment, ConstantNonNetPorosity
+            ):
+                adjusted_porosity = {"adjusted_porosity": constant_props.poro}
+            else:
+                adjusted_porosity = None
 
             # Calculate rock properties - fluids and minerals
             # Effective mineral (matrix) properties - one set valid for all time-steps
@@ -140,6 +151,7 @@ def pem_fcn(
                 fluid_props=fluid_properties,
                 bubble_point_grids=below_bp_grids,
                 dry_rock_props=dry_rock,
+                modified_porosity=adjusted_porosity,
             )
             pem_log("saved results, process finished")
     finally:

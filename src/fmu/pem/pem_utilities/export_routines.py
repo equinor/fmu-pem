@@ -17,7 +17,7 @@ from .utils import _verify_export_inputs, pem_logger, restore_dir
 
 def save_results(
     config_dir: Path,
-    sim_grid: xtgeo.grid3d.Grid,
+    sim_grid: xtgeo.Grid,
     grid_name: str,
     seis_dates: list[str],
     save_to_disk: bool,
@@ -32,6 +32,7 @@ def save_results(
     fluid_props: list[EffectiveFluidProperties],
     bubble_point_grids: list[dict[str, np.ma.MaskedArray]],
     dry_rock_props: list[DryRockProperties],
+    modified_porosity: dict[str, xtgeo.GridProperty] | None,
 ) -> None:
     """Saves all intermediate and final results according to the settings in the PEM
     and global config files
@@ -52,6 +53,10 @@ def save_results(
         difference_date_strs: dates for difference calculation
         matrix_props: intermediate results - mineral properties
         fluid_props: intermediate results - fluid properties per time step
+        bubble_point_grids: intermediate results - grid with pressure below bubble
+            point
+        dry_rock_props: intermediate results - bulk modulus, shear modulus and density
+        modified_porosity: intermediate result - adjusted porosity property
 
     Returns:
         None, warning or KeyError
@@ -125,6 +130,12 @@ def save_results(
                 "_DRY_ROCK",
             ]
             dates = [seis_dates, None, seis_dates, seis_dates]
+
+            if modified_porosity is not None:
+                suffices.append("")
+                export_dicts.append(modified_porosity)
+                dates.append(None)
+
             for props, date_info, suffix in zip(export_dicts, dates, suffices):
                 export_results_disk(
                     result_props=props,
