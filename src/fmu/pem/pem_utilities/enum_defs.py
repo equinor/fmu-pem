@@ -141,3 +141,11 @@ class Sim2SeisRequiredParams(_OptionsMixin, str, Enum):
     VP = "vp"
     VS = "vs"
     DENSITY = "density"
+
+
+class SaveTypes(_OptionsMixin, str, Enum):
+    INTERMEDIATE_PROPERTIES = "intermediate"
+    ELASTIC_PROPERTIES = "elastic"
+    DIFFERENCE_PROPERTIES = "difference"
+    GRID = "grid"
+    ALL = "all"
