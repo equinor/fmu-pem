@@ -84,70 +84,58 @@ def save_results(
     )
 
     # 2. Save results to disk according to config file
-
-    try:
-        if save_to_disk:
-            # create list of dict from list of pressure and saturated rock objects
-            eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
-            sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]
-            for props in [eff_pres_dict_list, sat_prop_dict_list]:
-                prop_dict = list(props)
-                export_results_disk(
-                    result_props=prop_dict,
-                    grid=sim_grid,
-                    grid_name=grid_name,
-                    results_dir=full_output_path,
-                    time_steps=seis_dates,
-                )
-            if not (difference_props is None and difference_date_strs is None):
-                export_results_disk(
-                    result_props=difference_props,
-                    grid=sim_grid,
-                    grid_name=grid_name,
-                    results_dir=full_output_path,
-                    time_steps=difference_date_strs,
-                )
-    except ValueError:  # warn user that results are not saved
-        pem_logger.warning(
-            f"{__file__}: no parameter for saving results to disk is found in the "
-            "config file"
-        )
+    if save_to_disk:
+        # create list of dict from list of pressure and saturated rock objects
+        eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
+        sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]
+        for props in [eff_pres_dict_list, sat_prop_dict_list]:
+            prop_dict = list(props)
+            export_results_disk(
+                result_props=prop_dict,
+                grid=sim_grid,
+                grid_name=grid_name,
+                results_dir=full_output_path,
+                time_steps=seis_dates,
+            )
+        if not (difference_props is None and difference_date_strs is None):
+            export_results_disk(
+                result_props=difference_props,
+                grid=sim_grid,
+                grid_name=grid_name,
+                results_dir=full_output_path,
+                time_steps=difference_date_strs,
+            )
 
     # 3. Save intermediate results only if specified in the config file
-    try:
-        if save_intermediate:
-            export_dicts = [
-                [asdict(fl_props) for fl_props in fluid_props],
-                asdict(matrix_props),
-                bubble_point_grids,
-                [asdict(dry_props) for dry_props in dry_rock_props],
-            ]
-            suffices = [
-                "_FLUID",
-                "_MINERAL",
-                "",
-                "_DRY_ROCK",
-            ]
-            dates = [seis_dates, None, seis_dates, seis_dates]
+    if save_intermediate:
+        export_dicts = [
+            [asdict(fl_props) for fl_props in fluid_props],
+            asdict(matrix_props),
+            bubble_point_grids,
+            [asdict(dry_props) for dry_props in dry_rock_props],
+        ]
+        suffices = [
+            "_FLUID",
+            "_MINERAL",
+            "",
+            "_DRY_ROCK",
+        ]
+        dates = [seis_dates, None, seis_dates, seis_dates]
 
-            if modified_porosity is not None:
-                suffices.append("")
-                export_dicts.append(modified_porosity)
-                dates.append(None)
+        if modified_porosity is not None:
+            suffices.append("")
+            export_dicts.append(modified_porosity)
+            dates.append(None)
 
-            for props, date_info, suffix in zip(export_dicts, dates, suffices):
-                export_results_disk(
-                    result_props=props,
-                    grid=sim_grid,
-                    grid_name=grid_name,
-                    results_dir=full_output_path,
-                    time_steps=date_info,
-                    name_suffix=suffix,
-                )
-    except KeyError:
-        # just skip silently if save_intermediate_results is not present in the
-        # pem_config
-        pass
+        for props, date_info, suffix in zip(export_dicts, dates, suffices):
+            export_results_disk(
+                result_props=props,
+                grid=sim_grid,
+                grid_name=grid_name,
+                results_dir=full_output_path,
+                time_steps=date_info,
+                name_suffix=suffix,
+            )
     return
 
 
