@@ -64,6 +64,7 @@ Repository = "https://github.com/equinor/fmu-pem"
 
 [project.scripts]
 pem = "fmu.pem.__main__:main"
+pem_cleanup = "fmu.pem.run_cleanup:run_pem_cleanup"
 
 [project.entry-points.ert]
 pem_jobs = "fmu.pem.hook_implementations.jobs"
