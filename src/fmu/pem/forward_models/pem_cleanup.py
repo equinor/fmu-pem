@@ -6,8 +6,6 @@ from ert import (
     ForwardModelStepPlugin,
 )
 
-# from grid3d_maps.aggregate.grid3d_aggregate_map import DESCRIPTION
-
 
 class PemCleanup(ForwardModelStepPlugin):
     def __init__(self) -> None:
@@ -33,7 +31,7 @@ class PemCleanup(ForwardModelStepPlugin):
     ) -> ForwardModelStepJSON:
         return fm_step_json
 
-    def validate_pre_experiment(self, fm_step_json: ForwardModelStepJSON) -> None:
+    def validate_pre_experiment(self, _fm_step_json: ForwardModelStepJSON) -> None:
         pass
 
     @staticmethod
@@ -43,13 +41,10 @@ class PemCleanup(ForwardModelStepPlugin):
             source_package="fmu.pem",
             source_function_name="PemCleanup",
             description="",
-            examples=(
-                "code-block:: console\n\n"
-                "FORWARD_MODEL PEM_CLEANUP("
-                "<GRID_DIR>=<RUNPATH>/share/results/grids, "
-                "<SAVE_TYPE_LIST>=intermediate, differences "
-                "<IS_ENSEMBLE>=false "
-                "<PREFIX>=simgrid "
-                "<EXTENSION>=.roff"
-            ),
+            examples="""
+.. code-block:: console
+
+  FORWARD_MODEL PEM_CLEANUP(<GRID_DIR>=<RUNPATH>/share/results/grids, <SAVE_TYPE_LIST>=intermediate, <IS_ENSEMBLE>=false, <PREFIX>=simgrid, <EXTENSION>=.roff)
+
+""",  # noqa: E501
         )

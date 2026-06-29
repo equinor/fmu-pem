@@ -13,16 +13,13 @@ def run_pem_cleanup(args_list=None):
         args_list = sys.argv[1:]
     args = parse_cleanup(args_list)
 
-    run_folder = _resolve_fmu_rootpath(config_dir=args.grid_dir.absolute())
-
-    with restore_dir(run_folder):
-        cleanup_pem_results(
-            directory=args.grid_dir,
-            remove_categories=args.save_type_list,
-            is_ensemble=args.is_ensemble,
-            prefix=args.prefix,
-            extension=args.extension,
-        )
+    cleanup_pem_results(
+        directory=args.grid_dir,
+        remove_categories=args.save_type_list,
+        is_ensemble=args.is_ensemble,
+        prefix=args.prefix,
+        extension=args.extension,
+    )
 
 
 if __name__ == "__main__":

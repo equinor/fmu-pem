@@ -17,7 +17,7 @@ _INTERMEDIATE_MARKERS = (
     "_fluid",
     "_dry_rock",
     "below_bubble_point",
-    "_adjusted_porosity",
+    "adjusted_porosity",
     "pressure",
 )
 
