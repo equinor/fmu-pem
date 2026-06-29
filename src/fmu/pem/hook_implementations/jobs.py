@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ert
 
-from fmu.pem.forward_models import PetroElasticModel
+from fmu.pem.forward_models import PemCleanup, PetroElasticModel
 
 PLUGIN_NAME = "pem"
 
@@ -15,5 +15,6 @@ def installable_workflow_jobs() -> dict[str, str]:
 @ert.plugin(name=PLUGIN_NAME)
 def installable_forward_model_steps() -> list[ert.ForwardModelStepPlugin]:
     return [  # type: ignore
+        PemCleanup,
         PetroElasticModel,
     ]

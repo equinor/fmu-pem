@@ -205,7 +205,7 @@ def _resolve_remove_categories(remove_categories: list[SaveTypes]) -> set[SaveTy
 
 def cleanup_pem_results(
     directory: Path,
-    suffix: str,
+    prefix: str,
     extension: str,
     remove_categories: list[SaveTypes | str],
     is_ensemble: bool = False,
@@ -234,7 +234,7 @@ def cleanup_pem_results(
     ----------
     directory : Path
         The ensemble top (``is_ensemble=True``) or a single-run grids/root directory.
-    suffix : str
+    prefix : str
         Grid-name prefix of the files to consider (e.g. ``"simgrid"``).
     extension : str
         File extension of the files to consider (e.g. ``".roff"``).
@@ -252,7 +252,7 @@ def cleanup_pem_results(
         grids_dirs = iter([_find_run_grids_dir(directory)])
     categories_to_remove = _resolve_remove_categories(categories)
     for grids_dir in grids_dirs:
-        type_dict = make_type_dict(grids_dir, suffix, extension)
+        type_dict = make_type_dict(grids_dir, prefix, extension)
         remove_files(
             [
                 path
