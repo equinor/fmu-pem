@@ -2,13 +2,13 @@
 # File: src/fmu/pem/pem_functions/pressure_sensitivity.py
 from __future__ import annotations
 
+from typing import Literal
+
 import numpy as np
 
 from fmu.pem.pem_utilities.enum_defs import (
     ParameterTypes,
     PhysicsPressureModelTypes,
-    RegressionPressureModelTypes,
-    RegressionPressureParameterTypes,
 )
 from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
 from fmu.pem.pem_utilities.rpm_models import (
@@ -57,7 +57,7 @@ def _validate_required_keys(
 
 def _extract_input_properties(
     in_situ_dict: dict[str, np.ndarray],
-    mode: RegressionPressureParameterTypes,
+    mode: Literal["vp_vs", "k_mu"],
     rho: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -67,7 +67,7 @@ def _extract_input_properties(
     ----------
     in_situ_dict : dict[str, np.ndarray]
         Dictionary with in-situ properties. Must contain either (vp, vs) or (k, mu).
-    mode : RegressionPressureParameterTypes
+    mode : Literal["vp_vs", "k_mu"]
         Model mode determining which properties are needed.
     rho : np.ndarray
         Density array for conversions.
@@ -76,8 +76,8 @@ def _extract_input_properties(
     -------
     tuple[np.ndarray, np.ndarray]
         (prop1, prop2) matching the model mode:
-        - VP_VS mode: (vp, vs)
-        - K_MU mode: (k, mu)
+        - "vp_vs" mode: (vp, vs)
+        - "k_mu" mode: (k, mu)
 
     Raises
     ------
@@ -94,7 +94,7 @@ def _extract_input_properties(
     has_velocities = vp_key in in_situ_dict and vs_key in in_situ_dict
     has_moduli = k_key in in_situ_dict and mu_key in in_situ_dict
 
-    if mode == RegressionPressureParameterTypes.VP_VS:
+    if mode == "vp_vs":
         if has_velocities:
             return in_situ_dict[vp_key], in_situ_dict[vs_key]
         if has_moduli:
@@ -105,7 +105,7 @@ def _extract_input_properties(
             f"For VP_VS mode pressure regression model, either ({vp_key}, "
             f"{vs_key}) or ({k_key}, {mu_key}) is needed"
         )
-    # K_MU mode
+    # k_mu mode
     if has_moduli:
         return in_situ_dict[k_key], in_situ_dict[mu_key]
     if has_velocities:
@@ -122,7 +122,7 @@ def _compute_all_elastic_properties(
     prop1: np.ndarray,
     prop2: np.ndarray,
     rho: np.ndarray,
-    mode: RegressionPressureParameterTypes,
+    mode: Literal["vp_vs", "k_mu"],
 ) -> dict[str, np.ndarray]:
     """
     Compute all four elastic properties from the two predicted ones.
@@ -135,7 +135,7 @@ def _compute_all_elastic_properties(
         Second predicted property (vs or mu).
     rho : np.ndarray
         Density array.
-    mode : RegressionPressureParameterTypes
+    mode : Literal["vp_vs", "k_mu"]
         Model mode indicating which properties were predicted.
 
     Returns
@@ -145,10 +145,10 @@ def _compute_all_elastic_properties(
     """
     from rock_physics_open.equinor_utilities.std_functions import moduli, velocity
 
-    if mode == RegressionPressureParameterTypes.VP_VS:
+    if mode == "vp_vs":
         vp, vs = prop1, prop2
         k, mu = moduli(vp, vs, rho)
-    else:  # K_MU mode
+    else:  # k_mu mode
         k, mu = prop1, prop2
         vp, vs = velocity(k, mu, rho)[0:2]
 
@@ -227,8 +227,6 @@ def apply_dry_rock_pressure_sensitivity_model(
         )
     raise TypeError(
         f"Unsupported model type for pressure sensitivity: {type(model)}. \n"
-        "Available options for regression based models are "
-        f"{RegressionPressureModelTypes.options()}. "
         f"Available options for physics based models are "
         f"{PhysicsPressureModelTypes.options()}."
     )

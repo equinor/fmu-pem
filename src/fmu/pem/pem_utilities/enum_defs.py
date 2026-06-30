@@ -113,19 +113,9 @@ class DifferenceAttribute(_OptionsMixin, str, Enum):
     OVERBURDEN_PRESSURE = "overburden_pressure"
 
 
-class RegressionPressureModelTypes(_OptionsMixin, str, Enum):
-    EXPONENTIAL = "exponential"
-    POLYNOMIAL = "polynomial"
-
-
 class PhysicsPressureModelTypes(_OptionsMixin, str, Enum):
     FRIABLE = "friable"
     PATCHY_CEMENT = "patchy_cement"
-
-
-class RegressionPressureParameterTypes(_OptionsMixin, str, Enum):
-    VP_VS = "vp_vs"
-    K_MU = "k_mu"
 
 
 class ParameterTypes(_OptionsMixin, str, Enum):

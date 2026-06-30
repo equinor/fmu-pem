@@ -62,17 +62,17 @@ rock_matrix:
     pressure_sensitivity: True
     pressure_sensitivity_model:
       sensitivity_type: regression
-      mode: vp_vs
-      model_type: exponential
-      parameters:
-        vp:
-          a_factor: 0.0822648
-          b_factor: 7.02268939
-          model_max_pressure: 40.0  # MPa
-        vs:
-          a_factor: 0.09164501
-          b_factor: 8.23144402
-          model_max_pressure: 40.0  # MPa
+      model_max_pressure: 40.0  # MPa
+      parameterisation:
+        mode: vp_vs
+        function:
+          function_type: exponential
+          vp:
+            a_factor: 0.0822648
+            b_factor: 7.02268939
+          vs:
+            a_factor: 0.09164501
+            b_factor: 8.23144402
   - fipnum: "11-21"
     model:
       model_name: t_matrix  # One of patchy_cement, friable, t_matrix or regression
@@ -86,17 +86,17 @@ rock_matrix:
     pressure_sensitivity: True
     pressure_sensitivity_model:
       sensitivity_type: regression
-      mode: vp_vs
-      model_type: exponential
-      parameters:
-        vp:
-          a_factor: 0.0822648
-          b_factor: 7.02268939
-          model_max_pressure: 40.0  # MPa
-        vs:
-          a_factor: 0.09164501
-          b_factor: 8.23144402
-          model_max_pressure: 40.0  # MPa
+      model_max_pressure: 40.0  # MPa
+      parameterisation:
+        mode: vp_vs
+        function:
+          function_type: exponential
+          vp:
+            a_factor: 0.0822648
+            b_factor: 7.02268939
+          vs:
+            a_factor: 0.09164501
+            b_factor: 8.23144402
 
 # Fluid definition: each fluid for FLAG modelling must have their parameters defined, temperature and pressure will be
 # varied in the model, salinity will also be taken from model if flag is set

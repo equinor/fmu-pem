@@ -2,16 +2,13 @@
 Define RPM model types and their parameters
 """
 
-from typing import Any, Literal, Self
+from typing import Any, Literal
 
 import numpy as np
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    ValidationInfo,
-    field_validator,
-    model_validator,
 )
 from pydantic.json_schema import SkipJsonSchema
 from rock_physics_open.equinor_utilities.machine_learning_utilities import (
@@ -25,9 +22,6 @@ from rock_physics_open.sandstone_models import (
 
 from fmu.pem.pem_utilities.enum_defs import (
     CoordinationNumberFunction,
-    ParameterTypes,
-    RegressionPressureModelTypes,
-    RegressionPressureParameterTypes,
     RPMType,
 )
 from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
@@ -284,55 +278,105 @@ class RegressionRPM(BaseModel):
 
 
 class ExpParams(BaseModel):
-    """Exponential pressure model parameters."""
+    """Exponential pressure model parameters for a single elastic property."""
 
     model_config = ConfigDict(title="Exponential Parameters")
 
     a_factor: float = Field(description="Exponential coefficient A")
     b_factor: float = Field(description="Exponential coefficient B")
 
-    model_max_pressure: float = Field(
-        default=40,  # MPa
-        description="Maximum pressure value for the exponential pressure"
-        " sensitive regression model. Unit MPa",
-    )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert exponential parameters to dictionary."""
-        return {
-            "a_factor": self.a_factor,
-            "b_factor": self.b_factor,
-            "model_max_pressure": self.model_max_pressure,
-        }
+    def build_model(self, model_max_pressure: float) -> ExponentialPressureModel:
+        """Construct the underlying exponential pressure model."""
+        return ExponentialPressureModel(
+            a_factor=self.a_factor,
+            b_factor=self.b_factor,
+            model_max_pressure=model_max_pressure,
+        )
 
 
 class PolyParams(BaseModel):
-    """Polynomial pressure model parameters."""
+    """Polynomial pressure model parameters for a single elastic property."""
 
     model_config = ConfigDict(title="Polynomial Parameters")
 
     weights: list[float] = Field(description="Polynomial coefficients")
 
-    model_max_pressure: float = Field(
-        default=40,  # MPa
-        description="Maximum pressure value for the polynomial pressure"
-        " sensitive regression model. Unit MPa",
+    def build_model(self, model_max_pressure: float) -> PolynomialPressureModel:
+        """Construct the underlying polynomial pressure model."""
+        return PolynomialPressureModel(
+            weights=self.weights,
+            model_max_pressure=model_max_pressure,
+        )
+
+
+# Function-level blocks. Choosing exponential vs polynomial applies to *both*
+# elastic properties of the selected parameterisation, so the two property
+# parameter sets always share the same regression function.
+class VpVsExponential(BaseModel):
+    model_config = ConfigDict(title="Exponential function (Vp/Vs)")
+    function_type: Literal["exponential"] = "exponential"
+    vp: ExpParams = Field(description="Exponential parameters for Vp")
+    vs: ExpParams = Field(description="Exponential parameters for Vs")
+
+
+class VpVsPolynomial(BaseModel):
+    model_config = ConfigDict(title="Polynomial function (Vp/Vs)")
+    function_type: Literal["polynomial"] = "polynomial"
+    vp: PolyParams = Field(description="Polynomial parameters for Vp")
+    vs: PolyParams = Field(description="Polynomial parameters for Vs")
+
+
+class KMuExponential(BaseModel):
+    model_config = ConfigDict(title="Exponential function (K/Mu)")
+    function_type: Literal["exponential"] = "exponential"
+    k: ExpParams = Field(description="Exponential parameters for bulk modulus")
+    mu: ExpParams = Field(description="Exponential parameters for shear modulus")
+
+
+class KMuPolynomial(BaseModel):
+    model_config = ConfigDict(title="Polynomial function (K/Mu)")
+    function_type: Literal["polynomial"] = "polynomial"
+    k: PolyParams = Field(description="Polynomial parameters for bulk modulus")
+    mu: PolyParams = Field(description="Polynomial parameters for shear modulus")
+
+
+# Parameterisation-level blocks. Choosing Vp/Vs vs K/Mu selects which pair of
+# elastic properties the regression predicts.
+class VpVsRegression(BaseModel):
+    model_config = ConfigDict(title="Vp / Vs parameterisation")
+    mode: Literal["vp_vs"] = "vp_vs"
+    function: VpVsExponential | VpVsPolynomial = Field(
+        description="Regression function type and per-property coefficients",
+        discriminator="function_type",
     )
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert polynomial parameters to dictionary."""
-        return {
-            "weights": self.weights,
-            "model_max_pressure": self.model_max_pressure,
-        }
+    @property
+    def parameter_pair(self) -> tuple[ExpParams | PolyParams, ExpParams | PolyParams]:
+        """Property parameter blocks in (prop1, prop2) = (vp, vs) order."""
+        return self.function.vp, self.function.vs
+
+
+class KMuRegression(BaseModel):
+    model_config = ConfigDict(title="K / Mu parameterisation")
+    mode: Literal["k_mu"] = "k_mu"
+    function: KMuExponential | KMuPolynomial = Field(
+        description="Regression function type and per-property coefficients",
+        discriminator="function_type",
+    )
+
+    @property
+    def parameter_pair(self) -> tuple[ExpParams | PolyParams, ExpParams | PolyParams]:
+        """Property parameter blocks in (prop1, prop2) = (k, mu) order."""
+        return self.function.k, self.function.mu
 
 
 class RegressionPressureSensitivity(BaseModel):
     """
-    Pressure sensitivity model for rock physics modeling.
+    Pressure sensitivity model based on regression of plug measurements.
 
-    This model handles different pressure-dependent parameter types (VP/VS or K/MU)
-    using various model types (exponential, polynomial.
+    The valid combinations of parameterisation (Vp/Vs or K/Mu) and regression
+    function (exponential or polynomial) are encoded as nested discriminated
+    unions, so invalid combinations cannot be expressed in the configuration.
     """
 
     model_config = ConfigDict(
@@ -342,83 +386,33 @@ class RegressionPressureSensitivity(BaseModel):
         default="regression",
         description="Discriminator for pressure sensitivity model type",
     )
-    # Selections that cover model types Exponential/Polynomial and parameter types
-    # VP-VS or K-MU
-    model_type: RegressionPressureModelTypes = Field(
-        description="Type of pressure model"
+    model_max_pressure: float = Field(
+        default=40,  # MPa
+        description="Maximum pressure value (depletion cap) for the regression "
+        "pressure sensitive model. Unit MPa",
     )
-    mode: RegressionPressureParameterTypes = Field(
-        description="Parameter mode (VP/VS or K/MU)"
+    parameterisation: VpVsRegression | KMuRegression = Field(
+        description="Parameterisation (Vp/Vs or K/Mu) and regression coefficients",
+        discriminator="mode",
     )
 
-    # Parameter containers
-    parameters: dict[ParameterTypes, ExpParams | PolyParams]
+    @property
+    def mode(self) -> Literal["vp_vs", "k_mu"]:
+        """Parameterisation mode ('vp_vs' or 'k_mu')."""
+        return self.parameterisation.mode
 
-    @field_validator("model_type", mode="before")
-    @classmethod
-    def check_model_type(cls, v: str, info: ValidationInfo) -> str:
-        if v in list(RegressionPressureModelTypes):
-            return v
-        raise ValueError(
-            f"unknown physics pressure model type: {v}\n"
-            f"Should be one of {list(RegressionPressureModelTypes)}"
+    def _build_models(
+        self,
+    ) -> tuple[
+        ExponentialPressureModel | PolynomialPressureModel,
+        ExponentialPressureModel | PolynomialPressureModel,
+    ]:
+        """Build the underlying ML pressure models for the two properties."""
+        param1, param2 = self.parameterisation.parameter_pair
+        return (
+            param1.build_model(self.model_max_pressure),
+            param2.build_model(self.model_max_pressure),
         )
-
-    @field_validator("mode", mode="before")
-    @classmethod
-    def check_mode(cls, v: str, info: ValidationInfo) -> str:
-        if v in list(RegressionPressureParameterTypes):
-            return v
-        raise ValueError(
-            f"unknown physics pressure model type: {v}\n"
-            + f"Should be one of {list(RegressionPressureParameterTypes)}"
-        )
-
-    @field_validator("parameters", mode="before")
-    @classmethod
-    def check_parameters(cls, v: dict, info: ValidationInfo) -> dict:
-        for key in v:
-            if key not in list(ParameterTypes):
-                raise ValueError(f"unknown pressure parameter: {key}")
-        return v
-
-    @model_validator(mode="after")
-    def _validate_model_configuration(self) -> Self:
-        """Validate model configuration and parameter consistency."""
-        if self.mode == RegressionPressureParameterTypes.VP_VS and not (
-            self.parameters.get(ParameterTypes.VP)
-            and self.parameters.get(ParameterTypes.VS)
-        ):
-            raise ValueError("VP/VS mode requires both vp_parameters and vs_parameters")
-        if self.mode == RegressionPressureParameterTypes.K_MU and not (
-            self.parameters.get(ParameterTypes.K)
-            and self.parameters.get(ParameterTypes.MU)
-        ):
-            raise ValueError("K/MU mode requires both k_parameters and mu_parameters")
-        """Validate model configuration and parameter consistency."""
-        for key, value in self.parameters.items():
-            if self.model_type == RegressionPressureModelTypes.POLYNOMIAL and (
-                not isinstance(value, PolyParams)
-            ):
-                raise ValueError(
-                    "model parameter mismatch, expected polynomial weights"
-                )
-            if self.model_type == RegressionPressureModelTypes.EXPONENTIAL and (
-                not isinstance(value, ExpParams)
-            ):
-                raise ValueError(
-                    "model parameter mismatch, expected exponential parameters"
-                )
-        return self
-
-    def _get_ml_models(self):
-        ml_models = {}
-        for key, value in self.parameters.items():
-            if self.model_type == RegressionPressureModelTypes.POLYNOMIAL:
-                ml_models[key] = PolynomialPressureModel(**value.to_dict())
-            if self.model_type == RegressionPressureModelTypes.EXPONENTIAL:
-                ml_models[key] = ExponentialPressureModel(**value.to_dict())
-        return ml_models
 
     def predict_elastic_properties(
         self,
@@ -431,29 +425,20 @@ class RegressionPressureSensitivity(BaseModel):
         Predict depleted elastic properties based on pressure change.
 
         Args:
-            prop1: First elastic property (K or VP depending on mode)
-            prop2: Second elastic property (MU or VS depending on mode)
+            prop1: First elastic property (VP or K depending on mode)
+            prop2: Second elastic property (VS or MU depending on mode)
             in_situ_press: In-situ pressure array
             depl_press: Depletion pressure array
 
         Returns:
             Tuple of depleted (prop1, prop2) arrays
         """
-        models = self._get_ml_models()
+        model1, model2 = self._build_models()
 
-        # Determine parameter keys based on mode
-        key1, key2 = (
-            (ParameterTypes.K, ParameterTypes.MU)
-            if self.mode == RegressionPressureParameterTypes.K_MU
-            else (ParameterTypes.VP, ParameterTypes.VS)
-        )
         # The model has set a maximum depletion, make sure that the depleted
         # pressure does not exceed this. Maximum depletion is given in MPa,
         # must be converted to Pa
-        max_depl = 1.0e6 * min(
-            self.parameters[key1].model_max_pressure,
-            self.parameters[key2].model_max_pressure,
-        )
+        max_depl = 1.0e6 * self.model_max_pressure
         depl_press = in_situ_press + np.minimum(depl_press - in_situ_press, max_depl)
 
         # Build input array for first property
@@ -465,11 +450,11 @@ class RegressionPressureSensitivity(BaseModel):
             ),
             axis=1,
         )
-        prop1_depl = models[key1].predict_abs(input_array, case="depl")
+        prop1_depl = model1.predict_abs(input_array, case="depl")
 
         # Reuse array for second property
         input_array[:, 0] = prop2
-        prop2_depl = models[key2].predict_abs(input_array, case="depl")
+        prop2_depl = model2.predict_abs(input_array, case="depl")
 
         return prop1_depl, prop2_depl
 

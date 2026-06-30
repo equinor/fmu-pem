@@ -25,18 +25,20 @@ from fmu.pem.pem_functions.pressure_sensitivity import (
 )
 from fmu.pem.pem_utilities.enum_defs import (
     ParameterTypes,
-    RegressionPressureModelTypes,
-    RegressionPressureParameterTypes,
 )
 from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
 from fmu.pem.pem_utilities.rpm_models import (
     ExpParams,
     FriableParams,
+    KMuPolynomial,
+    KMuRegression,
     MineralProperties,
     PatchyCementParams,
     PhysicsModelPressureSensitivity,
     PolyParams,
     RegressionPressureSensitivity,
+    VpVsExponential,
+    VpVsRegression,
 )
 
 # ---------------------------------------------------------------------------
@@ -89,12 +91,12 @@ def test_regression_exponential_vp_vs_numeric_truth():
     a_vs, b_vs = 0.10, 8.0e6
 
     model = RegressionPressureSensitivity(
-        model_type=RegressionPressureModelTypes.EXPONENTIAL,
-        mode=RegressionPressureParameterTypes.VP_VS,
-        parameters={
-            ParameterTypes.VP: ExpParams(a_factor=a_vp, b_factor=b_vp),
-            ParameterTypes.VS: ExpParams(a_factor=a_vs, b_factor=b_vs),
-        },
+        parameterisation=VpVsRegression(
+            function=VpVsExponential(
+                vp=ExpParams(a_factor=a_vp, b_factor=b_vp),
+                vs=ExpParams(a_factor=a_vs, b_factor=b_vs),
+            ),
+        ),
     )
 
     in_situ_dict = _mk_in_situ_dict(vp=vp0, vs=vs0, rho=rho)
@@ -141,12 +143,13 @@ def test_regression_polynomial_k_mu_numeric_truth_and_cap():
     weights = [1.0, 1.0e-7]  # P(p) = 1 + 1e-7 * p
 
     model = RegressionPressureSensitivity(
-        model_type=RegressionPressureModelTypes.POLYNOMIAL,
-        mode=RegressionPressureParameterTypes.K_MU,
-        parameters={
-            ParameterTypes.K: PolyParams(weights=weights, model_max_pressure=cap_mpa),
-            ParameterTypes.MU: PolyParams(weights=weights, model_max_pressure=cap_mpa),
-        },
+        model_max_pressure=cap_mpa,
+        parameterisation=KMuRegression(
+            function=KMuPolynomial(
+                k=PolyParams(weights=weights),
+                mu=PolyParams(weights=weights),
+            ),
+        ),
     )
 
     # in_situ dict with moduli only (mode matches)
@@ -185,12 +188,12 @@ def test_regression_vp_vs_from_moduli_conversion():
     a_vp, b_vp = 0.05, 5e6
     a_vs, b_vs = 0.04, 6e6
     model = RegressionPressureSensitivity(
-        model_type=RegressionPressureModelTypes.EXPONENTIAL,
-        mode=RegressionPressureParameterTypes.VP_VS,
-        parameters={
-            ParameterTypes.VP: ExpParams(a_factor=a_vp, b_factor=b_vp),
-            ParameterTypes.VS: ExpParams(a_factor=a_vs, b_factor=b_vs),
-        },
+        parameterisation=VpVsRegression(
+            function=VpVsExponential(
+                vp=ExpParams(a_factor=a_vp, b_factor=b_vp),
+                vs=ExpParams(a_factor=a_vs, b_factor=b_vs),
+            ),
+        ),
     )
 
     in_situ_dict = _mk_in_situ_dict(k=k0, mu=mu0, rho=rho)
@@ -376,12 +379,12 @@ def test_physics_patchy_cement_pressure_adjustment_monkeypatch(monkeypatch):
 def test_missing_rho_raises():
     """Missing required 'rho' key should raise PressureSensitivityInputError."""
     model = RegressionPressureSensitivity(
-        model_type=RegressionPressureModelTypes.EXPONENTIAL,
-        mode=RegressionPressureParameterTypes.VP_VS,
-        parameters={
-            ParameterTypes.VP: ExpParams(a_factor=0.1, b_factor=1e6),
-            ParameterTypes.VS: ExpParams(a_factor=0.1, b_factor=1e6),
-        },
+        parameterisation=VpVsRegression(
+            function=VpVsExponential(
+                vp=ExpParams(a_factor=0.1, b_factor=1e6),
+                vs=ExpParams(a_factor=0.1, b_factor=1e6),
+            ),
+        ),
     )
     in_situ = {ParameterTypes.VP.value: np.array([3000.0])}
     with pytest.raises(PressureSensitivityInputError):
@@ -493,13 +496,11 @@ def test_extract_input_properties_velocity_to_moduli_round_trip():
     in_situ = _mk_in_situ_dict(vp=vp, vs=vs, rho=rho)
     k, mu = _extract_input_properties(
         in_situ_dict=in_situ,
-        mode=RegressionPressureParameterTypes.K_MU,
+        mode="k_mu",
         rho=rho,
     )
     # Back compute velocities to ensure consistency
-    props = _compute_all_elastic_properties(
-        k, mu, rho, RegressionPressureParameterTypes.K_MU
-    )
+    props = _compute_all_elastic_properties(k, mu, rho, "k_mu")
     assert np.allclose(props[ParameterTypes.VP.value], vp, rtol=1e-12)
     assert np.allclose(props[ParameterTypes.VS.value], vs, rtol=1e-12)
 
@@ -513,13 +514,11 @@ def test_extract_input_properties_moduli_to_velocity_round_trip():
     in_situ = _mk_in_situ_dict(k=k, mu=mu, rho=rho)
     vp, vs = _extract_input_properties(
         in_situ_dict=in_situ,
-        mode=RegressionPressureParameterTypes.VP_VS,
+        mode="vp_vs",
         rho=rho,
     )
     # Recompute moduli
-    props = _compute_all_elastic_properties(
-        vp, vs, rho, RegressionPressureParameterTypes.VP_VS
-    )
+    props = _compute_all_elastic_properties(vp, vs, rho, "vp_vs")
     assert np.allclose(props[ParameterTypes.K.value], k, rtol=1e-12)
     assert np.allclose(props[ParameterTypes.MU.value], mu, rtol=1e-12)
 
@@ -566,12 +565,12 @@ def test_sequential_regression_then_physics_chain(monkeypatch):
     p_in = np.array([5e6, 5e6])
     p_depl = np.array([8e6, 9e6])
     reg_model = RegressionPressureSensitivity(
-        model_type=RegressionPressureModelTypes.EXPONENTIAL,
-        mode=RegressionPressureParameterTypes.VP_VS,
-        parameters={
-            ParameterTypes.VP: ExpParams(a_factor=0.05, b_factor=6e6),
-            ParameterTypes.VS: ExpParams(a_factor=0.06, b_factor=7e6),
-        },
+        parameterisation=VpVsRegression(
+            function=VpVsExponential(
+                vp=ExpParams(a_factor=0.05, b_factor=6e6),
+                vs=ExpParams(a_factor=0.06, b_factor=7e6),
+            ),
+        ),
     )
     reg_dict = _mk_in_situ_dict(vp=vp0, vs=vs0, rho=rho)
     reg_res = apply_dry_rock_pressure_sensitivity_model(
