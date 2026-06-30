@@ -41,7 +41,8 @@ export default defineConfig({
                     },
                     {text: 'Command-line-runs', link: 'command-line-runs'},
                     {text: 'ERT configuration', link: '/ert-configuration'},
-                    {text: 'PEM configuration', link: '/pem-configuration'}
+                    {text: 'PEM configuration', link: '/pem-configuration'},
+                    {text: 'Cleaning up results', link: '/cleanup'}
                 ]
             },
             {

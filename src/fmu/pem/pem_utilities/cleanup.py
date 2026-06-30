@@ -68,6 +68,10 @@ def categorise_filename(filename: Path) -> SaveTypes | None:
     parts = filename.stem.split("--")
     if len(parts) == 1:
         return SaveTypes.GRID
+    if len(parts) > 3:
+        # More segments than the grammar allows: treat as unrecognised so we never
+        # delete an unexpected file.
+        return None
 
     attribute = parts[1]
     date_part = parts[2] if len(parts) > 2 else ""

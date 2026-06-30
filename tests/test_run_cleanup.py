@@ -119,7 +119,7 @@ def test_pem_cleanup_forward_model_command():
     step = PemCleanup()
     assert step.name == "PEM_CLEANUP"
     assert step.executable == "pem_cleanup"
-    for flag in ("--grid_dir", "--save_type_list", "--is_ensemble", "--prefix"):
+    for flag in ("--grid_dir", "--save_type_list", "--prefix"):
         assert flag in step.arglist
 
 

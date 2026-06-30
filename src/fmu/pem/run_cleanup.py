@@ -1,9 +1,5 @@
-import os
 import sys
-from pathlib import Path
 
-from fmu.pem.__main__ import _resolve_fmu_rootpath
-from fmu.pem.pem_utilities import restore_dir
 from fmu.pem.pem_utilities.argument_parser import parse_cleanup
 from fmu.pem.pem_utilities.cleanup import cleanup_pem_results
 
