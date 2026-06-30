@@ -62,17 +62,17 @@ rock_matrix:
     pressure_sensitivity: True
     pressure_sensitivity_model:
       sensitivity_type: regression
-      mode: vp_vs
-      model_type: exponential
-      parameters:
-        vp:
-          a_factor: 0.0822648
-          b_factor: 7.02268939
-          model_max_pressure: 40.0  # MPa
-        vs:
-          a_factor: 0.09164501
-          b_factor: 8.23144402
-          model_max_pressure: 40.0  # MPa
+      model_max_pressure: 40.0  # MPa
+      parameterisation:
+        mode: vp_vs
+        function:
+          function_type: exponential
+          vp:
+            a_factor: 0.0822648
+            b_factor: 7.02268939
+          vs:
+            a_factor: 0.09164501
+            b_factor: 8.23144402
 
 #rock_matrix:
 # - fipnum: "*"
@@ -109,15 +109,16 @@ rock_matrix:
 # User-defined pressure-sensitivity model
 
 #  pressure_sensitivity_model:
-#    mode: vp_vs
-#    model_type: polynomial
-#    parameters:
-#      vp:
-#        weights: [3250.50,1.875]
-#        model_max_pressure: 40.0  # MPa
-#      vs:
-#        weights: [1750.48,1.25]
-#        model_max_pressure: 40.0  # MPa
+#    sensitivity_type: regression
+#    model_max_pressure: 40.0  # MPa
+#    parameterisation:
+#      mode: vp_vs
+#      function:
+#        function_type: polynomial
+#        vp:
+#          weights: [3250.50,1.875]
+#        vs:
+#          weights: [1750.48,1.25]
 
 
 #    pressure_sensitivity_model:

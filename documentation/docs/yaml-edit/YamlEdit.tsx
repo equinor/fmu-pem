@@ -166,6 +166,8 @@ export const YamlEdit = () => {
               }
             }}
             liveValidate
+            omitExtraData
+            liveOmit
             uiSchema={{
               "ui:submitButtonOptions": { norender: true },
               "ui:globalOptions": {
@@ -185,6 +187,14 @@ export const YamlEdit = () => {
                     },
                     pressure_sensitivity_model: {
                       sensitivity_type: { "ui:widget": "hidden" },
+                      // RegressionPressureSensitivity nested discriminators
+                      parameterisation: {
+                        mode: { "ui:widget": "hidden" },
+                        function: {
+                          function_type: { "ui:widget": "hidden" },
+                        },
+                      },
+                      // PhysicsModelPressureSensitivity discriminator
                       parameters: {
                         param_type: { "ui:widget": "hidden" },
                       },
