@@ -13,6 +13,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic.json_schema import SkipJsonSchema
 from rock_physics_open.equinor_utilities.machine_learning_utilities import (
     ExponentialPressureModel,
     PolynomialPressureModel,
@@ -73,7 +74,7 @@ class FriableParams(BaseModel):
     critical_porosity: float = Field(
         ge=0.3, le=0.5, default=0.4, description="Critical porosity"
     )
-    coordination_number_function: CoordinationNumberFunction = Field(
+    coordination_number_function: SkipJsonSchema[CoordinationNumberFunction] = Field(
         default="PorBased",
         description="Coordination number signifies the average number "
         "of grain contacts per grain. It is assumed to be related to porosity, "
