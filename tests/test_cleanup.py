@@ -133,6 +133,11 @@ def test_categorise_filename_invalid_date_returns_none():
     assert categorise_filename(Path("simgrid--vp--20181301.roff")) is None
 
 
+def test_categorise_filename_extra_segments_returns_none():
+    # More ``--`` segments than the grammar allows must not be classified.
+    assert categorise_filename(Path("simgrid--vp--20180101--extra.roff")) is None
+
+
 # --------------------------------------------------------------------------- #
 # make_type_dict
 # --------------------------------------------------------------------------- #

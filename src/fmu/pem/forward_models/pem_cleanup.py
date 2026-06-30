@@ -17,8 +17,6 @@ class PemCleanup(ForwardModelStepPlugin):
                 "<GRID_DIR>",
                 "--save_type_list",
                 "<SAVE_TYPE_LIST>",
-                "--is_ensemble",
-                "<IS_ENSEMBLE>",
                 "--prefix",
                 "<PREFIX>",
                 "--extension",
@@ -44,7 +42,7 @@ class PemCleanup(ForwardModelStepPlugin):
             examples="""
 .. code-block:: console
 
-  FORWARD_MODEL PEM_CLEANUP(<GRID_DIR>=<RUNPATH>/share/results/grids, <SAVE_TYPE_LIST>=intermediate, <IS_ENSEMBLE>=false, <PREFIX>=simgrid, <EXTENSION>=.roff)
+  FORWARD_MODEL PEM_CLEANUP(<GRID_DIR>=<RUNPATH>/share/results/grids, <SAVE_TYPE_LIST>=intermediate, <PREFIX>=simgrid, <EXTENSION>=.roff)
 
 """,  # noqa: E501
         )

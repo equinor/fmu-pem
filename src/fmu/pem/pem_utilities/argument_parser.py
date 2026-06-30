@@ -84,7 +84,10 @@ def parse_cleanup(
         "--save_type_list",
         nargs="+",
         type=str,
-        choices=[t.value for t in SaveTypes],
+        # 'grid' is intentionally not selectable on its own: the grid is only removed
+        # together with everything else (via 'all'), since the parameter files are
+        # useless without it.
+        choices=[t.value for t in SaveTypes if t is not SaveTypes.GRID],
         required=True,
         help="List of save batches: 'all', 'intermediate', 'difference', 'elastic'",
     )
