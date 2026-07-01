@@ -73,9 +73,6 @@ class GasModels(_OptionsMixin, str, Enum):
     HC2016 = "HC2016"
 
 
-# class CoordinationNumberFunction(str, Enum):
-#     PORBASED = "PorBased"
-#     CONSTANT = "ConstVal"
 CoordinationNumberFunction = Literal["PorBased", "ConstVal"]
 
 
@@ -116,6 +113,11 @@ class DifferenceAttribute(_OptionsMixin, str, Enum):
 class PhysicsPressureModelTypes(_OptionsMixin, str, Enum):
     FRIABLE = "friable"
     PATCHY_CEMENT = "patchy_cement"
+
+
+class RegressionPressureModelTypes(_OptionsMixin, str, Enum):
+    EXPONENTIAL = "exponential"
+    POLYNOMIAL = "polynomial"
 
 
 class ParameterTypes(_OptionsMixin, str, Enum):
