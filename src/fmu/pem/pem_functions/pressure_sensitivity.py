@@ -9,6 +9,7 @@ import numpy as np
 from fmu.pem.pem_utilities.enum_defs import (
     ParameterTypes,
     PhysicsPressureModelTypes,
+    RegressionPressureModelTypes,
 )
 from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperties
 from fmu.pem.pem_utilities.rpm_models import (
@@ -97,24 +98,15 @@ def _extract_input_properties(
     if mode == "vp_vs":
         if has_velocities:
             return in_situ_dict[vp_key], in_situ_dict[vs_key]
-        if has_moduli:
-            # Convert from moduli to velocities
-            vp, vs = velocity(in_situ_dict[k_key], in_situ_dict[mu_key], rho)[0:2]
-            return vp, vs
         raise PressureSensitivityInputError(
-            f"For VP_VS mode pressure regression model, either ({vp_key}, "
-            f"{vs_key}) or ({k_key}, {mu_key}) is needed"
+            f"For vp_vs mode pressure regression model, {vp_key}, "
+            f"and {vs_key} are needed"
         )
     # k_mu mode
     if has_moduli:
         return in_situ_dict[k_key], in_situ_dict[mu_key]
-    if has_velocities:
-        # Convert from velocities to moduli
-        k, mu = moduli(in_situ_dict[vp_key], in_situ_dict[vs_key], rho)
-        return k, mu
     raise PressureSensitivityInputError(
-        f"For K_MU mode pressure regression model, either ({vp_key}, "
-        f"{vs_key}) or ({k_key}, {mu_key}) is needed"
+        f"For k_mu mode pressure regression model, {k_key} and {mu_key} are needed"
     )
 
 
@@ -199,7 +191,11 @@ def apply_dry_rock_pressure_sensitivity_model(
     Returns
     -------
     dict[str, np.ndarray]
-        Dictionary with 'vp', 'vs', 'k', 'mu', 'rho'.
+        Dictionary with 'vp', 'vs', 'k', 'mu', 'rho'.if has_moduli:
+            # Convert from moduli to velocities
+            vp, vs = velocity(in_situ_dict[k_key], in_situ_dict[mu_key], rho)[0:2]
+            return vp, vs
+
 
     Raises
     ------
@@ -228,7 +224,9 @@ def apply_dry_rock_pressure_sensitivity_model(
     raise TypeError(
         f"Unsupported model type for pressure sensitivity: {type(model)}. \n"
         f"Available options for physics based models are "
-        f"{PhysicsPressureModelTypes.options()}."
+        f"{PhysicsPressureModelTypes.options()} and "
+        "Available options for regression based models are "
+        f"{RegressionPressureModelTypes.options()}. "
     )
 
 
