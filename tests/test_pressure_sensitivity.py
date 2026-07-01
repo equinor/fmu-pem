@@ -30,6 +30,7 @@ from fmu.pem.pem_utilities.pem_class_definitions import EffectiveMineralProperti
 from fmu.pem.pem_utilities.rpm_models import (
     ExpParams,
     FriableParams,
+    KMuExponential,
     KMuPolynomial,
     KMuRegression,
     MineralProperties,
@@ -175,8 +176,9 @@ def test_regression_polynomial_k_mu_numeric_truth_and_cap():
     assert np.allclose(res[ParameterTypes.MU.value], exp_mu, rtol=1e-12)
 
 
-def test_regression_vp_vs_from_moduli_conversion():
-    """Mode VP/VS but only moduli provided: verify conversion path works."""
+def test_regression_vp_vs_from_moduli_raises():
+    """Mode VP/VS but only moduli provided: verify that PressureSensitivityError
+    is raised."""
     n = 5
     k0 = np.linspace(18e9, 22e9, n)
     mu0 = k0 * 0.5
@@ -197,18 +199,49 @@ def test_regression_vp_vs_from_moduli_conversion():
     )
 
     in_situ_dict = _mk_in_situ_dict(k=k0, mu=mu0, rho=rho)
-    res = apply_dry_rock_pressure_sensitivity_model(
-        model=model,
-        initial_eff_pressure=p_in,
-        depleted_eff_pressure=p_depl,
-        in_situ_dict=in_situ_dict,
+    with pytest.raises(
+        PressureSensitivityInputError, match="For vp_vs mode pressure regression model"
+    ):
+        _ = apply_dry_rock_pressure_sensitivity_model(
+            model=model,
+            initial_eff_pressure=p_in,
+            depleted_eff_pressure=p_depl,
+            in_situ_dict=in_situ_dict,
+        )
+
+
+def test_regression_moduli_from_vp_vs_raises():
+    """Mode K/Mu but only velocities provided: verify that PressureSensitivityError
+    is raised."""
+    n = 5
+    vp = np.linspace(3500.0, 3550.0, n)
+    vs = vp * 0.5
+    rho = np.full(n, 2550.0)
+    p_in = np.full(n, 8e6)
+    p_depl = np.full(n, 12e6)
+
+    # Simple exponential weights for test (small effect)
+    a_k, b_k = 0.05, 5e6
+    a_mu, b_mu = 0.04, 6e6
+    model = RegressionPressureSensitivity(
+        parameterisation=KMuRegression(
+            function=KMuExponential(
+                k=ExpParams(a_factor=a_k, b_factor=b_k),
+                mu=ExpParams(a_factor=a_mu, b_factor=b_mu),
+            ),
+        ),
     )
-    # Just sanity: velocities increase with pressure in this parametrisation
-    # (depending on a,b)
-    assert res[ParameterTypes.VP.value].shape == (n,)
-    assert res[ParameterTypes.VS.value].shape == (n,)
-    assert np.all(res[ParameterTypes.VP.value] > 0)
-    assert np.all(res[ParameterTypes.VS.value] > 0)
+
+    in_situ_dict = _mk_in_situ_dict(vp=vp, vs=vs, rho=rho)
+    with pytest.raises(
+        PressureSensitivityInputError, match="For k_mu mode pressure regression model"
+    ):
+        _ = apply_dry_rock_pressure_sensitivity_model(
+            model=model,
+            initial_eff_pressure=p_in,
+            depleted_eff_pressure=p_depl,
+            in_situ_dict=in_situ_dict,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -480,47 +513,6 @@ def test_invalid_model_type_raises():
             depleted_eff_pressure=np.array([6e6]),
             in_situ_dict=in_situ,
         )
-
-
-# ---------------------------------------------------------------------------
-# Internal utility path tests
-# ---------------------------------------------------------------------------
-
-
-def test_extract_input_properties_velocity_to_moduli_round_trip():
-    """Round-trip: provide velocities for K_MU mode and ensure conversions succeed."""
-    n = 6
-    vp = np.linspace(3000.0, 3300.0, n)
-    vs = vp * 0.55
-    rho = np.full(n, 2500.0)
-    in_situ = _mk_in_situ_dict(vp=vp, vs=vs, rho=rho)
-    k, mu = _extract_input_properties(
-        in_situ_dict=in_situ,
-        mode="k_mu",
-        rho=rho,
-    )
-    # Back compute velocities to ensure consistency
-    props = _compute_all_elastic_properties(k, mu, rho, "k_mu")
-    assert np.allclose(props[ParameterTypes.VP.value], vp, rtol=1e-12)
-    assert np.allclose(props[ParameterTypes.VS.value], vs, rtol=1e-12)
-
-
-def test_extract_input_properties_moduli_to_velocity_round_trip():
-    """Provide moduli for VP_VS mode and verify conversions back to moduli."""
-    n = 5
-    k = np.linspace(18e9, 22e9, n)
-    mu = k * 0.6
-    rho = np.full(n, 2550.0)
-    in_situ = _mk_in_situ_dict(k=k, mu=mu, rho=rho)
-    vp, vs = _extract_input_properties(
-        in_situ_dict=in_situ,
-        mode="vp_vs",
-        rho=rho,
-    )
-    # Recompute moduli
-    props = _compute_all_elastic_properties(vp, vs, rho, "vp_vs")
-    assert np.allclose(props[ParameterTypes.K.value], k, rtol=1e-12)
-    assert np.allclose(props[ParameterTypes.MU.value], mu, rtol=1e-12)
 
 
 # ---------------------------------------------------------------------------
