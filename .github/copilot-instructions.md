@@ -36,7 +36,7 @@ tests/
 - **Python ≥ 3.11** is required; use modern type annotations (`X | Y`,
   `list[X]`, `tuple[X, Y]`).
 - All source files must be compatible with the Python versions tested in CI
-  (`3.11`, `3.12`).
+  (`3.11`, `3.12`, `3.13`, `3.14`).
 
 ---
 
