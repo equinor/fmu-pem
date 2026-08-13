@@ -8,7 +8,6 @@ Default values for the elastic properties of the most common minerals are provid
 be verified in each case. Shale is often given as the effective mineral properties of a combination of constituents,
 and it can range from a soft marine clay to a stiff, quartz-rich silt.
 
-
 | Mineral    | Density [kg/m^3] | Bulk modulus [GPa] | Shear modulus [GPa] |
 |------------|------------------|--------------------|---------------------|
 | Quartz     | 2650.0           | 36.8               | 44.0                |
@@ -32,7 +31,7 @@ fractions or mineral fractions.
 ## Mix models for effective mineral properties
 
 Two models for mixing minerals are available in `fmu-pem`: **Hashin-Shtrikman** and **Voigt-Reuss-Hill** average. The
-difference between them is illustrated in [Figure 1](figure-1-bulk-modulus) and [Figure 2](figure-2-shear-modulus)
+difference between them is illustrated in [Figure 1](#figure-1-bulk-modulus) and [Figure 2](#figure-2-shear-modulus)
 below. In this example, quartz is mixed with a soft marine clay in different proportions. As shown, there is negligible
 difference in effective bulk modulus properties when selecting either Hashin-Shtrikman average or Voigt-Reuss-Hill average.
 The upper and lower bounds of both methods are also included in the plots. The bounds for Hashin-Shtrikman are notably
