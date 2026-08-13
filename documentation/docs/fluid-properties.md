@@ -5,7 +5,7 @@ saturations and a mixing model. For "normal" (Newtonian) fluids, the elastic pro
 from which compressional wave velocity (Vp) can be derived.
 
 Unlike mineral properties, the elastic properties of each fluid phase are not constants. They vary with temperature
-and pressure, as well as other parameters, listed in [Table 1](table-1-fluid-model-parameters) below. Pressure in
+and pressure, as well as other parameters, listed in [Table 1](#table-1-fluid-model-parameters) below. Pressure in
 terms of fluid modelling is synonymous with formation pressure.
 
 | Fluid phase | Parameters                                                    |
@@ -36,14 +36,14 @@ Span, R. and Wagner, W.: *A New Equation of State for Carbon Dioxide Covering th
 
 ### Brine model
 
-As listed in [Table 1](table-1-fluid-model-parameters), salinity and composition of different salts are required for
+As listed in [Table 1](#table-1-fluid-model-parameters), salinity and composition of different salts are required for
 modelling of brine properties, in addition to pressure and temperature. Note that the brine model assumes single-phase
 behaviour, i.e. it is not a model for steam, nor ice. Values for salinity and composition are taken from isotope
-analysis reports. An example is shown in [Figure 1](figure-1-isotope-analysis). The values we require here are
+analysis reports. An example is shown in [Figure 1](#figure-1-isotope-analysis). The values we require here are
 *total dissolved solids*, *Na⁺*, *Ca²⁺* and *K⁺*. All are given here in unit **mg/L**, which is equivalent to **ppm**,
 i.e., the expected unit for salinity. Calculating the percentage of Na, Ca and K should be straightforward, as they
 have the same unit. Variation in composition has much less influence on the elastic properties than salinity,
-temperature and pressure; see [Figure 2](figure-2-brine-properties).
+temperature and pressure; see [Figure 2](#figure-2-brine-properties).
 
 <img src="./images/isotope_analysis.png">
 <span id="figure-1-isotope-analysis"><strong>Figure 1:</strong> Result of formation water isotope analysis.</span>
@@ -56,8 +56,8 @@ temperature and pressure; see [Figure 2](figure-2-brine-properties).
 ### Gas model
 
 The light hydrocarbon gas model has a single parameter in addition to temperature and pressure: gas gravity. Gas gravity
-is defined as the molecular weight of the gas relative to the molecular weight of air. [Table 2](table-2-gas-gravity)
-shows the gas gravity for alkanes from methane through octane. Modelling results are shown in [Figure 3](figure-3-gas-properties).
+is defined as the molecular weight of the gas relative to the molecular weight of air. [Table 2](#table-2-gas-gravity)
+shows the gas gravity for alkanes from methane through octane. Modelling results are shown in [Figure 3](#figure-3-gas-properties).
 
 | **Alkane**   | **Chemical Formula** | **Molecular Weight (g/mol)** | **Gas Gravity** (G)     |
 |--------------|----------------------|------------------------------|-------------------------|
@@ -86,7 +86,7 @@ otherwise the condensate model should be used.
 It should also be noted that the oil model does not cover very heavy oil, such as Canadian or Venezuelan bitumen. As
 these varieties of hydrocarbons are not a prime target for Equinor, we have not included such models in `fmu-pem`. Oil
 with an API gravity as low as 10° can be modelled with the standard oil model, unless the temperature is very low. Oil
-properties as functions of temperature and pressure are shown in [Figure 4](figure-4-oil-properties). The other parameters are
+properties as functions of temperature and pressure are shown in [Figure 4](#figure-4-oil-properties). The other parameters are
 illustrated with a reference case and comparison cases where each parameter is increased individually.
 
 In general, oil properties are reduced with increasing temperature and increased with increasing pressure. Increasing
@@ -121,12 +121,12 @@ BUBBLE_POINT_FRACTION_TOLERANCE = 0.01
 The CO₂ models require only temperature and pressure as parameters. The model of Span and Wagner should be the
 default choice, although it requires more computational time than the Equinor internal alternative. CO₂ behaviour is
 complex because it can exist in three different phases within normal reservoir temperature and pressure ranges:
-gas, liquid and supercritical phases. [Figure 5](figure-5-co2-properties) shows the CO₂ properties with one parameter
+gas, liquid and supercritical phases. [Figure 5](#figure-5-co2-properties) shows the CO₂ properties with one parameter
 varied at a time.
 
 To get a full overview of the CO₂ properties, all combinations of reservoir temperature and pressure should be examined,
-as shown in [Figure 6](figure-6-co2-meshgrid), and complemented by the phase diagram
-in [Figure 7](figure-7-co2-phase-diagram). Most models will not provide a complete picture of the possible combinations
+as shown in [Figure 6](#figure-6-co2-meshgrid), and complemented by the phase diagram
+in [Figure 7](#figure-7-co2-phase-diagram). Most models will not provide a complete picture of the possible combinations
 of hydrocarbons, brine and CO₂, as CO₂ can also react with the rock matrix and dissolve or precipitate minerals.
 
 <img src="./images/co2_properties_complete.png">
@@ -157,7 +157,7 @@ the curve shape of the mixture. A typical value is **3.0**. In a fluid mixture w
 can be closer to observations than Wood's. These can be considered realistic upper and lower bounds for fluid properties
 , as it is unlikely that the mixture will approach the Voigt bound.
 
-[Figure 8](figure-6-brine-gas-mix) illustrates mixing of brine and gas. The impact of gas is most prominent in the Wood
+[Figure 8](#figure-8-brine-gas-mix) illustrates mixing of brine and gas. The impact of gas is most prominent in the Wood
 mixture. It has been noted that a small amount of gas in brine ("fizz gas") can have similar properties to oil, which
 has led to uncertainty in evaluation of exploration prospects.
 

@@ -31,7 +31,7 @@ fractions or mineral fractions.
 ## Mix models for effective mineral properties
 
 Two models for mixing minerals are available in `fmu-pem`: **Hashin-Shtrikman** and **Voigt-Reuss-Hill** average. The
-difference between them is illustrated in [Figure 1](figure-1-bulk-modulus) and [Figure 2](figure-2-shear-modulus)
+difference between them is illustrated in [Figure 1](#figure-1-bulk-modulus) and [Figure 2](#figure-2-shear-modulus)
 below. In this example, quartz is mixed with a soft marine clay in different proportions. As shown, there is negligible
 difference in effective bulk modulus properties when selecting either Hashin-Shtrikman average or Voigt-Reuss-Hill average.
 The upper and lower bounds of both methods are also included in the plots. The bounds for Hashin-Shtrikman are notably
