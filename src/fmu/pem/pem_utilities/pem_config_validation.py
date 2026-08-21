@@ -1,7 +1,7 @@
 import os
 from datetime import date
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 import numpy as np
 from pydantic import (
@@ -410,7 +410,11 @@ class RockMatrixProperties(BaseModel):
 
 # Pressure
 class OverburdenPressureTrend(BaseModel):
-    type: SkipJsonSchema[OverburdenPressureTypes] = OverburdenPressureTypes.TREND
+    model_config = ConfigDict(title="Overburden pressure from depth trend")
+
+    type: SkipJsonSchema[Literal[OverburdenPressureTypes.TREND]] = (
+        OverburdenPressureTypes.TREND
+    )
     fipnum: str = Field(
         default="*",
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
@@ -426,7 +430,11 @@ class OverburdenPressureTrend(BaseModel):
 
 
 class OverburdenPressureConstant(BaseModel):
-    type: SkipJsonSchema[OverburdenPressureTypes] = OverburdenPressureTypes.CONSTANT
+    model_config = ConfigDict(title="Constant overburden pressure")
+
+    type: SkipJsonSchema[Literal[OverburdenPressureTypes.CONSTANT]] = (
+        OverburdenPressureTypes.CONSTANT
+    )
     fipnum: str = Field(
         default="*",
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
@@ -791,9 +799,16 @@ class PemConfig(BaseModel):
         "calculation of effective fluid properties. You can have multiple fluid PVT "
         "definitions, representing e.g. different regions and/or zones in your model.",
     )
-    pressure: list[OverburdenPressureTrend | OverburdenPressureConstant] = Field(
-        default_factory=OverburdenPressureTrend,
-        description="Definition of overburden pressure model - constant or trend",
+    pressure: list[
+        Annotated[
+            OverburdenPressureTrend | OverburdenPressureConstant,
+            Field(discriminator="type"),
+        ]
+    ] = Field(
+        title="Overburden pressure",
+        description="Definition of overburden pressure model - constant or trend. "
+        "One entry per FIPNUM group; the FIPNUM grouping is independent of the "
+        "rock-matrix and pressure-sensitivity grouping.",
     )
     results: Results = Field(
         description="Flags for saving results of the PEM",
