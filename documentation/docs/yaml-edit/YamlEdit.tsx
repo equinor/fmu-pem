@@ -16,13 +16,37 @@ import {
 
 import { copy } from "@equinor/eds-icons";
 
-import { TranslatableString, englishStringTranslator, replaceStringParameters } from '@rjsf/utils';
+import { TranslatableString, englishStringTranslator, replaceStringParameters, type TitleFieldProps } from '@rjsf/utils';
 
 function customStrings(stringToTranslate: TranslatableString, params?: string[]): string {
   if(stringToTranslate === TranslatableString.KeyLabel) {
     return replaceStringParameters('Key:', params);
   }
   return englishStringTranslator(stringToTranslate, params);
+}
+
+// VitePress flattens RJSF's default field titles, so render them as explicit headings.
+function TitleFieldTemplate({ id, title, required }: TitleFieldProps) {
+  if (!title) {
+    return null;
+  }
+  return (
+    <div
+      id={id}
+      className="rjsf-field-title"
+      style={{
+        fontSize: "1.15rem",
+        fontWeight: 700,
+        marginTop: "1.5rem",
+        marginBottom: "0.5rem",
+        paddingBottom: "0.25rem",
+        borderBottom: "1px solid var(--vp-c-divider, #e2e2e3)",
+      }}
+    >
+      {title}
+      {required ? " *" : null}
+    </div>
+  );
 }
 
 export const YamlEdit = () => {
@@ -168,6 +192,7 @@ export const YamlEdit = () => {
             liveValidate
             omitExtraData
             liveOmit
+            templates={{ TitleFieldTemplate }}
             uiSchema={{
               "ui:submitButtonOptions": { norender: true },
               "ui:globalOptions": {
