@@ -16,7 +16,7 @@ import {
 
 import { copy } from "@equinor/eds-icons";
 
-import { TranslatableString, englishStringTranslator, replaceStringParameters, type TitleFieldProps } from '@rjsf/utils';
+import { TranslatableString, englishStringTranslator, replaceStringParameters, getUiOptions, type TitleFieldProps, type ArrayFieldTemplateProps } from '@rjsf/utils';
 
 function customStrings(stringToTranslate: TranslatableString, params?: string[]): string {
   if(stringToTranslate === TranslatableString.KeyLabel) {
@@ -26,7 +26,7 @@ function customStrings(stringToTranslate: TranslatableString, params?: string[])
 }
 
 // VitePress flattens RJSF's default field titles, so render them as explicit headings.
-function TitleFieldTemplate({ id, title, required }: TitleFieldProps) {
+function TitleFieldTemplate({ id, title, required }: Pick<TitleFieldProps, "id" | "title" | "required">) {
   if (!title) {
     return null;
   }
@@ -46,6 +46,70 @@ function TitleFieldTemplate({ id, title, required }: TitleFieldProps) {
       {title}
       {required ? " *" : null}
     </div>
+  );
+}
+
+// Arrays whose items are a discriminated `oneOf` (e.g. `pressure`) do not render
+// their array-level title until the first item is added, unlike arrays of a
+// single `$ref` (e.g. `zone_regions`). Give such arrays a template that always
+// renders the title heading up front, matching the `zone_regions` appearance.
+function TitledArrayFieldTemplate(props: ArrayFieldTemplateProps) {
+  const {
+    canAdd,
+    className,
+    disabled,
+    fieldPathId,
+    uiSchema,
+    items,
+    onAddClick,
+    readonly,
+    registry,
+    required,
+    schema,
+    title,
+  } = props;
+  const uiOptions = getUiOptions(uiSchema);
+  const displayTitle = uiOptions.title || title;
+  const description = uiOptions.description || schema.description;
+  const {
+    ButtonTemplates: { AddButton },
+  } = registry.templates;
+  const baseId = fieldPathId?.$id ?? "array";
+  return (
+    <fieldset className={className} id={fieldPathId?.$id}>
+      {displayTitle ? (
+        <TitleFieldTemplate
+          id={`${baseId}__title`}
+          title={displayTitle}
+          required={required}
+        />
+      ) : null}
+      {description ? (
+        <p className="field-description" style={{ marginBottom: "0.5rem" }}>
+          {description}
+        </p>
+      ) : null}
+      <div className="row array-item-list">
+        {items &&
+          items.map((element: any, index: number) =>
+            React.isValidElement(element) ? (
+              element
+            ) : (
+              <div key={element?.key ?? index}>{element?.children}</div>
+            ),
+          )}
+      </div>
+      {canAdd ? (
+        <AddButton
+          id={`${baseId}__add`}
+          className="rjsf-array-item-add"
+          onClick={onAddClick}
+          disabled={disabled || readonly}
+          uiSchema={uiSchema}
+          registry={registry}
+        />
+      ) : null}
+    </fieldset>
   );
 }
 
@@ -226,6 +290,11 @@ export const YamlEdit = () => {
                     },
                   },
                 },
+              },
+              // The pressure array items are a discriminated `oneOf`; use a
+              // template that always renders the array title heading up front.
+              pressure: {
+                "ui:ArrayFieldTemplate": TitledArrayFieldTemplate,
               },
             }}
             showErrorList={false}
