@@ -34,6 +34,8 @@ function TitleFieldTemplate({ id, title, required }: Pick<TitleFieldProps, "id" 
     <div
       id={id}
       className="rjsf-field-title"
+      role="heading"
+      aria-level={3}
       style={{
         fontSize: "1.15rem",
         fontWeight: 700,
