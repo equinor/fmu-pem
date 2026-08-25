@@ -15,7 +15,6 @@ from pydantic import (
 from pydantic.json_schema import SkipJsonSchema
 from pydantic_core.core_schema import ValidationInfo
 
-from fmu.datamodels.fmu_results.global_configuration import GlobalConfiguration
 from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
 from .enum_defs import (
@@ -705,7 +704,6 @@ class FromGlobal(BaseModel):
     obs_dates: list[str] | None = None
     obs_diffdates: list[list[str]] | None = None
     seismic: SeismicSection
-    global_config: GlobalConfiguration
 
     @field_validator("mod_dates", "obs_dates", mode="before")
     def make_date_strings(cls, v: list[date]) -> list[str] | None:

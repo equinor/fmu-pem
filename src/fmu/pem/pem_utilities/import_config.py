@@ -69,7 +69,6 @@ def get_global_params_and_dates(
     # Find the correct seismic dates references
     dates_config = global_config_par["global"]["dates"]
     return_dict = {
-        "global_config": global_config_par,
         "grid_model": grid_model_name,
         "seismic": global_config_par["global"]["seismic"],
     }
