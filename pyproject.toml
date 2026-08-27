@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Topic :: Utilities",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Operating System :: POSIX :: Linux",
@@ -31,17 +31,15 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "numpy >= 1.24.3",
-    "xtgeo >= 4.7.1",
-    "resfo",
-    "fmu-tools",
+    "ert >= 23.0.0",
     "fmu-config",
-    "fmu-dataio",
-    "fmu-datamodels",
-    "rock-physics-open >= 1.0.0",
-    "PyYAML >=6.0.1",
+    "fmu-tools",
+    "numpy >= 2.4.6",
     "pydantic",
-    "ert >= 14.1.10",
+    "PyYAML >=6.0.3",
+    "resfo",
+    "rock-physics-open >= 1.0.1",
+    "xtgeo >= 4.24.5",
 ]
 
 [project.optional-dependencies]
