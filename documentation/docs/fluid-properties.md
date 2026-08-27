@@ -10,7 +10,7 @@ terms of fluid modelling is synonymous with formation pressure.
 
 | Fluid phase | Parameters                                                    |
 |-------------|---------------------------------------------------------------|
-| Brine       | Salinity, percentage of NaCl, KCl, CaCl₂                     |
+| Brine       | Salinity, percentage of NaCl, KCl, CaCl₂                      |
 | Gas         | Gas gravity                                                   |
 | Oil         | Gas gravity, gas/oil ratio, oil density @ standard conditions |
 | Condensate  | Gas gravity, gas/oil ratio, oil density @ standard conditions |

@@ -8,7 +8,6 @@ Default values for the elastic properties of the most common minerals are provid
 be verified in each case. Shale is often given as the effective mineral properties of a combination of constituents,
 and it can range from a soft marine clay to a stiff, quartz-rich silt.
 
-
 | Mineral    | Density [kg/m^3] | Bulk modulus [GPa] | Shear modulus [GPa] |
 |------------|------------------|--------------------|---------------------|
 | Quartz     | 2650.0           | 36.8               | 44.0                |
