@@ -86,17 +86,14 @@ def save_results(
     # 2. Save results to disk according to config file
     if save_to_disk:
         # create list of dict from list of pressure and saturated rock objects
-        eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
         sat_prop_dict_list = [asdict(obj) for obj in sat_rock_props]
-        for props in [eff_pres_dict_list, sat_prop_dict_list]:
-            prop_dict = list(props)
-            export_results_disk(
-                result_props=prop_dict,
-                grid=sim_grid,
-                grid_name=grid_name,
-                results_dir=full_output_path,
-                time_steps=seis_dates,
-            )
+        export_results_disk(
+            result_props=sat_prop_dict_list,
+            grid=sim_grid,
+            grid_name=grid_name,
+            results_dir=full_output_path,
+            time_steps=seis_dates,
+        )
         if not (difference_props is None and difference_date_strs is None):
             export_results_disk(
                 result_props=difference_props,
@@ -108,6 +105,14 @@ def save_results(
 
     # 3. Save intermediate results only if specified in the config file
     if save_intermediate:
+        eff_pres_dict_list = [asdict(obj) for obj in eff_pres_props]
+        export_results_disk(
+            result_props=eff_pres_dict_list,
+            grid=sim_grid,
+            grid_name=grid_name,
+            results_dir=full_output_path,
+            time_steps=seis_dates,
+        )
         export_dicts = [
             [asdict(fl_props) for fl_props in fluid_props],
             asdict(matrix_props),
