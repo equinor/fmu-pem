@@ -411,9 +411,7 @@ class RockMatrixProperties(BaseModel):
 class OverburdenPressureTrend(BaseModel):
     model_config = ConfigDict(title="Overburden pressure from depth trend")
 
-    type: SkipJsonSchema[Literal[OverburdenPressureTypes.TREND]] = (
-        OverburdenPressureTypes.TREND
-    )
+    type: Literal[OverburdenPressureTypes.TREND] = OverburdenPressureTypes.TREND
     fipnum: str = Field(
         default="*",
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
@@ -431,9 +429,7 @@ class OverburdenPressureTrend(BaseModel):
 class OverburdenPressureConstant(BaseModel):
     model_config = ConfigDict(title="Constant overburden pressure")
 
-    type: SkipJsonSchema[Literal[OverburdenPressureTypes.CONSTANT]] = (
-        OverburdenPressureTypes.CONSTANT
-    )
+    type: Literal[OverburdenPressureTypes.CONSTANT] = OverburdenPressureTypes.CONSTANT
     fipnum: str = Field(
         default="*",
         description="Each grid cell in a reservoir model is assigned a FIPNUM "
