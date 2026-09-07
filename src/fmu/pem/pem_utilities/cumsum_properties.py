@@ -1,13 +1,13 @@
 from dataclasses import asdict
 
-from .enum_defs import DifferenceAttribute, DifferenceMethod
+from .difference_calculation import DifferenceCalculation
 
 
 def calculate_diff_properties(
     props: list,
     diff_dates: list[list[str]],
     seis_dates: list[str],
-    diff_calculation: dict[DifferenceAttribute, list[DifferenceMethod]],
+    diff_calculation: list[DifferenceCalculation],
 ) -> tuple[list, list]:
     """
     Function to calculate difference attributes between grid properties
@@ -16,7 +16,7 @@ def calculate_diff_properties(
         props: grid properties
         diff_dates: list of simulation model dates for difference calculation
         seis_dates: list of simulation model dates
-        diff_calculation: dictionary of difference calculation attributes and methods
+        diff_calculation: difference calculation attributes and methods
 
     Returns:
         diff_prop: difference properties
@@ -24,6 +24,9 @@ def calculate_diff_properties(
     """
     _verify_diff_inputs(props, seis_dates, diff_dates)
     props = _filter_diff_inputs(props, diff_calculation)
+    difference_methods = {
+        calculation.attribute: calculation.methods for calculation in diff_calculation
+    }
 
     def diff(x, y):
         return x - y
@@ -42,8 +45,8 @@ def calculate_diff_properties(
     for monitor, base in diff_dates:  # type: ignore
         tmp_dict = {}
         for k, v_base in props[lookup[base]].items():
-            if k in diff_calculation:
-                operations = diff_calculation[k]
+            if k in difference_methods:
+                operations = difference_methods[k]
                 v_monitor = props[lookup[monitor]][k]
                 for op in operations:
                     if op in locals():
@@ -81,15 +84,16 @@ def _verify_diff_inputs(prop_set, seis_dates, diff_dates):
     return
 
 
-def _filter_diff_inputs(prop_list_list, diff_calculation):
+def _filter_diff_inputs(
+    prop_list_list: list, diff_calculation: list[DifferenceCalculation]
+):
     # Filter out the properties that are not in the diff_calculation list.
     # Keep the time-step order in the list
+    attributes = {calculation.attribute for calculation in diff_calculation}
     return_list = [{} for _ in range(len(prop_list_list[0]))]
     for prop_list in prop_list_list:
         for i, prop_set in enumerate(prop_list):
-            tmp_dict = {
-                k: v for k, v in asdict(prop_set).items() if k in diff_calculation
-            }
+            tmp_dict = {k: v for k, v in asdict(prop_set).items() if k in attributes}
             if tmp_dict:
                 return_list[i].update(tmp_dict)
 

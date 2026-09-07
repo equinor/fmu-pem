@@ -11,16 +11,26 @@ what kind of difference attributes should be estimated:
 ```yaml
 # For 4D parameters: settings for which difference parameters to calculate
 diff_calculation:
-  AI: [diffpercent, ratio]
-  SI: [diffpercent, ratio]
-  VPVS: [ratio]
-  TWTPP: [diff]
-  DENS: [diffpercent]
-  VP: [diffpercent]
-  VS: [diffpercent]
-  SWAT: [diff]
-  SGAS: [diff]
-  PRESSURE: [diff]
+  - attribute: ai
+    methods: [diffpercent, ratio]
+  - attribute: si
+    methods: [diffpercent, ratio]
+  - attribute: vpvs
+    methods: [ratio]
+  - attribute: twtpp
+    methods: [diff]
+  - attribute: dens
+    methods: [diffpercent]
+  - attribute: vp
+    methods: [diffpercent]
+  - attribute: vs
+    methods: [diffpercent]
+  - attribute: swat
+    methods: [diff]
+  - attribute: sgas
+    methods: [diff]
+  - attribute: pressure
+    methods: [diff]
 ```
 
 For convenience, it is possible to calculate differences of input parameter, as well, as in the example above for
