@@ -145,6 +145,8 @@ def test_read_pem_config_pre_experiment_skips_filesystem_checks(
     assert config.fluids is not None
     assert config.rock_matrix is not None
     assert config.diff_calculation is not None
+    assert config.diff_calculation[0].attribute.value == "dens"
+    assert config.diff_calculation[0].methods[0].value == "diffpercent"
 
 
 if __name__ == "__main__":  # pragma: no cover

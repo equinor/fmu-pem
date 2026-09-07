@@ -189,9 +189,15 @@ results:
 
 # For 4D parameters: settings for which difference parameters to calculate
 diff_calculation:
-  DENS: [ diffpercent ]
-  VP: [ diffpercent ]
-  VS: [ diffpercent ]
-  SI: [diff, diffpercent, ratio]
-  TWTPP: [diff]
-  PRESSURE: [diff]
+  - attribute: dens
+    methods: [diffpercent]
+  - attribute: vp
+    methods: [diffpercent]
+  - attribute: vs
+    methods: [diffpercent]
+  - attribute: si
+    methods: [diff, diffpercent, ratio]
+  - attribute: twtpp
+    methods: [diff]
+  - attribute: pressure
+    methods: [diff]
