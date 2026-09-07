@@ -17,6 +17,7 @@ from pydantic_core.core_schema import ValidationInfo
 
 from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
+from .difference_calculation import DifferenceCalculation
 from .enum_defs import (
     CO2Models,
     DifferenceAttribute,
@@ -811,7 +812,7 @@ class PemConfig(BaseModel):
     results: Results = Field(
         description="Flags for saving results of the PEM",
     )
-    diff_calculation: dict[DifferenceAttribute, list[DifferenceMethod]] = Field(
+    diff_calculation: list[DifferenceCalculation] = Field(
         description="Difference properties of the PEM can be calculated for the dates "
         "in the Eclipse `.UNRST` file. The settings decide which parameters "
         "difference properties will be generated for, and what kind of "
@@ -843,17 +844,15 @@ class PemConfig(BaseModel):
                     )
         return v
 
-    @field_validator("diff_calculation", mode="before")
-    def to_list(cls, v: dict) -> dict:
-        v_keys = [key.lower() for key in v]
-        v_val = list(v.values())
-        for i, val_item in enumerate(v_val):
-            if not isinstance(val_item, list):
-                v_val[i] = [
-                    val_item,
-                ]
-            v_val[i] = [v.lower() for v in v_val[i]]
-        return dict(zip(v_keys, v_val))
+    @field_validator("diff_calculation")
+    @classmethod
+    def unique_difference_attributes(
+        cls, v: list[DifferenceCalculation]
+    ) -> list[DifferenceCalculation]:
+        attributes = [calculation.attribute for calculation in v]
+        if len(attributes) != len(set(attributes)):
+            raise ValueError("each difference attribute may only be configured once")
+        return v
 
     # Add global parameters used in the PEM
     def update_with_global(self, global_params: dict):
