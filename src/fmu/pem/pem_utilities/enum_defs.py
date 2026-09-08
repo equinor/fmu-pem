@@ -93,7 +93,7 @@ class DifferenceAttribute(_OptionsMixin, str, Enum):
     SI = "si"
     VP = "vp"
     VS = "vs"
-    DENS = "dens"
+    DENSITY = "density"
     TWT = "twt"
     SGAS = "sgas"
     SWAT = "swat"

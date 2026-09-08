@@ -17,7 +17,6 @@ from pydantic_core.core_schema import ValidationInfo
 
 from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
-from .difference_calculation import DifferenceCalculation
 from .enum_defs import (
     CO2Models,
     DifferenceAttribute,
@@ -769,6 +768,15 @@ class Results(BaseModel):
         description="Intermediate results can be saved to a separate directory for "
         "QC. Intermediate results include effective mineral and fluid "
         "properties",
+    )
+
+
+class DifferenceCalculation(BaseModel):
+    attribute: DifferenceAttribute = Field(
+        description="Property for which difference values are calculated"
+    )
+    methods: list[DifferenceMethod] = Field(
+        description="Difference calculations to apply to the selected property"
     )
 
 

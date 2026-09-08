@@ -1,6 +1,6 @@
 from dataclasses import asdict
 
-from .difference_calculation import DifferenceCalculation
+from .pem_config_validation import DifferenceCalculation
 
 
 def calculate_diff_properties(
@@ -25,7 +25,8 @@ def calculate_diff_properties(
     _verify_diff_inputs(props, seis_dates, diff_dates)
     props = _filter_diff_inputs(props, diff_calculation)
     difference_methods = {
-        calculation.attribute: calculation.methods for calculation in diff_calculation
+        calculation.attribute.value: calculation.methods
+        for calculation in diff_calculation
     }
 
     def diff(x, y):
@@ -89,7 +90,7 @@ def _filter_diff_inputs(
 ):
     # Filter out the properties that are not in the diff_calculation list.
     # Keep the time-step order in the list
-    attributes = {calculation.attribute for calculation in diff_calculation}
+    attributes = {calculation.attribute.value for calculation in diff_calculation}
     return_list = [{} for _ in range(len(prop_list_list[0]))]
     for prop_list in prop_list_list:
         for i, prop_set in enumerate(prop_list):
