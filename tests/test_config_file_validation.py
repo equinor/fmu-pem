@@ -1,12 +1,20 @@
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+import yaml
 
+from fmu.pem.pem_utilities.cumsum_properties import calculate_diff_properties
+from fmu.pem.pem_utilities.enum_defs import DifferenceAttribute, DifferenceMethod
 from fmu.pem.pem_utilities.import_config import (
     find_key_first,
     get_global_params_and_dates,
     read_pem_config,
+)
+from fmu.pem.pem_utilities.pem_config_validation import (
+    DifferenceCalculation,
+    PemConfig,
 )
 from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
 
@@ -145,8 +153,44 @@ def test_read_pem_config_pre_experiment_skips_filesystem_checks(
     assert config.fluids is not None
     assert config.rock_matrix is not None
     assert config.diff_calculation is not None
-    assert config.diff_calculation[0].attribute.value == "dens"
+    assert config.diff_calculation[0].attribute.value == "density"
     assert config.diff_calculation[0].methods[0].value == "diffpercent"
+
+
+def test_duplicate_difference_attributes_are_rejected(testdata):
+    config_path = testdata / "sim2seis/model/pem_config_no_condensate.yml"
+    with config_path.open() as config_file:
+        config_data = yaml.safe_load(config_file)
+    config_data["diff_calculation"].append(
+        {
+            "attribute": "density",
+            "methods": ["ratio"],
+        }
+    )
+
+    with pytest.raises(ValueError, match="each difference attribute"):
+        PemConfig.model_validate(config_data, context={"pre_experiment": True})
+
+
+def test_density_difference_uses_density_property_name():
+    @dataclass
+    class Properties:
+        density: float
+
+    diff_props, date_strs = calculate_diff_properties(
+        props=[[Properties(10.0), Properties(20.0)]],
+        diff_dates=[["2020", "2010"]],
+        seis_dates=["2010", "2020"],
+        diff_calculation=[
+            DifferenceCalculation(
+                attribute=DifferenceAttribute.DENSITY,
+                methods=[DifferenceMethod.DIFF],
+            )
+        ],
+    )
+
+    assert diff_props == [{"densitydiff": 10.0}]
+    assert date_strs == ["2020_2010"]
 
 
 if __name__ == "__main__":  # pragma: no cover

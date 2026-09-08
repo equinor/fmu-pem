@@ -19,7 +19,7 @@ diff_calculation:
     methods: [ratio]
   - attribute: twtpp
     methods: [diff]
-  - attribute: dens
+  - attribute: density
     methods: [diffpercent]
   - attribute: vp
     methods: [diffpercent]

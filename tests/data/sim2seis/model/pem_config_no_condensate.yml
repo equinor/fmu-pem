@@ -189,7 +189,7 @@ results:
 
 # For 4D parameters: settings for which difference parameters to calculate
 diff_calculation:
-  - attribute: dens
+  - attribute: density
     methods: [diffpercent]
   - attribute: vp
     methods: [diffpercent]
