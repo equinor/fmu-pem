@@ -45,12 +45,26 @@ Difference properties calculated between different simulation dates can be made 
 ```yaml
 # For 4D parameters: settings for which difference parameters to calculate
 diff_calculation:
-  DENS: [ diffpercent ]
-  VP: [ diffpercent ]
-  VS: [ diffpercent ]
-  SI: [diff, diffpercent, ratio]
-  TWTPP: [diff]
-  PRESSURE: [diff]
+  - attribute: ai
+    methods: [diffpercent, ratio]
+  - attribute: si
+    methods: [diffpercent, ratio]
+  - attribute: vpvs
+    methods: [ratio]
+  - attribute: twtpp
+    methods: [diff]
+  - attribute: density
+    methods: [diffpercent]
+  - attribute: vp
+    methods: [diffpercent]
+  - attribute: vs
+    methods: [diffpercent]
+  - attribute: swat
+    methods: [diff]
+  - attribute: sgas
+    methods: [diff]
+  - attribute: pressure
+    methods: [diff]
 ```
 
 Three different difference attributes can be calculated: difference, difference percent and ratio. In [Table 3](#table-3-difference-properties), example files of difference properties are shown.
