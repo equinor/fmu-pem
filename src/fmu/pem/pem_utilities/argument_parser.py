@@ -23,7 +23,7 @@ def parse_arguments(
     """
     Uses argparse to parse arguments as expected from command line invocation for pem
     """
-    parser = argparse.ArgumentParser(__file__)
+    parser = argparse.ArgumentParser(prog="pem")
     parser.add_argument(
         "-f",
         "--config-file",
@@ -71,7 +71,7 @@ def parse_cleanup(
     Uses argparse to parse arguments as expected from command line invocation for
     pem_cleanup
     """
-    parser = argparse.ArgumentParser(__file__)
+    parser = argparse.ArgumentParser(prog="pem_cleanup")
     parser.add_argument(
         "-g",
         "--grid_dir",
