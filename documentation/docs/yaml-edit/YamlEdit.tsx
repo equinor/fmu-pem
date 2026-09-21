@@ -295,8 +295,14 @@ export const YamlEdit = () => {
               },
               // The pressure array items are a discriminated `oneOf`; use a
               // template that always renders the array title heading up front.
+              // Hide the `type` discriminator (users pick the variant via the
+              // oneOf selector); the const default is still written to formData
+              // and exported to YAML.
               pressure: {
                 "ui:ArrayFieldTemplate": TitledArrayFieldTemplate,
+                items: {
+                  type: { "ui:widget": "hidden" },
+                },
               },
             }}
             showErrorList={false}
