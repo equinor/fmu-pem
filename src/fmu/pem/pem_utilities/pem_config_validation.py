@@ -422,8 +422,12 @@ class OverburdenPressureTrend(BaseModel):
         "treated as one",
         pattern=REGEX_FIPNUM_PVTNUM,
     )
-    intercept: float = Field(description="Intercept in pressure depth trend")
-    gradient: float = Field(description="Gradient in pressure depth trend")
+    intercept: float = Field(
+        description="Intercept in pressure depth trend. Unit: `Pa`"
+    )
+    gradient: float = Field(
+        description="Gradient in pressure depth trend. Unit: `Pa/m`"
+    )
 
 
 class OverburdenPressureConstant(BaseModel):
@@ -440,7 +444,7 @@ class OverburdenPressureConstant(BaseModel):
         "treated as one",
         pattern=REGEX_FIPNUM_PVTNUM,
     )
-    value: float = Field(description="Constant pressure")
+    value: float = Field(description="Constant overburden pressure. Unit: `Pa`")
 
 
 # Fluids
