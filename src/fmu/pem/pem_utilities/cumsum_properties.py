@@ -1,6 +1,9 @@
 from dataclasses import asdict
+from pathlib import Path
 
+from .pem_class_definitions import SimInitProperties
 from .pem_config_validation import DifferenceCalculation
+from .qc_statistics import build_qc_statistics_table, export_qc_statistics_table
 
 
 def calculate_diff_properties(
@@ -8,6 +11,8 @@ def calculate_diff_properties(
     diff_dates: list[list[str]],
     seis_dates: list[str],
     diff_calculation: list[DifferenceCalculation],
+    init_props: SimInitProperties,
+    qc_tables_file: Path,
 ) -> tuple[list, list]:
     """
     Function to calculate difference attributes between grid properties
@@ -17,6 +22,8 @@ def calculate_diff_properties(
         diff_dates: list of simulation model dates for difference calculation
         seis_dates: list of simulation model dates
         diff_calculation: difference calculation attributes and methods
+        init_props: reservoir simulation INIT properties
+        qc_tables_file: out filename for QC statistics tables
 
     Returns:
         diff_prop: difference properties
@@ -27,6 +34,13 @@ def calculate_diff_properties(
     difference_methods = {
         calculation.attribute.value: calculation.methods
         for calculation in diff_calculation
+    }
+    # Lookup table for selecting difference attributes that will be exported with
+    # statistics
+    qc_table_lookup = {
+        (calculation.attribute.value, method.value): calculation.qc_table
+        for calculation in diff_calculation
+        for method in calculation.methods
     }
 
     def diff(x, y):
@@ -41,6 +55,7 @@ def calculate_diff_properties(
     lookup = dict(zip(seis_dates, range(len(seis_dates))))
     date_str = []
     diff_prop = []
+    qc_table_props = {}
     # Need to iterate over the lists in props, which contain the properties
     # for each date
     for monitor, base in diff_dates:  # type: ignore
@@ -52,6 +67,14 @@ def calculate_diff_properties(
                 for op in operations:
                     if op in locals():
                         tmp_dict[k + op] = locals()[op](v_monitor, v_base)
+                        if qc_table_lookup[(k, op)]:
+                            # Suffix with dates so entries for every date pair are
+                            # kept. Use the already-concatenated "k + op" string
+                            # (op is a str-mixin Enum, whose f-string formatting
+                            # would otherwise render as "DifferenceMethod.RATIO")
+                            qc_table_props[f"{k + op}_{monitor}_{base}"] = tmp_dict[
+                                k + op
+                            ]
                     else:
                         raise ValueError(
                             f"{__file__}: unknown difference operation: {op}, should "
@@ -60,6 +83,11 @@ def calculate_diff_properties(
         if tmp_dict:
             diff_prop.append(tmp_dict)
             date_str.append(monitor + "_" + base)
+
+    # If required, export a table with statistics for selected difference properties
+    if qc_table_props:
+        qc_dataframe = build_qc_statistics_table(qc_table_props, init_props)
+        export_qc_statistics_table(qc_dataframe, qc_tables_file)
     return diff_prop, date_str
 
 
