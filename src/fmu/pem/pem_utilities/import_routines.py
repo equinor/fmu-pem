@@ -41,7 +41,9 @@ def read_init_properties(
         populated when the NTG keyword is present in the INIT file and
         left as ``None`` otherwise.
     """
-    init_props = ["PORO", "DEPTH", "PVTNUM", "AQUIFERN"] + [fipnum_param]
+    init_props = ["PORO", "DEPTH", "PVTNUM", "AQUIFERN", "EQLNUM", "FIPZON"] + [
+        fipnum_param
+    ]
     sim_init_props = xtgeo.gridproperties_from_file(
         property_file,
         fformat="init",
