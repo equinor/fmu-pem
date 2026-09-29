@@ -782,6 +782,10 @@ class DifferenceCalculation(BaseModel):
     methods: list[DifferenceMethod] = Field(
         description="Difference calculations to apply to the selected property"
     )
+    qc_table: bool = Field(
+        description="Produce QC table output",
+        default=False,
+    )
 
 
 class PemConfig(BaseModel):
@@ -827,6 +831,12 @@ class PemConfig(BaseModel):
         "difference calculation is run - normal difference (`diff`), percent "
         "difference (`diffperc`) or ratio (`ratio`). Multiple kinds of differences "
         "can be estimated for each parameter"
+    )
+    qc_tables_file_name: Path = Field(
+        description="File name for .CSV file for output QC of difference properties. "
+        "Ouput is only written to file if one or more difference calculations have "
+        "`qc_table: true`",
+        default_factory=Path("grid_property_statistics_pemgrid"),
     )
     global_params: SkipJsonSchema[FromGlobal | None] = Field(
         default=None,
