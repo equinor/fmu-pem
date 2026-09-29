@@ -3,6 +3,8 @@ from shutil import copytree
 
 import pytest
 
+from fmu.settings._drogon import create_drogon_fmu_dir
+
 
 @pytest.fixture(scope="session")
 def testdata() -> Path:
@@ -21,5 +23,8 @@ def setup_sim2seis_test_data(testdata, tmp_path_factory):
 
     pem_output_path = config_dir / "sim2seis/output/pem"
     pem_output_path.mkdir(parents=True, exist_ok=True)
+
+    # Create required .fmu directory
+    create_drogon_fmu_dir(base_path=config_dir)
 
     return config_dir

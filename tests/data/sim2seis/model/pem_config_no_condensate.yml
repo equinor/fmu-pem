@@ -199,5 +199,9 @@ diff_calculation:
     methods: [diff, diffpercent, ratio]
   - attribute: twtpp
     methods: [diff]
+    qc_table: True
+  - attribute: ai
+    methods: [ratio]
+    qc_table: True
   - attribute: pressure
     methods: [diff]

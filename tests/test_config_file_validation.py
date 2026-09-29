@@ -187,6 +187,10 @@ def test_density_difference_uses_density_property_name():
                 methods=[DifferenceMethod.DIFF],
             )
         ],
+        # qc_table is False by default above, so no QC export is triggered and
+        # init_props/qc_tables_file are unused in this test
+        init_props=None,
+        qc_tables_file=Path("grid_property_statistics_pemgrid"),
     )
 
     assert diff_props == [{"densitydiff": 10.0}]

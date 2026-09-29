@@ -55,11 +55,12 @@ def read_init_properties(
     # anomalous porosity values. Cells with negative numbers are added to inactive
     # (masked) cells
     if "AQUIFERN" in sim_init_props and np.any(sim_init_props["AQUIFERN"].values < 0):
-        for key in init_props:
-            # Don't change AQUIFERN
-            if key != "AQUIFERN":
-                sim_init_props[key].values = adjust_mask(
-                    property=sim_init_props[key].values,
+        for prop in sim_init_props:
+            # Don't change AQUIFERN; iterating the loaded properties (rather than
+            # the requested init_props names) naturally skips any that are absent
+            if prop.name != "AQUIFERN":
+                prop.values = adjust_mask(
+                    property=prop.values,
                     indicator=sim_init_props["AQUIFERN"].values,
                     threshold=0,
                     filter_below=True,

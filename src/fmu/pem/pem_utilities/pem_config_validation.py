@@ -834,7 +834,7 @@ class PemConfig(BaseModel):
     )
     qc_tables_file_name: Path = Field(
         description="File name for .CSV file for output QC of difference properties. "
-        "Ouput is only written to file if one or more difference calculations have "
+        "Output is only written to file if one or more difference calculations have "
         "`qc_table: true`",
         default=Path("grid_property_statistics_pemgrid"),
     )
