@@ -836,7 +836,7 @@ class PemConfig(BaseModel):
         description="File name for .CSV file for output QC of difference properties. "
         "Ouput is only written to file if one or more difference calculations have "
         "`qc_table: true`",
-        default_factory=Path("grid_property_statistics_pemgrid"),
+        default=Path("grid_property_statistics_pemgrid"),
     )
     global_params: SkipJsonSchema[FromGlobal | None] = Field(
         default=None,
