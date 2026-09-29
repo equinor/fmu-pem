@@ -120,6 +120,8 @@ def pem_fcn(
                     diff_dates=config.global_params.mod_diffdates,
                     seis_dates=config.global_params.mod_dates,
                     diff_calculation=config.diff_calculation,
+                    init_props=constant_props,
+                    qc_tables_file=config.qc_tables_file_name,
                 )
                 pem_log("differential properties estimated")
             else:
