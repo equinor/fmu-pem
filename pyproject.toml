@@ -33,7 +33,9 @@ dynamic = ["version"]
 dependencies = [
     "ert >= 23.0.0",
     "fmu-config",
-    "fmu-tools",
+    "fmu-dataio",
+    "fmu-settings >= 1.1.0",
+    "fmu-tools > 1.32.0",
     "numpy >= 2.4.6",
     "pydantic",
     "PyYAML >=6.0.3",
@@ -74,6 +76,13 @@ pem_jobs = "fmu.pem.hook_implementations.jobs"
 
 [tool.mypy]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # Benign ABI mismatch from ert's netCDF4 dependency vs. the installed numpy
+    # version; not raised by fmu-pem's own code.
+    "ignore:numpy.ndarray size changed, may indicate binary incompatibility:RuntimeWarning",
+]
 
 [tool.ruff]
 src = ["src"]
