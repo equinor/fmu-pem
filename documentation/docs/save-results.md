@@ -40,34 +40,7 @@ For QC purposes, intermediate results can also be saved. [Table 2](#table-2-inte
 
 ## Difference properties
 
-Difference properties calculated between different simulation dates can be made for saturated rock properties and for convenience, also for input properties from the reservoir simulator. This is controlled by the `differences` settings in the parameter YAML file:
-
-```yaml
-# For 4D parameters: settings for which difference parameters to calculate
-diff_calculation:
-  - attribute: ai
-    methods: [diffpercent, ratio]
-  - attribute: si
-    methods: [diffpercent, ratio]
-  - attribute: vpvs
-    methods: [ratio]
-  - attribute: twtpp
-    methods: [diff]
-  - attribute: density
-    methods: [diffpercent]
-  - attribute: vp
-    methods: [diffpercent]
-  - attribute: vs
-    methods: [diffpercent]
-  - attribute: swat
-    methods: [diff]
-  - attribute: sgas
-    methods: [diff]
-  - attribute: pressure
-    methods: [diff]
-```
-
-Three different difference attributes can be calculated: difference, difference percent and ratio. In [Table 3](#table-3-difference-properties), example files of difference properties are shown.
+Difference properties calculated between different simulation dates can be made for saturated rock properties and for convenience, also for input properties from the reservoir simulator. Which parameters and difference attributes (`diff`, `diffpercent`, `ratio`) are calculated is controlled by the `diff_calculation` settings in the parameter YAML file, see [Calculate difference properties](./difference-properties.md). [Table 3](#table-3-difference-properties) shows example files of difference properties.
 
 | Grid | Type | Example name | Comment |
 | ------------------------ | ---------------------- | ---------------------- | -------- |
@@ -76,6 +49,9 @@ Three different difference attributes can be calculated: difference, difference 
 | TWT PP difference | Two-way travel time | simgrid--twtppdiff--20180701_20180101.roff | One for each difference date |
 
 <span id="table-3-difference-properties"><strong>Table 3:</strong> List of some of the properties that can be saved if `save_results_to_disk` and `diff_calculation` options are set.</span>
+
+Difference attributes flagged with `qc_table: true` additionally have statistics exported to a `.CSV` file in
+`share/results/tables`, see [QC statistics tables](./difference-properties.md#qc-statistics-tables).
 
 ## Output directories
 
