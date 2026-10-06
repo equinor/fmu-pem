@@ -13,12 +13,14 @@ what kind of difference attributes should be estimated:
 diff_calculation:
   - attribute: ai
     methods: [diffpercent, ratio]
+    qc_table: True
   - attribute: si
     methods: [diffpercent, ratio]
   - attribute: vpvs
     methods: [ratio]
   - attribute: twtpp
     methods: [diff]
+    qc_table: True
   - attribute: density
     methods: [diffpercent]
   - attribute: vp
@@ -37,3 +39,21 @@ For convenience, it is possible to calculate differences of input parameter, as 
 `SWAT` and `SGAS`. The three difference attributes that can be selected, are `diff`, `diffpercent` and `ratio`.
 
 In the FMU directory structure, the difference estimates are stored in `share/results/grids`.
+
+## QC statistics tables
+
+For any `diff_calculation` entry, setting `qc_table: true` (as for `ai` and `twtpp` in the example above) additionally
+exports statistics for that difference attribute and its selected methods to a `.CSV` file.
+
+Statistics (`AVG`, `STDDEV`, `P10`, `P90`, `MIN`, `MAX`, `COUNT`) are computed per active cell, grouped by the
+discrete `EQLNUM` and `FIPZON` regions from the reservoir simulator **.INIT** file - both of these must therefore be
+present for `qc_table` output to be generated. In addition to the per-`(EQLNUM, FIPZON)` groups, "Total" rows are
+added for each region summed over the other selector, as well as a grand total across the whole grid.
+
+All difference attributes flagged with `qc_table: true` are collected into a single table, with one row group per
+attribute/method/date-pair combination. The output file name is set with `qc_tables_file_name` (default
+`grid_property_statistics_pemgrid`), and the table is exported with `fmu-dataio` to `share/results/tables`:
+
+```yaml
+qc_tables_file_name: grid_property_statistics_pemgrid
+```
