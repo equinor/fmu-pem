@@ -173,20 +173,22 @@ results:
   save_intermediate_results: True
 
 # For 4D parameters: settings for which difference parameters to calculate
-diff_calculation:
-  - attribute: density
-    methods: [diffpercent]
-  - attribute: vp
-    methods: [diffpercent]
-  - attribute: vs
-    methods: [diffpercent]
-  - attribute: si
-    methods: [diff, diffpercent, ratio]
-  - attribute: twtpp
-    methods: [diff]
-    qc_table: True
-  - attribute: ai
-    methods: [ratio]
-    qc_table: True
-  - attribute: pressure
-    methods: [diff]
+difference_properties:
+  group_statistics: region_zone
+  diff_calculation:
+    - attribute: density
+      methods: [diffpercent]
+    - attribute: vp
+      methods: [diffpercent]
+    - attribute: vs
+      methods: [diffpercent]
+    - attribute: si
+      methods: [diff, diffpercent, ratio]
+    - attribute: twtpp
+      methods: [diff]
+      qc_table: True
+    - attribute: ai
+      methods: [ratio]
+      qc_table: True
+    - attribute: pressure
+      methods: [diff]
