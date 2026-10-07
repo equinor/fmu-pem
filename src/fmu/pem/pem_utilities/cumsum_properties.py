@@ -23,9 +23,7 @@ def calculate_diff_properties(
         props: grid properties
         diff_dates: list of simulation model dates for difference calculation
         seis_dates: list of simulation model dates
-        diff_calculation: difference calculation attributes and methods
-        init_props: reservoir simulation INIT properties
-        qc_tables_file: out filename for QC statistics tables
+        pem_config: configuration parameters
 
     Returns:
         diff_prop: difference properties
