@@ -51,8 +51,6 @@ class SimInitProperties(PropertiesSubgridMasked):
     fipnum: MaskedArray | None = None
     aquifern: MaskedArray | None = None
     ntg: MaskedArray | None = None
-    eqlnum: MaskedArray | None = None
-    fipzon: MaskedArray | None = None
 
     @property
     def delta_z(self) -> MaskedArray:
