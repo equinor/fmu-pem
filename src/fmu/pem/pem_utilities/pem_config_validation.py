@@ -788,6 +788,55 @@ class DifferenceCalculation(BaseModel):
     )
 
 
+class DifferenceProperties(BaseModel):
+    diff_calculation: list[DifferenceCalculation] = Field(
+        description="Difference properties of the PEM can be calculated for the dates "
+        "in the Eclipse `.UNRST` file. The settings decide which parameters "
+        "difference properties will be generated for, and what kind of "
+        "difference calculation is run - normal difference (`diff`), percent "
+        "difference (`diffperc`) or ratio (`ratio`). Multiple kinds of differences "
+        "can be estimated for each parameter"
+    )
+    qc_tables_file_name: Path = Field(
+        description="File name for .CSV file for output QC of difference properties. "
+        "Output is only written to file if one or more difference calculations have "
+        "`qc_table: true`",
+        default=Path("grid_property_statistics_pemgrid"),
+    )
+    group_statistics: Literal["fipnum", "region_zone"] = Field(
+        description="In addition to summary statistics for the whole grid, statistics "
+        "can also be grouped by subregions. These will either come from the INIT file "
+        "`FIPNUM` parameter or from ROFF files with REGION and ZONE. Labels/names "
+        "should be set in the parameters in both cases",
+        default="fipnum",
+    )
+    statistics_grid_dir: SkipJsonSchema[Path] = Field(
+        default=Path("sim2seis/input/attribute_maps"),
+        description="This directory is the standard place for grid, zone "
+        "and region files, used when statistics is grouped by region and zone",
+    )
+    statistics_zone_file: Path = Field(
+        default=Path("simgrid_maps4ahm--zone.roff"),
+        description="The file name for zone definition file, used when statistics "
+        "is grouped by region and zone",
+    )
+    statistics_region_file: Path = Field(
+        default=Path("simgrid_maps4ahm--region.roff"),
+        description="The file name for region definition file, used when statistics "
+        "is grouped by region and zone",
+    )
+
+    @field_validator("diff_calculation")
+    @classmethod
+    def unique_difference_attributes(
+        cls, v: list[DifferenceCalculation]
+    ) -> list[DifferenceCalculation]:
+        attributes = [calculation.attribute for calculation in v]
+        if len(attributes) != len(set(attributes)):
+            raise ValueError("each difference attribute may only be configured once")
+        return v
+
+
 class PemConfig(BaseModel):
     paths: SkipJsonSchema[PemPaths] = Field(
         default_factory=PemPaths,
@@ -824,20 +873,7 @@ class PemConfig(BaseModel):
     results: Results = Field(
         description="Flags for saving results of the PEM",
     )
-    diff_calculation: list[DifferenceCalculation] = Field(
-        description="Difference properties of the PEM can be calculated for the dates "
-        "in the Eclipse `.UNRST` file. The settings decide which parameters "
-        "difference properties will be generated for, and what kind of "
-        "difference calculation is run - normal difference (`diff`), percent "
-        "difference (`diffperc`) or ratio (`ratio`). Multiple kinds of differences "
-        "can be estimated for each parameter"
-    )
-    qc_tables_file_name: Path = Field(
-        description="File name for .CSV file for output QC of difference properties. "
-        "Output is only written to file if one or more difference calculations have "
-        "`qc_table: true`",
-        default=Path("grid_property_statistics_pemgrid"),
-    )
+    difference_properties: DifferenceProperties
     global_params: SkipJsonSchema[FromGlobal | None] = Field(
         default=None,
     )
@@ -860,16 +896,6 @@ class PemConfig(BaseModel):
                         f"PEM paths: Directory {path} does not exist. "
                         "Please create it before attempting to re-run."
                     )
-        return v
-
-    @field_validator("diff_calculation")
-    @classmethod
-    def unique_difference_attributes(
-        cls, v: list[DifferenceCalculation]
-    ) -> list[DifferenceCalculation]:
-        attributes = [calculation.attribute for calculation in v]
-        if len(attributes) != len(set(attributes)):
-            raise ValueError("each difference attribute may only be configured once")
         return v
 
     # Add global parameters used in the PEM
