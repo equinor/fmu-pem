@@ -114,14 +114,12 @@ def pem_fcn(
 
             # Calculate difference properties. Possible properties are all that vary
             # with time
-            if config.diff_calculation:
+            if config.difference_properties.diff_calculation:
                 diff_props, diff_date_strs = pem_utils.calculate_diff_properties(
                     props=[time_step_props, eff_pres, sat_rock_props, sum_delta_time],
                     diff_dates=config.global_params.mod_diffdates,
                     seis_dates=config.global_params.mod_dates,
-                    diff_calculation=config.diff_calculation,
-                    init_props=constant_props,
-                    qc_tables_file=config.qc_tables_file_name,
+                    pem_config=config,
                 )
                 pem_log("differential properties estimated")
             else:
