@@ -1,6 +1,7 @@
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -14,6 +15,7 @@ from fmu.pem.pem_utilities.import_config import (
 )
 from fmu.pem.pem_utilities.pem_config_validation import (
     DifferenceCalculation,
+    DifferenceProperties,
     PemConfig,
 )
 from fmu.pem.pem_utilities.rock_physics_adapter import HAS_PROPRIETARY_ROCK_PHYSICS
@@ -152,16 +154,19 @@ def test_read_pem_config_pre_experiment_skips_filesystem_checks(
     # Non-filesystem validators should still have run: check a few basic fields
     assert config.fluids is not None
     assert config.rock_matrix is not None
-    assert config.diff_calculation is not None
-    assert config.diff_calculation[0].attribute.value == "density"
-    assert config.diff_calculation[0].methods[0].value == "diffpercent"
+    assert config.difference_properties.diff_calculation is not None
+    assert config.difference_properties.diff_calculation[0].attribute.value == "density"
+    assert (
+        config.difference_properties.diff_calculation[0].methods[0].value
+        == "diffpercent"
+    )
 
 
 def test_duplicate_difference_attributes_are_rejected(testdata):
     config_path = testdata / "sim2seis/model/pem_config_no_condensate.yml"
     with config_path.open() as config_file:
         config_data = yaml.safe_load(config_file)
-    config_data["diff_calculation"].append(
+    config_data["difference_properties"]["diff_calculation"].append(
         {
             "attribute": "density",
             "methods": ["ratio"],
@@ -177,20 +182,23 @@ def test_density_difference_uses_density_property_name():
     class Properties:
         density: float
 
+    # qc_table is False by default, so no QC export is triggered and only
+    # difference_properties is read off the config stand-in
+    pem_config = SimpleNamespace(
+        difference_properties=DifferenceProperties(
+            diff_calculation=[
+                DifferenceCalculation(
+                    attribute=DifferenceAttribute.DENSITY,
+                    methods=[DifferenceMethod.DIFF],
+                )
+            ]
+        )
+    )
     diff_props, date_strs = calculate_diff_properties(
         props=[[Properties(10.0), Properties(20.0)]],
         diff_dates=[["2020", "2010"]],
         seis_dates=["2010", "2020"],
-        diff_calculation=[
-            DifferenceCalculation(
-                attribute=DifferenceAttribute.DENSITY,
-                methods=[DifferenceMethod.DIFF],
-            )
-        ],
-        # qc_table is False by default above, so no QC export is triggered and
-        # init_props/qc_tables_file are unused in this test
-        init_props=None,
-        qc_tables_file=Path("grid_property_statistics_pemgrid"),
+        pem_config=pem_config,
     )
 
     assert diff_props == [{"densitydiff": 10.0}]

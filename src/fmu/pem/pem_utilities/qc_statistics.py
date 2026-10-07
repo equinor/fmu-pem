@@ -52,23 +52,15 @@ def build_qc_statistics_table(
     # each code to the region name used to label the output rows
     selector_values, selector_names = _get_groupby_selector(config=config)
 
-    # Discard masked (inactive) cells and flatten all inputs to 1D, since only
-    # active-cell values should contribute to the statistics
-    _, selector_values, *values = filter_and_one_dim(
-        selector_values, *qc_table_props.values()
-    )
-
-    # One column of region codes plus one column per QC variable
-    data = pd.DataFrame(
-        {"SELECTOR": selector_values}
-        | dict(zip(qc_table_props.keys(), values, strict=True))
-    )
-
-    # Group once and reuse for every variable so the regions are only indexed once
-    by_region = data.groupby("SELECTOR")
-
     tables = []
-    for variable in qc_table_props:
+    for variable, prop in qc_table_props.items():
+        # Filter each property on its own mask (combined with the selector mask)
+        # only, so a cell masked in one property never drops it from another
+        # property's statistics; this also keeps one property in memory at a time
+        _, codes, prop_values = filter_and_one_dim(selector_values, prop)
+        data = pd.DataFrame({"SELECTOR": codes, variable: prop_values})
+        by_region = data.groupby("SELECTOR")
+
         # Statistics per region, with the numeric code replaced by its region name
         per_region = by_region[variable].agg(**_STATISTICS)
         per_region.insert(0, "SELECTOR", per_region.index.map(selector_names))

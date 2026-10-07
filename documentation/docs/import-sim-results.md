@@ -29,7 +29,7 @@ lrwxrwxrwx 1 hfle fmu        36 Jun 26  2024 ECLIPSE.UNRST -> ../../../eclipse/m
 The main static results from the reservoir simulator model which are used in `pem` are **PORO** and **DEPTH**.
 Earlier, **NTG** was also used, but we now advise using volume fractions from the geomodel. **PVTNUM** and
 **AQUIFERN** are also read, to select the correct fluid PVT zone and to mask out aquifer cells, respectively.
-**EQLNUM** and **FIPZON** are read if present, and are used to group statistics in the (optional) [QC statistics
+**FIPNUM** is read when statistics are grouped by region, to group the (optional) [QC statistics
 tables for difference properties](./difference-properties.md#qc-statistics-tables). Static results are found in
 the **.INIT** file of the reservoir simulator.
 

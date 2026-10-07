@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from fmu.pem.pem_utilities.pem_class_definitions import SimInitProperties
+import fmu.pem.pem_utilities.qc_statistics as qc_mod
 from fmu.pem.pem_utilities.qc_statistics import build_qc_statistics_table
 
 
@@ -12,31 +12,33 @@ def _masked(values: list[float], mask: list[bool] | None = None) -> np.ma.Masked
     )
 
 
-def _init_props(
-    eqlnum: list[int], fipzon: list[int], mask: list[bool] | None = None
-) -> SimInitProperties:
-    # poro/depth are required but unused by build_qc_statistics_table
-    dummy = _masked([0.0] * len(eqlnum))
-    return SimInitProperties(
-        poro=dummy,
-        depth=dummy,
-        eqlnum=_masked(eqlnum, mask),
-        fipzon=_masked(fipzon, mask),
+def _codes(values: list[int], mask: list[bool] | None = None) -> np.ma.MaskedArray:
+    return np.ma.MaskedArray(
+        np.array(values, dtype=int), mask=mask or [False] * len(values)
     )
 
 
-def test_build_qc_statistics_table_computes_expected_statistics():
-    # A 2x2 EQLNUM/FIPZON grid with one value per cell: 1, 2, 3, 4
-    init_props = _init_props(eqlnum=[1, 1, 2, 2], fipzon=[1, 2, 1, 2])
+def _patch_selector(monkeypatch, selector_values, selector_names) -> None:
+    # build_qc_statistics_table reads the region selector from grid files via
+    # _get_groupby_selector; replace it with fixed arrays to test aggregation only
+    monkeypatch.setattr(
+        qc_mod,
+        "_get_groupby_selector",
+        lambda config: (selector_values, selector_names),
+    )
+
+
+def test_build_qc_statistics_table_computes_expected_statistics(monkeypatch):
+    # Two regions of two cells each, labelled by name via the code -> name mapping
+    _patch_selector(monkeypatch, _codes([1, 1, 2, 2]), {1: "RegionA", 2: "RegionB"})
     qc_table_props = {"PORODIFF_20200101_20180101": _masked([1.0, 2.0, 3.0, 4.0])}
 
-    result = build_qc_statistics_table(qc_table_props, init_props)
+    result = build_qc_statistics_table(qc_table_props, config=None)
 
-    def row(eqlnum, fipzon, avg, stddev, p10, p90, vmin, vmax, count):
+    def row(selector, avg, stddev, p10, p90, vmin, vmax, count):
         return {
             "PROPERTY": "PORODIFF_20200101_20180101",
-            "EQLNUM": eqlnum,
-            "FIPZON": fipzon,
+            "SELECTOR": selector,
             "AVG": avg,
             "STDDEV": stddev,
             "P10": p10,
@@ -48,80 +50,82 @@ def test_build_qc_statistics_table_computes_expected_statistics():
 
     expected = pd.DataFrame(
         [
-            # full (EQLNUM, FIPZON) split: one value per group
-            row(1, 1, 1.0, np.nan, 1.0, 1.0, 1.0, 1.0, 1),
-            row(1, 2, 2.0, np.nan, 2.0, 2.0, 2.0, 2.0, 1),
-            row(2, 1, 3.0, np.nan, 3.0, 3.0, 3.0, 3.0, 1),
-            row(2, 2, 4.0, np.nan, 4.0, 4.0, 4.0, 4.0, 1),
-            # per-EQLNUM totals (summed over FIPZON)
-            row(1, "Total", 1.5, 0.7071067811865476, 1.1, 1.9, 1.0, 2.0, 2),
-            row(2, "Total", 3.5, 0.7071067811865476, 3.1, 3.9, 3.0, 4.0, 2),
-            # per-FIPZON totals (summed over EQLNUM)
-            row("Total", 1, 2.0, 1.4142135623730951, 1.2, 2.8, 1.0, 3.0, 2),
-            row("Total", 2, 3.0, 1.4142135623730951, 2.2, 3.8, 2.0, 4.0, 2),
-            # grand total across all EQLNUM and FIPZON
-            row("Total", "Total", 2.5, 1.2909944487358056, 1.3, 3.7, 1.0, 4.0, 4),
+            row("RegionA", 1.5, 0.7071067811865476, 1.1, 1.9, 1.0, 2.0, 2),
+            row("RegionB", 3.5, 0.7071067811865476, 3.1, 3.9, 3.0, 4.0, 2),
+            row("Total", 2.5, 1.2909944487358056, 1.3, 3.7, 1.0, 4.0, 4),
         ]
     )
 
     pd.testing.assert_frame_equal(
-        result.reset_index(drop=True), expected.reset_index(drop=True)
+        result.reset_index(drop=True), expected, check_dtype=False
     )
 
 
-def test_build_qc_statistics_table_excludes_masked_cells():
-    init_props = _init_props(eqlnum=[1, 1, 2, 2], fipzon=[1, 2, 1, 2])
-    # Mask the (EQLNUM=2, FIPZON=2) cell out of the difference property only;
-    # filter_and_one_dim combines masks across all inputs, so it is still dropped
+def test_build_qc_statistics_table_excludes_masked_cells(monkeypatch):
+    _patch_selector(monkeypatch, _codes([1, 1, 2, 2]), {1: "RegionA", 2: "RegionB"})
+    # Mask the last cell (RegionB) on the property; that cell must be dropped
     qc_table_props = {
         "PORODIFF": _masked([1.0, 2.0, 3.0, 4.0], mask=[False, False, False, True])
     }
 
-    result = build_qc_statistics_table(qc_table_props, init_props)
+    result = build_qc_statistics_table(qc_table_props, config=None)
 
-    # The masked cell's group must be absent entirely
-    assert not ((result["EQLNUM"] == 2) & (result["FIPZON"] == 2)).any()
+    total = result[result["SELECTOR"] == "Total"]
+    assert total["COUNT"].iloc[0] == 3
+    assert total["AVG"].iloc[0] == pytest.approx(2.0)
 
-    grand_total = result[(result["EQLNUM"] == "Total") & (result["FIPZON"] == "Total")]
-    assert grand_total["COUNT"].iloc[0] == 3
-    assert grand_total["AVG"].iloc[0] == pytest.approx(2.0)
-
-    eqlnum_2_total = result[(result["EQLNUM"] == 2) & (result["FIPZON"] == "Total")]
-    assert eqlnum_2_total["COUNT"].iloc[0] == 1
-    assert eqlnum_2_total["AVG"].iloc[0] == pytest.approx(3.0)
+    region_b = result[result["SELECTOR"] == "RegionB"]
+    assert region_b["COUNT"].iloc[0] == 1
+    assert region_b["AVG"].iloc[0] == pytest.approx(3.0)
 
 
-def test_build_qc_statistics_table_keeps_separate_date_pair_properties():
-    init_props = _init_props(eqlnum=[1, 2], fipzon=[1, 1])
-    # Two difference properties for different date pairs must not overwrite
-    # each other, even though they cover the same EQLNUM/FIPZON cells
+def test_build_qc_statistics_table_masks_each_property_independently(monkeypatch):
+    _patch_selector(monkeypatch, _codes([1, 2]), {1: "RegionA", 2: "RegionB"})
+    # A cell masked only in one property must not be dropped from the other
+    # property's statistics
+    qc_table_props = {
+        "A": _masked([1.0, 2.0], mask=[False, True]),
+        "B": _masked([10.0, 20.0]),
+    }
+
+    result = build_qc_statistics_table(qc_table_props, config=None)
+
+    a_total = result[(result["PROPERTY"] == "A") & (result["SELECTOR"] == "Total")]
+    b_total = result[(result["PROPERTY"] == "B") & (result["SELECTOR"] == "Total")]
+    # A loses its masked cell, B keeps both cells
+    assert a_total["COUNT"].iloc[0] == 1
+    assert b_total["COUNT"].iloc[0] == 2
+    assert b_total["AVG"].iloc[0] == pytest.approx(15.0)
+
+
+def test_build_qc_statistics_table_keeps_separate_date_pair_properties(monkeypatch):
+    _patch_selector(monkeypatch, _codes([1, 2]), {1: "RegionA", 2: "RegionB"})
+    # Two difference properties for different date pairs must each get their own
+    # rows and not overwrite one another
     qc_table_props = {
         "AIRATIO_20190101_20180101": _masked([10.0, 20.0]),
         "AIRATIO_20200101_20180101": _masked([100.0, 200.0]),
     }
 
-    result = build_qc_statistics_table(qc_table_props, init_props)
+    result = build_qc_statistics_table(qc_table_props, config=None)
 
     assert set(result["PROPERTY"]) == set(qc_table_props)
     first = result[
         (result["PROPERTY"] == "AIRATIO_20190101_20180101")
-        & (result["EQLNUM"] == "Total")
-        & (result["FIPZON"] == "Total")
+        & (result["SELECTOR"] == "Total")
     ]
     second = result[
         (result["PROPERTY"] == "AIRATIO_20200101_20180101")
-        & (result["EQLNUM"] == "Total")
-        & (result["FIPZON"] == "Total")
+        & (result["SELECTOR"] == "Total")
     ]
     assert first["AVG"].iloc[0] == pytest.approx(15.0)
     assert second["AVG"].iloc[0] == pytest.approx(150.0)
 
 
-@pytest.mark.parametrize("missing", ["eqlnum", "fipzon"])
-def test_build_qc_statistics_table_requires_eqlnum_and_fipzon(missing):
-    init_props = _init_props(eqlnum=[1, 2], fipzon=[1, 2])
-    setattr(init_props, missing, None)
-    qc_table_props = {"PORODIFF": _masked([1.0, 2.0])}
+def test_build_qc_statistics_table_labels_rows_with_selector_names(monkeypatch):
+    _patch_selector(monkeypatch, _codes([5, 5, 7]), {5: "North", 7: "South"})
+    qc_table_props = {"PORODIFF": _masked([1.0, 3.0, 9.0])}
 
-    with pytest.raises(ValueError, match="EQLNUM and FIPZON"):
-        build_qc_statistics_table(qc_table_props, init_props)
+    result = build_qc_statistics_table(qc_table_props, config=None)
+
+    assert list(result["SELECTOR"]) == ["North", "South", "Total"]
