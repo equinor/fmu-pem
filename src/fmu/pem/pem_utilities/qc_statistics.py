@@ -133,13 +133,14 @@ def _get_groupby_selector(
         selector_values = region_zone["FIPNUM"].values
         selector_names = region_zone["FIPNUM"].codes
     else:
+        statistics_dir = config.difference_properties.statistics_grid_dir
         zones = xtgeo.gridproperty_from_file(
-            config.paths.webviz_map_dir.joinpath(config.webviz_map.zone_file)
+            statistics_dir / config.difference_properties.statistics_zone_file
         )
         zone_values = zones.values
 
         regions = xtgeo.gridproperty_from_file(
-            config.paths.webviz_map_dir.joinpath(config.webviz_map.region_file)
+            statistics_dir / config.difference_properties.statistics_region_file
         )
         region_values = regions.values
 
