@@ -33,7 +33,7 @@ dynamic = ["version"]
 dependencies = [
     "ert >= 23.0.0",
     "fmu-config",
-    "fmu-dataio",
+    "fmu-dataio >= 2.31.1",
     "fmu-tools > 1.32.0",
     "numpy >= 2.4.6",
     "pydantic",
