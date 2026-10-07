@@ -794,7 +794,7 @@ class DifferenceProperties(BaseModel):
         "in the Eclipse `.UNRST` file. The settings decide which parameters "
         "difference properties will be generated for, and what kind of "
         "difference calculation is run - normal difference (`diff`), percent "
-        "difference (`diffperc`) or ratio (`ratio`). Multiple kinds of differences "
+        "difference (`diffpercent`) or ratio (`ratio`). Multiple kinds of differences "
         "can be estimated for each parameter"
     )
     qc_tables_file_name: Path = Field(
@@ -835,6 +835,25 @@ class DifferenceProperties(BaseModel):
         if len(attributes) != len(set(attributes)):
             raise ValueError("each difference attribute may only be configured once")
         return v
+
+    @model_validator(mode="after")
+    def check_statistics_files_exist(self, info: ValidationInfo) -> Self:
+        pre_experiment = (
+            info.context.get("pre_experiment", False) if info.context else False
+        )
+        if (
+            pre_experiment
+            or self.group_statistics != "region_zone"
+            or not any(item.qc_table for item in self.diff_calculation)
+        ):
+            return self
+        files = [
+            self.statistics_grid_dir / self.statistics_zone_file,
+            self.statistics_grid_dir / self.statistics_region_file,
+        ]
+        if missing := [path for path in files if not path.exists()]:
+            raise FileNotFoundError(f"statistics grid files are missing: {missing}")
+        return self
 
 
 class PemConfig(BaseModel):

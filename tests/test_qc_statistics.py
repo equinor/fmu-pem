@@ -1,9 +1,15 @@
+from pathlib import Path
+from types import SimpleNamespace
+
 import numpy as np
 import pandas as pd
 import pytest
 
 import fmu.pem.pem_utilities.qc_statistics as qc_mod
-from fmu.pem.pem_utilities.qc_statistics import build_qc_statistics_table
+from fmu.pem.pem_utilities.qc_statistics import (
+    _get_groupby_selector,
+    build_qc_statistics_table,
+)
 
 
 def _masked(values: list[float], mask: list[bool] | None = None) -> np.ma.MaskedArray:
@@ -129,3 +135,54 @@ def test_build_qc_statistics_table_labels_rows_with_selector_names(monkeypatch):
     result = build_qc_statistics_table(qc_table_props, config=None)
 
     assert list(result["SELECTOR"]) == ["North", "South", "Total"]
+
+
+def test_get_groupby_selector_reads_fipnum_from_grid_files(monkeypatch):
+    # Exercise the default "fipnum" branch that reads EGRID/INIT data from disk;
+    # all other tests patch _get_groupby_selector, so this branch is otherwise
+    # never covered and could regress unnoticed.
+    fipnum_values = _codes([1, 1, 2])
+    fipnum_codes = {1: "FIP1", 2: "FIP2"}
+
+    config = SimpleNamespace(
+        difference_properties=SimpleNamespace(group_statistics="fipnum"),
+        simulator_files=SimpleNamespace(
+            rel_path_simgrid=Path("sim/model"),
+            egrid_file=Path("CASE.EGRID"),
+            init_property_file=Path("CASE.INIT"),
+        ),
+        alternative_fipnum_name="FIPNUM",
+    )
+
+    grid_sentinel = object()
+    captured = {}
+
+    def fake_grid_from_file(path):
+        captured["grid_path"] = path
+        return grid_sentinel
+
+    def fake_gridproperties_from_file(property_file, fformat, names, grid):
+        captured["property_file"] = property_file
+        captured["fformat"] = fformat
+        captured["names"] = names
+        captured["grid"] = grid
+        prop = SimpleNamespace(values=fipnum_values, codes=fipnum_codes)
+        return {config.alternative_fipnum_name: prop}
+
+    monkeypatch.setattr(qc_mod.xtgeo, "grid_from_file", fake_grid_from_file)
+    monkeypatch.setattr(
+        qc_mod.xtgeo, "gridproperties_from_file", fake_gridproperties_from_file
+    )
+
+    selector_values, selector_names = _get_groupby_selector(config=config)
+
+    np.testing.assert_array_equal(selector_values, fipnum_values)
+    assert selector_names == fipnum_codes
+
+    # The EGRID grid is read and passed to the INIT property reader, which is
+    # queried for the configured FIPNUM parameter in "init" format.
+    assert captured["grid_path"] == Path("sim/model/CASE.EGRID")
+    assert captured["property_file"] == Path("sim/model/CASE.INIT")
+    assert captured["fformat"] == "init"
+    assert captured["names"] == ["FIPNUM"]
+    assert captured["grid"] is grid_sentinel

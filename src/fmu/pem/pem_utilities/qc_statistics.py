@@ -66,8 +66,9 @@ def build_qc_statistics_table(
         per_region.insert(0, "SELECTOR", per_region.index.map(selector_names))
 
         # A single "Total" row aggregating every active cell of the variable
+        total_values = pd.Series(prop.compressed())
         total = pd.Series(
-            {name: data[variable].agg(func) for name, func in _STATISTICS.items()}
+            {name: total_values.agg(func) for name, func in _STATISTICS.items()}
         )
         total["SELECTOR"] = "Total"
 
@@ -119,11 +120,11 @@ def _get_groupby_selector(
                 / config.simulator_files.init_property_file
             ),
             fformat="init",
-            names=["FIPNUM"],
+            names=[config.alternative_fipnum_name],
             grid=grid,
         )
-        selector_values = region_zone["FIPNUM"].values
-        selector_names = region_zone["FIPNUM"].codes
+        selector_values = region_zone[config.alternative_fipnum_name].values
+        selector_names = region_zone[config.alternative_fipnum_name].codes
     else:
         statistics_dir = config.difference_properties.statistics_grid_dir
         zones = xtgeo.gridproperty_from_file(
