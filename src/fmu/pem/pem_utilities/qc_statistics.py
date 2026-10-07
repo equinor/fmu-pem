@@ -1,24 +1,20 @@
 """Build and export a statistics table for difference properties flagged for QC.
 
-Properties are grouped by the discrete EQLNUM and FIPZON regions, mirroring the
-grouping used by the legacy RMS ``QCProperties``-based export script, but computed
-directly from the in-memory grid arrays instead of re-reading named grid/log data.
+Properties are grouped by a discrete region selector (FIPNUM, or a region/zone
+combination), with the statistics computed directly from the in-memory grid
+arrays instead of re-reading named grid/log data.
 """
 
-from itertools import combinations
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import xtgeo
 
 from fmu.dataio import ExportData
 
-from .pem_class_definitions import SimInitProperties
+from .pem_config_validation import PemConfig
 from .utils import filter_and_one_dim, pem_log
-
-# Discrete regions statistics are grouped by, in fixed output column order
-# ToDo: evaluate if _SELECTORS should be input parameters
-_SELECTORS = ["EQLNUM", "FIPZON"]
 
 # Aggregations applied per group, named to match the statistics produced by
 # fmu-tools' QCProperties
@@ -33,80 +29,61 @@ _STATISTICS = {
 }
 
 
-def _selector_combinations(selectors: list[str]) -> list[list[str]]:
-    """All non-empty subsets of selectors, largest first, plus the empty subset.
-
-    Used to compute statistics for every selector combination (e.g. per EQLNUM
-    across all FIPZON) as well as a grand total across all selectors.
-    """
-    combos = [
-        list(combo)
-        for size in range(len(selectors), 0, -1)
-        for combo in combinations(selectors, size)
-    ]
-    combos.append([])
-    return combos
-
-
 def build_qc_statistics_table(
     qc_table_props: dict[str, np.ma.MaskedArray],
-    init_props: SimInitProperties,
+    config: PemConfig,
 ) -> pd.DataFrame:
-    """Build a long-format statistics table for the selected difference properties.
+    """Build a statistics table for the selected difference properties.
 
-    In addition to statistics per (PROPERTY, EQLNUM, FIPZON) combination, "Total"
-    rows are added for each selector subset (e.g. per EQLNUM summed over all
-    FIPZON) and a grand total across all EQLNUM and FIPZON, mirroring the
-    behaviour of fmu-tools' QCProperties with selector_combos enabled.
+    The statistics measurements (AVG, STDDEV, P10, ...) form the columns. Each row
+    holds the statistics for one variable within one selector region, and every
+    variable additionally gets a "Total" row aggregating all of its active cells.
 
     Args:
         qc_table_props: difference properties flagged for QC export, keyed by a
             name that identifies property, difference method and date pair
-        init_props: reservoir simulation INIT properties, providing the EQLNUM and
-            FIPZON region properties used to group the statistics
+        config: PEM configuration providing the region selector used for grouping
 
     Returns:
-        Dataframe with one row per (PROPERTY, EQLNUM, FIPZON) statistics group,
-        where EQLNUM and/or FIPZON is "Total" for the aggregated rows
+        Dataframe with the statistics measurements as columns and one row per
+        (variable, selector) group plus a (variable, "Total") row per variable
     """
-    if init_props.eqlnum is None or init_props.fipzon is None:
-        raise ValueError(
-            f"{__file__}: EQLNUM and FIPZON must be available in the reservoir "
-            f"simulation INIT properties to group QC statistics"
-        )
+    # selector_values holds one integer region code per cell; selector_names maps
+    # each code to the region name used to label the output rows
+    selector_values, selector_names = _get_groupby_selector(config=config)
 
-    # Discard masked (inactive) cells and flatten all inputs to 1D before building
-    # the dataframe, since only active-cell values should contribute to statistics
-    _, eqlnum, fipzon, *values = filter_and_one_dim(
-        init_props.eqlnum, init_props.fipzon, *qc_table_props.values()
+    # Discard masked (inactive) cells and flatten all inputs to 1D, since only
+    # active-cell values should contribute to the statistics
+    _, selector_values, *values = filter_and_one_dim(
+        selector_values, *qc_table_props.values()
     )
-    wide_table = pd.DataFrame(
-        {"EQLNUM": eqlnum, "FIPZON": fipzon}
+
+    # One column of region codes plus one column per QC variable
+    data = pd.DataFrame(
+        {"SELECTOR": selector_values}
         | dict(zip(qc_table_props.keys(), values, strict=True))
     )
 
-    # Reshape to long format so all difference properties can be aggregated with a
-    # single groupby, then compute statistics per property/region combination
-    long_table = wide_table.melt(
-        id_vars=_SELECTORS, var_name="PROPERTY", value_name="VALUE"
-    )
-    tables = [
-        long_table.groupby(["PROPERTY", *combo])["VALUE"]
-        .agg(**_STATISTICS)
-        .reset_index()
-        for combo in _selector_combinations(_SELECTORS)
-    ]
-    # Selectors missing from a given combo (e.g. FIPZON when grouping by EQLNUM
-    # only) become NaN on concat; label those aggregated rows "Total"
-    result = pd.concat(tables, ignore_index=True)
-    result[_SELECTORS] = result[_SELECTORS].fillna("Total")
-    # Concat with NaN upcasts the selector columns to float; restore plain ints
-    # for the actual region codes so e.g. "1" isn't shown as "1.0" in the CSV
-    for selector in _SELECTORS:
-        result[selector] = result[selector].apply(
-            lambda v: v if v == "Total" else int(v)
+    # Group once and reuse for every variable so the regions are only indexed once
+    by_region = data.groupby("SELECTOR")
+
+    tables = []
+    for variable in qc_table_props:
+        # Statistics per region, with the numeric code replaced by its region name
+        per_region = by_region[variable].agg(**_STATISTICS)
+        per_region.insert(0, "SELECTOR", per_region.index.map(selector_names))
+
+        # A single "Total" row aggregating every active cell of the variable
+        total = pd.Series(
+            {name: data[variable].agg(func) for name, func in _STATISTICS.items()}
         )
-    return result[["PROPERTY", *_SELECTORS, *_STATISTICS]]
+        total["SELECTOR"] = "Total"
+
+        table = pd.concat([per_region, total.to_frame().T], ignore_index=True)
+        table.insert(0, "PROPERTY", variable)
+        tables.append(table)
+
+    return pd.concat(tables, ignore_index=True)
 
 
 def export_qc_statistics_table(
@@ -126,7 +103,54 @@ def export_qc_statistics_table(
         name=qc_tables_file.stem,
         content="property",
         content_metadata={"attribute": "statistics"},
-        table_index=["PROPERTY", *_SELECTORS],
+        table_index=["PROPERTY", "SELECTOR"],
     )
     out_path = export_data.export(qc_dataframe)
     pem_log(f"QC statistics table exported to {out_path}")
+
+
+def _get_groupby_selector(
+    config: PemConfig,
+) -> tuple[np.ma.MaskedArray, dict[int, str]]:
+    """Return per-cell region codes and a mapping from each code to a region name.
+
+    The codes are used to group the statistics; the mapping turns the numeric code
+    of each row into a human-readable region name.
+    """
+    if config.difference_properties.group_statistics == "fipnum":
+        grid = xtgeo.grid_from_file(
+            config.simulator_files.rel_path_simgrid / config.simulator_files.egrid_file
+        )
+        region_zone = xtgeo.gridproperties_from_file(
+            property_file=(
+                config.simulator_files.rel_path_simgrid
+                / config.simulator_files.init_property_file
+            ),
+            fformat="init",
+            names=["FIPNUM"],
+            grid=grid,
+        )
+        selector_values = region_zone["FIPNUM"].values
+        selector_names = region_zone["FIPNUM"].codes
+    else:
+        zones = xtgeo.gridproperty_from_file(
+            config.paths.webviz_map_dir.joinpath(config.webviz_map.zone_file)
+        )
+        zone_values = zones.values
+
+        regions = xtgeo.gridproperty_from_file(
+            config.paths.webviz_map_dir.joinpath(config.webviz_map.region_file)
+        )
+        region_values = regions.values
+
+        # Combine region and zone into a single code; the multiplier guarantees a
+        # unique code for every (region, zone) pair
+        zone_span = int(np.ma.max(zone_values)) + 1
+        selector_values = region_values * zone_span + zone_values
+        selector_names = {
+            region_code * zone_span + zone_code: f"{region_name}_{zone_name}"
+            for region_code, region_name in regions.codes.items()
+            for zone_code, zone_name in zones.codes.items()
+        }
+
+    return selector_values, selector_names

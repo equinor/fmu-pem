@@ -2,7 +2,11 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .pem_class_definitions import SimInitProperties
-from .pem_config_validation import DifferenceCalculation
+from .pem_config_validation import (
+    DifferenceCalculation,
+    DifferenceProperties,
+    PemConfig,
+)
 from .qc_statistics import build_qc_statistics_table, export_qc_statistics_table
 
 
@@ -10,9 +14,7 @@ def calculate_diff_properties(
     props: list,
     diff_dates: list[list[str]],
     seis_dates: list[str],
-    diff_calculation: list[DifferenceCalculation],
-    init_props: SimInitProperties,
-    qc_tables_file: Path,
+    pem_config: PemConfig,
 ) -> tuple[list, list]:
     """
     Function to calculate difference attributes between grid properties
@@ -30,6 +32,11 @@ def calculate_diff_properties(
         date_str: formatted string for difference dates
     """
     _verify_diff_inputs(props, seis_dates, diff_dates)
+
+    diff_properties = pem_config.difference_properties
+    diff_calculation = diff_properties.diff_calculation
+    qc_tables_file = diff_properties.qc_tables_file_name
+
     props = _filter_diff_inputs(props, diff_calculation)
     difference_methods = {
         calculation.attribute.value: calculation.methods
@@ -86,7 +93,10 @@ def calculate_diff_properties(
 
     # If required, export a table with statistics for selected difference properties
     if qc_table_props:
-        qc_dataframe = build_qc_statistics_table(qc_table_props, init_props)
+        qc_dataframe = build_qc_statistics_table(
+            qc_table_props=qc_table_props,
+            config=pem_config,
+        )
         export_qc_statistics_table(qc_dataframe, qc_tables_file)
     return diff_prop, date_str
 
