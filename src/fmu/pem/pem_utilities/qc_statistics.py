@@ -21,8 +21,8 @@ from .utils import filter_and_one_dim, pem_log
 _STATISTICS = {
     "AVG": "mean",
     "STDDEV": "std",
-    "P10": lambda x: np.percentile(x, 10),
-    "P90": lambda x: np.percentile(x, 90),
+    "P10": lambda x: np.percentile(x, 10) if len(x) else np.nan,
+    "P90": lambda x: np.percentile(x, 90) if len(x) else np.nan,
     "MIN": "min",
     "MAX": "max",
     "COUNT": "count",
