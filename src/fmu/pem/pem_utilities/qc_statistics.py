@@ -21,8 +21,8 @@ from .utils import filter_and_one_dim, pem_log
 _STATISTICS = {
     "AVG": "mean",
     "STDDEV": "std",
-    "P10": lambda x: np.percentile(x, 10) if len(x) else np.nan,
-    "P90": lambda x: np.percentile(x, 90) if len(x) else np.nan,
+    "P10": lambda x: np.nanpercentile(x, 10) if len(x) else np.nan,
+    "P90": lambda x: np.nanpercentile(x, 90) if len(x) else np.nan,
     "MIN": "min",
     "MAX": "max",
     "COUNT": "count",
@@ -67,12 +67,10 @@ def build_qc_statistics_table(
 
         # A single "Total" row aggregating every active cell of the variable
         total_values = pd.Series(prop.compressed())
-        total = pd.Series(
-            {name: total_values.agg(func) for name, func in _STATISTICS.items()}
-        )
+        total = {name: total_values.agg(func) for name, func in _STATISTICS.items()}
         total["SELECTOR"] = "Total"
 
-        table = pd.concat([per_region, total.to_frame().T], ignore_index=True)
+        table = pd.concat([per_region, pd.DataFrame([total])], ignore_index=True)
         table.insert(0, "PROPERTY", variable)
         tables.append(table)
 
