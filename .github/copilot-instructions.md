@@ -54,6 +54,13 @@ tests/
 
 ---
 
+## Python Library Standards
+
+- **Public API Protection:** Ensure changes to public modules, classes, and functions maintain backward compatibility. Verify that internal-only helpers use a leading underscore (`_`).
+- **Type Hints & Annotations:** Check that public functions and classes include precise type hints and that annotations align with the surrounding codebase standards.
+- **Documentation & Docstrings:** Ensure new public APIs include clear docstrings documenting parameters, return values, and expected exceptions.
+- **Idiomatic Python:** Flag anti-patterns or inefficient constructs (e.g., mutable default arguments, improper exception handling, or missing context managers for resource management).
+
 ## Pydantic validation patterns
 
 Config models live in `src/fmu/pem/pem_utilities/pem_config_validation.py` and
@@ -171,3 +178,4 @@ When performing a code review:
 - Compare new comments with earlier comments on the same code. If an earlier suggestion
   conflicts with the current one, thoroughly evaluate whether the new suggestion is needed.
 - Review user feedback on earlier suggestions, especially suggestions that were downvoted.
+- Check review summary, ensure that there are no "```" added, which disables rendering.
