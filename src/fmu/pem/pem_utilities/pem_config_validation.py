@@ -790,12 +790,9 @@ class DifferenceCalculation(BaseModel):
 
 class DifferenceProperties(BaseModel):
     diff_calculation: list[DifferenceCalculation] = Field(
-        description="Difference properties of the PEM can be calculated for the dates "
-        "in the Eclipse `.UNRST` file. The settings decide which parameters "
-        "difference properties will be generated for, and what kind of "
-        "difference calculation is run - normal difference (`diff`), percent "
-        "difference (`diffpercent`) or ratio (`ratio`). Multiple kinds of differences "
-        "can be estimated for each parameter"
+        description="Select the DifferenceAttribute (like `ai` etc.) and the set "
+        "of difference methods that should be made from the pulldown menus. Also tick "
+        "on CQ table if you want to have summary statistics from the attribute",
     )
     qc_tables_file_name: Path = Field(
         description="File name for .CSV file for output QC of difference properties. "
@@ -894,7 +891,14 @@ class PemConfig(BaseModel):
     results: Results = Field(
         description="Flags for saving results of the PEM",
     )
-    difference_properties: DifferenceProperties
+    difference_properties: DifferenceProperties = Field(
+        description="Difference properties of the PEM can be calculated for the dates "
+        "in the Eclipse `.UNRST` file. The settings decide which parameters "
+        "difference properties will be generated for, and what kind of "
+        "difference calculation is run - normal difference (`diff`), percent "
+        "difference (`diffpercent`) or ratio (`ratio`). Multiple kinds of differences "
+        "can be estimated for each parameter"
+    )
     global_params: SkipJsonSchema[FromGlobal | None] = Field(
         default=None,
     )
