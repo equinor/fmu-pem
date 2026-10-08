@@ -146,3 +146,28 @@ Core runtime dependencies are declared in `pyproject.toml` under
 (use `>=` lower bounds).
 
 Test-only dependencies belong under `[project.optional-dependencies] tests`.
+
+## Code review guidance
+
+In principle, it should not be necessary to have several iterations on code review
+unless the suggested fixes also include weak or erroneous code.
+
+When performing a code review:
+
+- Review all changed files systematically before reporting findings. Check correctness,
+  error handling, boundary conditions, security, compatibility, and regression-test
+  coverage.
+- Inspect relevant callers, callees, and tests before claiming that changed code is
+  incorrect.
+- Report actionable defects with a concrete failure scenario and explain the impact.
+  Avoid speculative issues and stylistic preferences unless they violate an explicit
+  repository convention.
+- Validate suggested fixes against the surrounding implementation. Do not propose a
+  fix that introduces another defect or contradicts the documented requirements.
+- Respect intentional design decisions documented in this repository. If a decision
+  is unsafe, explain the specific failure rather than merely recommending a different
+  approach.
+- Consolidate findings with the same root cause rather than reporting multiple symptoms separately.
+- Compare new comments with earlier comments on the same code. If an earlier suggestion
+  conflicts with the current one, thoroughly evaluate whether the new suggestion is needed.
+- Review user feedback on earlier suggestions, especially suggestions that were downvoted.
