@@ -806,8 +806,10 @@ class DifferenceProperties(BaseModel):
     group_statistics: Literal["fipnum", "region_zone"] = Field(
         description="In addition to summary statistics for the whole grid, statistics "
         "can also be grouped by subregions. These will either come from the INIT file "
-        "`FIPNUM` parameter or from ROFF files with REGION and ZONE. Labels/names "
-        "should be set in the parameters in both cases",
+        "`FIPNUM` parameter or from ROFF files with REGION and ZONE. Even if labels "
+        "exist in the FIPNUM parameter in an RMS project, this information is not "
+        "retained in the INIT file. To ensure region and zone names in the "
+        "statistics, the `region_zone` options should be selected.",
         default="fipnum",
     )
     statistics_grid_dir: SkipJsonSchema[Path] = Field(
