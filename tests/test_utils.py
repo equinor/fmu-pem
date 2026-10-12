@@ -7,10 +7,13 @@ from fmu.pem.pem_functions.mineral_properties import (
     verify_mineral_inputs,
 )
 from fmu.pem.pem_utilities import (
+    bar_to_pa,
     filter_and_one_dim,
     get_shale_fraction,
+    pa_to_bar,
     reverse_filter_and_restore,
 )
+from fmu.pem.pem_utilities.pem_class_definitions import PressureProperties
 from fmu.pem.pem_utilities.pem_config_validation import (
     MineralProperties,
 )
@@ -275,3 +278,53 @@ def test_filter_and_restore_round_trip_two_arrays():
     # After running them through filter_and_one_dim followed by
     # reverse_filter_and_restore, both arrays will have the same mask.
     np.testing.assert_array_equal(restored[0].mask, restored[1].mask)
+
+
+def test_pressure_conversion_round_trip_numpy_and_masked_array():
+    arr = np.array([1.0, 5.5, 100.0])
+    masked = np.ma.array([2.0, 4.0, 6.0], mask=[False, True, False])
+
+    np.testing.assert_allclose(pa_to_bar(bar_to_pa(arr)), arr)
+    masked_rt = pa_to_bar(bar_to_pa(masked))
+    np.testing.assert_allclose(masked_rt.data, masked.data)
+    np.testing.assert_array_equal(masked_rt.mask, masked.mask)
+
+
+def test_migration_pattern_for_removed_pressure_helpers():
+    pressures_bar = [
+        PressureProperties(
+            effective_pressure=np.ma.array([100.0, 200.0]),
+            pressure=np.ma.array([110.0, 210.0]),
+            overburden_pressure=np.ma.array([300.0, 400.0]),
+        ),
+        PressureProperties(
+            effective_pressure=np.ma.array([500.0]),
+            pressure=np.ma.array([510.0]),
+            overburden_pressure=np.ma.array([700.0]),
+        ),
+    ]
+
+    converted = [
+        PressureProperties(
+            effective_pressure=bar_to_pa(single_press.effective_pressure),
+            pressure=bar_to_pa(single_press.pressure),
+            overburden_pressure=bar_to_pa(single_press.overburden_pressure),
+        )
+        for single_press in pressures_bar
+    ]
+
+    np.testing.assert_allclose(
+        converted[0].effective_pressure.data,
+        np.array([1.0e7, 2.0e7]),
+    )
+    np.testing.assert_allclose(
+        converted[0].pressure.data,
+        np.array([1.1e7, 2.1e7]),
+    )
+    np.testing.assert_allclose(
+        converted[0].overburden_pressure.data,
+        np.array([3.0e7, 4.0e7]),
+    )
+    np.testing.assert_allclose(converted[1].effective_pressure.data, np.array([5.0e7]))
+    np.testing.assert_allclose(converted[1].pressure.data, np.array([5.1e7]))
+    np.testing.assert_allclose(converted[1].overburden_pressure.data, np.array([7.0e7]))
