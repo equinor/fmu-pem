@@ -9,7 +9,7 @@ from typing import Generator
 import numpy as np
 import xtgeo
 
-from .pem_class_definitions import EffectiveMineralProperties, PressureProperties
+from .pem_class_definitions import EffectiveMineralProperties
 
 
 @contextmanager
@@ -274,22 +274,6 @@ def pa_to_bar(
     Pressure unit conversion from Pa to bar
     """
     return pres_pa * 1.0e-5
-
-
-def convert_single_pressure_to_pa(
-    single_press_bar: PressureProperties,
-) -> PressureProperties:
-    return PressureProperties(
-        effective_pressure=bar_to_pa(single_press_bar.effective_pressure),
-        pressure=bar_to_pa(single_press_bar.pressure),
-        overburden_pressure=bar_to_pa(single_press_bar.overburden_pressure),
-    )
-
-
-def convert_pressures_list_to_pa(
-    press_bar: list[PressureProperties],
-) -> list[PressureProperties]:
-    return [convert_single_pressure_to_pa(pres) for pres in press_bar]
 
 
 def _format_elapsed(seconds: float) -> str:
