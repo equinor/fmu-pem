@@ -266,6 +266,9 @@ export const YamlEdit = () => {
               },
               // Hide discriminator fields from UI - users select via dropdown, not by editing these
               rock_matrix: {
+                porosity_adjustment: {
+                  method: { "ui:widget": "hidden" },
+                },
                 zone_regions: {
                   items: {
                     model: {

@@ -7,6 +7,11 @@ you can edit the YAML file in any standard text editor. The interface hides cert
 do not require modification. Example files with all options and commented standard settings can be found in the
 [GitHub repository](https://github.com/equinor/fmu-pem/blob/main/tests/data/sim2seis/model/pem_config_no_condensate.yml).
 
+For porosity adjustment, the interface selects the `method` field through the
+dropdown and includes it in the exported YAML (`none`, `constant`, or `grid_file`).
+This field is hidden in the form but remains in the JSON Schema so validation can
+distinguish the three options.
+
 There is also a global configuration file in YAML format, which is used throughout the FMU process. In this context,
 the main information used is a set of dates for which the estimation is made, also the dates from which difference
 seismic is estimated. The name of output grid is also read from the global config file.
