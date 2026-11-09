@@ -4,6 +4,7 @@ import YAML from "yaml";
 import validator from "@rjsf/validator-ajv8";
 
 import { pemSchema } from "./schema";
+import { configYamlOptions } from "./yamlOptions.mjs";
 
 import {
   Button,
@@ -154,7 +155,7 @@ export const YamlEdit = () => {
 
   const yamlOutput =
     (validInput ? "" : "# This YAML file is not complete/valid\n\n") +
-    YAML.stringify(userInputRef.current);
+    YAML.stringify(userInputRef.current, configYamlOptions);
 
   return (
     <div>
@@ -180,7 +181,7 @@ export const YamlEdit = () => {
                   return
                 }
                 const content = readerEvent.target.result as string;
-                setInitialConfig(YAML.parse(content));
+                setInitialConfig(YAML.parse(content, configYamlOptions));
                 setNumberRead(() => numberRead + 1);
               };
             };
