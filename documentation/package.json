@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "test": "node --test docs/yaml-edit/*.test.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs --base=/fmu-pem/",
     "docs:preview": "vitepress preview docs",

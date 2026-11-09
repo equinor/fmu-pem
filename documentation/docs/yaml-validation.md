@@ -12,6 +12,10 @@ dropdown and includes it in the exported YAML (`none`, `constant`, or `grid_file
 This field is hidden in the form but remains in the JSON Schema so validation can
 distinguish the three options.
 
+The interface accepts underscores as decimal digit separators in numeric YAML
+values, such as `25_000_000_000.0`, matching the Python configuration loader.
+Quoted values remain strings. Exported numbers may omit the separators.
+
 There is also a global configuration file in YAML format, which is used throughout the FMU process. In this context,
 the main information used is a set of dates for which the estimation is made, also the dates from which difference
 seismic is estimated. The name of output grid is also read from the global config file.

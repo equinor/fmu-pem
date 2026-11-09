@@ -104,6 +104,10 @@ jobs:
         working-directory: ./documentation
         run: npm ci
 
+      - name: Test YAML Import and Export
+        working-directory: ./documentation
+        run: npm test
+
       - name: Create JSON Schema
         working-directory: ./documentation
         run: npm run create-json-schema
