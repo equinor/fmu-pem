@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 import xtgeo
 import yaml
+from pydantic import TypeAdapter
 
 from fmu.pem.pem_utilities import apply_porosity_adjustment
 from fmu.pem.pem_utilities.import_routines import (
@@ -112,6 +113,35 @@ def test_default_porosity_adjustment_is_none(data_dir):
     )
     assert isinstance(rm.porosity_adjustment, NoPorosityAdjustment)
     assert rm.porosity_adjustment.method == "none"
+
+
+@pytest.mark.parametrize(
+    ("model", "method", "parameters"),
+    [
+        (NoPorosityAdjustment, "none", {}),
+        (ConstantNonNetPorosity, "constant", {"non_net_porosity": 0.05}),
+        (PreAdjustedPorosityGrid, "grid_file", {"file_name": "poro.roff"}),
+    ],
+)
+def test_porosity_adjustment_schema_preserves_discriminator(model, method, parameters):
+    schema = RockMatrixProperties.model_json_schema()
+    adjustment_schema = schema["properties"]["porosity_adjustment"]
+    mapping = adjustment_schema["discriminator"]["mapping"]
+
+    assert adjustment_schema["discriminator"]["propertyName"] == "method"
+    assert {"$ref": mapping[method]} in adjustment_schema["oneOf"]
+    variant = schema["$defs"][model.__name__]
+    assert variant["properties"]["method"]["const"] == method
+    assert variant["properties"]["method"]["default"] == method
+    adjustment = model.model_validate(parameters, context={"pre_experiment": True})
+    exported = adjustment.model_dump(mode="json")
+    assert exported["method"] == method
+    parsed = TypeAdapter(
+        RockMatrixProperties.model_fields["porosity_adjustment"].rebuild_annotation()
+    )
+    assert isinstance(
+        parsed.validate_python(exported, context={"pre_experiment": True}), model
+    )
 
 
 def test_discriminator_picks_constant_variant():

@@ -176,7 +176,7 @@ class NoPorosityAdjustment(BaseModel):
 
     model_config = ConfigDict(title="No porosity adjustment")
 
-    method: SkipJsonSchema[Literal["none"]] = "none"
+    method: Literal["none"] = "none"
 
 
 class ConstantNonNetPorosity(BaseModel):
@@ -188,7 +188,7 @@ class ConstantNonNetPorosity(BaseModel):
 
     model_config = ConfigDict(title="Constant non-net porosity")
 
-    method: SkipJsonSchema[Literal["constant"]] = "constant"
+    method: Literal["constant"] = "constant"
     non_net_porosity: float = Field(
         default=0.05,
         ge=0.0,
@@ -205,7 +205,7 @@ class PreAdjustedPorosityGrid(BaseModel):
 
     model_config = ConfigDict(title="Pre-adjusted porosity grid")
 
-    method: SkipJsonSchema[Literal["grid_file"]] = "grid_file"
+    method: Literal["grid_file"] = "grid_file"
     rel_path: Path = Field(
         default=Path("sim2seis/input/pem"),
         description="Directory containing the pre-adjusted porosity grid file.",
